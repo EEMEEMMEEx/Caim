@@ -15,11 +15,12 @@ import {
   MapPin,
   Check,
   X,
-  Save
+  Save,
+  Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { calculateCaseDuration } from "@/lib/utils/caseDuration"
+import { calculateCaseDuration, calculateRemainingDays } from "@/lib/utils/caseDuration"
 import { useTicketsQuery, invalidateTicketsCache } from "@/hooks/useTicketsQuery"
 
 export interface TicketDetailData {
@@ -46,6 +47,7 @@ export interface TicketDetailData {
   reporter: string
   assignee: string
   currentStage: number // 1: รับแจ้ง, 2: ส่งศูนย์, 3: รออะไหล่, 4: รอส่งมอบ, 5: ปิดเคส
+  status?: string
   timeline: {
     title: string
     timestamp: string
@@ -61,7 +63,7 @@ export interface TicketDetailData {
 }
 
 const DEFAULT_TICKET_DATA: TicketDetailData = {
-  id: "1",
+  id: "CLM-2026-001",
   title: "หัวข้อเลขที่เคลม",
   problemDesc: "หัวข้ออาการเสีย ปัญหาที่พบ",
   repairResult: "ยังไม่มีผลการซ่อม",
@@ -71,24 +73,24 @@ const DEFAULT_TICKET_DATA: TicketDetailData = {
   serialNo: "1000167600349",
   deviceType: "Optical Transceiver",
   category: "ระบบบริหารจัดการ Software-Defined WAN (SD-WAN Controller)",
-  location: "—",
+  location: "ที่ว่าการอำเภอเลาขวัญ จ.กาญจนบุรี",
   warrantyStatus: "อยู่ในประกัน",
   serviceCenter: "Huawei",
-  reportedDate: "13 ก.ย. 2569 07:00",
+  reportedDate: "13 มิ.ย. 2569",
   sentDate: "—",
   deadlineDate: "12 พ.ย. 2569",
   lastTrackDate: "—",
   returnDate: "—",
-  ageDays: 10,
-  remainingDays: 50,
+  ageDays: 107,
+  remainingDays: 45,
   reporter: "ทดสอบผู้แจ้ง",
   assignee: "ทดสอบขอบเคส",
   currentStage: 1,
   timeline: [
     {
       title: "เปิดเคส · รับแจ้ง/รอตรวจสภาพ",
-      timestamp: "13 ก.ย. 2569 01:09",
-      duration: "ค้างอยู่ 10 วัน",
+      timestamp: "13 มิ.ย. 2569 01:09",
+      duration: "ค้างอยู่ 107 วัน",
     },
   ],
   otherCases: [
@@ -120,21 +122,57 @@ const STAGES = [
 export function TicketDetailView({ ticketId }: { ticketId?: string }) {
   const { tickets, updateTicket } = useTicketsQuery()
 
+  const activeTicketId = ticketId || DEFAULT_TICKET_DATA.id
+
   const [data, setData] = React.useState<TicketDetailData>(() => ({
     ...DEFAULT_TICKET_DATA,
-    id: ticketId || DEFAULT_TICKET_DATA.id,
+    id: activeTicketId,
   }))
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
   const [isStatusModalOpen, setIsStatusModalOpen] = React.useState(false)
+  const [isSaving, setIsSaving] = React.useState(false)
   const [editForm, setEditForm] = React.useState(DEFAULT_TICKET_DATA)
   const [newStatusStage, setNewStatusStage] = React.useState(data.currentStage)
   const [statusRemark, setStatusRemark] = React.useState("")
   const [bannerMessage, setBannerMessage] = React.useState<string | null>(null)
 
+  // Direct sync function from Authoritative Tickets API
+  const syncTicketFromRemote = React.useCallback(async (targetId: string) => {
+    try {
+      const res = await fetch(`/api/tickets?id=${encodeURIComponent(targetId)}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      })
+      if (!res.ok) return
+      const json = await res.json()
+      if (json && json.success && json.ticket) {
+        const t = json.ticket
+        setData((prev) => ({
+          ...prev,
+          id: t.id,
+          title: t.title || prev.title,
+          problemDesc: t.problemDesc || prev.problemDesc,
+          vendor: t.vendor || prev.vendor,
+          model: t.model || prev.model,
+          serialNo: t.serialNo || prev.serialNo,
+          reportedDate: t.date || prev.reportedDate,
+          deadlineDate: t.deadlineDate || prev.deadlineDate,
+          currentStage: Number(t.statusCode) || prev.currentStage,
+          location: [t.subdistrict, t.district, t.province].filter(Boolean).join(" ") || t.station || prev.location,
+        }))
+      }
+    } catch (err) {
+      console.warn("[TicketDetailView] syncTicketFromRemote error:", err)
+    }
+  }, [])
+
   // Sync state when tickets cache loads or ticketId matches
   React.useEffect(() => {
-    if (!ticketId) return
-    const found = tickets.find((t) => t.id === ticketId)
+    const targetId = activeTicketId
+    const found = tickets.find(
+      (t) => t.id === targetId || (targetId === "CLM-2026-001" && t.id === "1") || (targetId === "1" && t.id === "CLM-2026-001")
+    )
+
     if (found) {
       setData((prev) => ({
         ...prev,
@@ -145,24 +183,69 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
         model: found.model,
         serialNo: found.serialNo,
         reportedDate: found.date,
-        currentStage: found.statusCode,
+        deadlineDate: found.deadlineDate || prev.deadlineDate,
+        currentStage: Number(found.statusCode) || prev.currentStage,
+        location: [found.subdistrict, found.district, found.province].filter(Boolean).join(" ") || found.station || prev.location,
       }))
     }
-  }, [ticketId, tickets])
 
+    // Initial fetch from remote
+    syncTicketFromRemote(targetId)
+
+    // Real-time synchronization event listener from SSE & mutations
+    const handleRealtime = (e: Event) => {
+      const custom = e as CustomEvent
+      const detail = custom.detail as { action?: string; data?: { id?: string } } | undefined
+      if (!detail?.data?.id || detail.data.id === targetId || (targetId === "CLM-2026-001" && detail.data.id === "1")) {
+        syncTicketFromRemote(targetId)
+      }
+    }
+
+    const handleInvalidate = () => {
+      syncTicketFromRemote(targetId)
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("caim:realtime:ticket", handleRealtime)
+      window.addEventListener("caim:tickets:invalidated", handleInvalidate)
+      window.addEventListener("visibilitychange", handleInvalidate)
+      window.addEventListener("focus", handleInvalidate)
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("caim:realtime:ticket", handleRealtime)
+        window.removeEventListener("caim:tickets:invalidated", handleInvalidate)
+        window.removeEventListener("visibilitychange", handleInvalidate)
+        window.removeEventListener("focus", handleInvalidate)
+      }
+    }
+  }, [activeTicketId, tickets, syncTicketFromRemote])
+
+  // Harmonized Case Age Duration Calculation (Both Top Card & Sidebar)
   const caseDuration = React.useMemo(() => {
     return calculateCaseDuration({
       date: data.reportedDate,
       statusCode: data.currentStage,
+      status: data.currentStage === 5 ? "ปิดเคส" : "รับแจ้ง",
       ageDays: data.ageDays,
     })
   }, [data.reportedDate, data.currentStage, data.ageDays])
+
+  // Dynamic Remaining Days & Circular Progress Metric Calculation
+  const remainingMetric = React.useMemo(() => {
+    return calculateRemainingDays(data.deadlineDate, data.reportedDate)
+  }, [data.deadlineDate, data.reportedDate])
+
+  const radius = 38
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (remainingMetric.progressPercent / 100) * circumference
 
   function showBanner(msg: string) {
     setBannerMessage(msg)
     setTimeout(() => {
       setBannerMessage(null)
-    }, 2500)
+    }, 3000)
   }
 
   function handleOpenEdit() {
@@ -172,7 +255,11 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
 
   async function handleSaveEdit(e: React.FormEvent) {
     e.preventDefault()
-    setData({ ...editForm })
+    if (isSaving) return
+
+    setIsSaving(true)
+    const updatedData = { ...editForm, id: data.id }
+    setData(updatedData)
     setIsEditModalOpen(false)
 
     try {
@@ -185,16 +272,26 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
         model: editForm.model.trim(),
         serialNo: editForm.serialNo.trim(),
         serialNumber: editForm.serialNo.trim(),
+        date: editForm.reportedDate,
+        deadlineDate: editForm.deadlineDate,
       })
       await invalidateTicketsCache()
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("caim:tickets:invalidated"))
+      }
       showBanner("บันทึกการแก้ไขข้อมูลเรียบร้อยแล้ว")
     } catch {
       showBanner("บันทึกการแก้ไขข้อมูลเรียบร้อยแล้ว")
+    } finally {
+      setIsSaving(false)
     }
   }
 
   async function handleSaveStatus(e: React.FormEvent) {
     e.preventDefault()
+    if (isSaving) return
+
+    setIsSaving(true)
     const stageNames: Record<number, string> = {
       1: "รับแจ้ง",
       2: "ส่งศูนย์",
@@ -236,18 +333,16 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
         status: stageNames[newStatusStage] || "รับแจ้ง",
       })
       await invalidateTicketsCache()
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("caim:tickets:invalidated"))
+      }
       showBanner("อัปเดตสถานะงานเคลมเรียบร้อยแล้ว")
     } catch {
       showBanner("อัปเดตสถานะงานเคลมเรียบร้อยแล้ว")
+    } finally {
+      setIsSaving(false)
     }
   }
-
-  // Circular progress calculation (e.g. 50 days of 60 days total ~ 83%)
-  const totalDays = 60
-  const progressPercent = Math.min(100, Math.max(0, (data.remainingDays / totalDays) * 100))
-  const radius = 38
-  const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference - (progressPercent / 100) * circumference
 
   return (
     <main id="main" className="flex-1 bg-background">
@@ -465,20 +560,28 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                   ลำดับเหตุการณ์
                 </h3>
                 <div className="relative pl-5 border-l-2 border-border/70 space-y-4">
-                  {data.timeline.map((item, idx) => (
-                    <div key={idx} className="relative">
-                      {/* Timeline dot */}
-                      <span className="absolute -left-[27px] top-0.5 size-3.5 rounded-full border-2 border-emerald-600 bg-background flex items-center justify-center">
-                        <span className="size-1 rounded-full bg-emerald-600" />
-                      </span>
-                      <p className="text-xs font-medium text-foreground">
-                        {item.title}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {item.timestamp} · {item.duration}
-                      </p>
-                    </div>
-                  ))}
+                  {data.timeline.map((item, idx) => {
+                    const isInitialStage = idx === data.timeline.length - 1 || item.title.includes("เปิดเคส")
+                    const displayDuration =
+                      isInitialStage && data.currentStage === 1
+                        ? `ค้างอยู่ ${caseDuration.days} วัน`
+                        : item.duration
+
+                    return (
+                      <div key={idx} className="relative">
+                        {/* Timeline dot */}
+                        <span className="absolute -left-[27px] top-0.5 size-3.5 rounded-full border-2 border-emerald-600 bg-background flex items-center justify-center">
+                          <span className="size-1 rounded-full bg-emerald-600" />
+                        </span>
+                        <p className="text-xs font-medium text-foreground">
+                          {item.title}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {item.timestamp} · {displayDuration}
+                        </p>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -538,7 +641,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                         cx="48"
                         cy="48"
                         r={radius}
-                        className="stroke-brand transition-all duration-700"
+                        className={`transition-all duration-700 ${remainingMetric.isOverdue ? "stroke-red-500" : "stroke-brand"}`}
                         strokeWidth="7"
                         strokeDasharray={circumference}
                         strokeDashoffset={strokeDashoffset}
@@ -548,7 +651,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     </svg>
                     <div className="absolute flex flex-col items-center justify-center">
                       <span className="text-2xl font-bold tracking-tight text-foreground leading-none">
-                        {data.remainingDays}
+                        {remainingMetric.remainingDays}
                       </span>
                       <span className="text-[10px] text-muted-foreground mt-0.5">
                         วัน
@@ -556,11 +659,13 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     </div>
                   </div>
 
-                  <p className="text-xs font-semibold text-brand mt-3">
-                    เหลืออีก {data.remainingDays} วัน
+                  <p className={`text-xs font-semibold mt-3 ${remainingMetric.isOverdue ? "text-red-600" : "text-brand"}`}>
+                    {remainingMetric.isOverdue
+                      ? `เกินกำหนด ${remainingMetric.overdueDays} วัน`
+                      : `เหลืออีก ${remainingMetric.remainingDays} วัน`}
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    ครบกำหนด {data.deadlineDate}
+                    ครบกำหนด {remainingMetric.deadlineDateStr}
                   </p>
                 </div>
               </div>
@@ -638,7 +743,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">กำหนดแล้วเสร็จ</span>
-                    <span className="text-foreground">{data.deadlineDate}</span>
+                    <span className="text-foreground">{remainingMetric.deadlineDateStr}</span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">ติดตามล่าสุด</span>
@@ -722,6 +827,56 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="font-medium text-foreground">วันที่รับแจ้ง</label>
+                  <Input
+                    value={editForm.reportedDate}
+                    onChange={(e) => setEditForm({ ...editForm, reportedDate: e.target.value })}
+                    className="h-8 text-xs"
+                    placeholder="เช่น 13 มิ.ย. 2569"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-medium text-foreground">กำหนดแล้วเสร็จ</label>
+                  <Input
+                    value={editForm.deadlineDate}
+                    onChange={(e) => setEditForm({ ...editForm, deadlineDate: e.target.value })}
+                    className="h-8 text-xs"
+                    placeholder="เช่น 12 พ.ย. 2569"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="font-medium text-foreground">ผู้ผลิต (Vendor)</label>
+                  <Input
+                    value={editForm.vendor}
+                    onChange={(e) => setEditForm({ ...editForm, vendor: e.target.value })}
+                    className="h-8 text-xs"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-medium text-foreground">รุ่น (Model)</label>
+                  <Input
+                    value={editForm.model}
+                    onChange={(e) => setEditForm({ ...editForm, model: e.target.value })}
+                    className="h-8 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-medium text-foreground">หมายเลขเครื่อง (S/N)</label>
+                <Input
+                  value={editForm.serialNo}
+                  onChange={(e) => setEditForm({ ...editForm, serialNo: e.target.value })}
+                  className="h-8 font-mono text-xs"
+                />
+              </div>
+
               <div className="flex flex-col gap-1">
                 <label className="font-medium text-foreground">ผลการซ่อม / การแก้ไข</label>
                 <Input
@@ -764,17 +919,28 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                   type="button"
                   variant="outline"
                   size="sm"
+                  disabled={isSaving}
                   onClick={() => setIsEditModalOpen(false)}
                 >
                   ยกเลิก
                 </Button>
                 <Button
                   type="submit"
+                  disabled={isSaving}
                   size="sm"
-                  className="gap-1.5 bg-brand text-white hover:bg-brand-dark"
+                  className="gap-1.5 bg-brand text-white hover:bg-brand-dark disabled:opacity-60 cursor-pointer"
                 >
-                  <Save className="size-3.5" />
-                  <span>บันทึกการแก้ไข</span>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      <span>กำลังบันทึก...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="size-3.5" />
+                      <span>บันทึกการแก้ไข</span>
+                    </>
+                  )}
                 </Button>
               </div>
             </form>
@@ -856,17 +1022,28 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                   type="button"
                   variant="outline"
                   size="sm"
+                  disabled={isSaving}
                   onClick={() => setIsStatusModalOpen(false)}
                 >
                   ยกเลิก
                 </Button>
                 <Button
                   type="submit"
+                  disabled={isSaving}
                   size="sm"
-                  className="gap-1.5 bg-brand text-white hover:bg-brand-dark"
+                  className="gap-1.5 bg-brand text-white hover:bg-brand-dark disabled:opacity-60 cursor-pointer"
                 >
-                  <Check className="size-3.5" />
-                  <span>ยืนยันเปลี่ยนสถานะ</span>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      <span>กำลังบันทึก...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="size-3.5" />
+                      <span>ยืนยันเปลี่ยนสถานะ</span>
+                    </>
+                  )}
                 </Button>
               </div>
             </form>

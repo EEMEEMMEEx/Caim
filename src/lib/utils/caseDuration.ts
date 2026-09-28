@@ -49,12 +49,17 @@ export function parseThaiDate(dateStr?: string | Date | null): Date | null {
   const trimmed = String(dateStr).trim()
   if (!trimmed) return null
 
-  // 1. Check for Thai text date pattern: e.g. "13 มิ.ย. 2569" or "13 มิถุนายน 2569"
-  const thaiTextMatch = trimmed.match(/^(\d{1,2})\s+([ก-๙.]+)\s+(\d{4})$/)
+  // 1. Check for Thai text date pattern: e.g. "13 มิ.ย. 2569", "13 มิ.ย. 2569 07:00", "13 มิถุนายน 2569 01:09"
+  const thaiTextMatch = trimmed.match(
+    /^(\d{1,2})\s+([ก-๙.]+)\s+(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/
+  )
   if (thaiTextMatch) {
     const day = parseInt(thaiTextMatch[1], 10)
     const monthKey = thaiTextMatch[2].trim()
     let year = parseInt(thaiTextMatch[3], 10)
+    const hour = thaiTextMatch[4] ? parseInt(thaiTextMatch[4], 10) : 0
+    const minute = thaiTextMatch[5] ? parseInt(thaiTextMatch[5], 10) : 0
+    const second = thaiTextMatch[6] ? parseInt(thaiTextMatch[6], 10) : 0
 
     const month = THAI_MONTHS_MAP[monthKey]
     if (month !== undefined && !isNaN(day) && !isNaN(year)) {
@@ -62,20 +67,26 @@ export function parseThaiDate(dateStr?: string | Date | null): Date | null {
       if (year >= 2400) {
         year -= 543
       }
-      return new Date(year, month, day, 0, 0, 0, 0)
+      return new Date(year, month, day, hour, minute, second, 0)
     }
   }
 
-  // 2. Check for slash or dash format: DD/MM/YYYY with potential BE year (e.g. 13/06/2569)
-  const slashMatch = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+  // 2. Check for slash or dash format: DD/MM/YYYY with potential BE year (e.g. 13/06/2569 or 13/06/2569 07:00)
+  const slashMatch = trimmed.match(
+    /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/
+  )
   if (slashMatch) {
     const day = parseInt(slashMatch[1], 10)
     const month = parseInt(slashMatch[2], 10) - 1
     let year = parseInt(slashMatch[3], 10)
+    const hour = slashMatch[4] ? parseInt(slashMatch[4], 10) : 0
+    const minute = slashMatch[5] ? parseInt(slashMatch[5], 10) : 0
+    const second = slashMatch[6] ? parseInt(slashMatch[6], 10) : 0
+
     if (year >= 2400) {
       year -= 543
     }
-    return new Date(year, month, day, 0, 0, 0, 0)
+    return new Date(year, month, day, hour, minute, second, 0)
   }
 
   // 3. Fallback to standard JavaScript Date parser (for ISO strings, e.g. 2026-06-13T08:00:00Z)
@@ -89,6 +100,75 @@ export function parseThaiDate(dateStr?: string | Date | null): Date | null {
   }
 
   return null
+}
+
+/**
+ * Format a Date object into standard Thai BE text (e.g. "12 พ.ย. 2569")
+ */
+export function formatThaiDate(date: Date): string {
+  const day = date.getDate()
+  const monthNames = [
+    "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+    "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+  ]
+  const month = monthNames[date.getMonth()]
+  const yearBe = date.getFullYear() + 543
+  return `${day} ${month} ${yearBe}`
+}
+
+export interface RemainingDaysResult {
+  remainingDays: number
+  totalDays: number
+  progressPercent: number
+  isOverdue: boolean
+  overdueDays: number
+  deadlineDateStr: string
+}
+
+/**
+ * Dynamically computes remaining days and progress percentage towards deadline/due date.
+ * Formats: dueDate - currentDate
+ */
+export function calculateRemainingDays(
+  deadlineDateInput?: string | Date | null,
+  reportedDateInput?: string | Date | null,
+  currentDate: Date = new Date()
+): RemainingDaysResult {
+  const reported = parseThaiDate(reportedDateInput) || new Date(currentDate)
+  let deadline = parseThaiDate(deadlineDateInput)
+
+  // Default to standard 60-day SLA if no deadline is specified
+  if (!deadline) {
+    deadline = new Date(reported.getFullYear(), reported.getMonth(), reported.getDate() + 60)
+  }
+
+  const currentMidnight = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()).getTime()
+  const deadlineMidnight = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate()).getTime()
+  const reportedMidnight = new Date(reported.getFullYear(), reported.getMonth(), reported.getDate()).getTime()
+
+  const remainingDiffMs = deadlineMidnight - currentMidnight
+  const remainingDays = Math.ceil(remainingDiffMs / (1000 * 60 * 60 * 24))
+
+  const totalSlaMs = deadlineMidnight - reportedMidnight
+  const totalDays = Math.max(1, Math.round(totalSlaMs / (1000 * 60 * 60 * 24)))
+
+  // Progress percent representing remaining portion of the SLA window
+  const progressPercent = Math.min(100, Math.max(0, (remainingDays / totalDays) * 100))
+
+  const isOverdue = remainingDays < 0
+  const overdueDays = isOverdue ? Math.abs(remainingDays) : 0
+
+  return {
+    remainingDays: Math.max(0, remainingDays),
+    totalDays,
+    progressPercent,
+    isOverdue,
+    overdueDays,
+    deadlineDateStr:
+      deadlineDateInput && typeof deadlineDateInput === "string" && deadlineDateInput.trim()
+        ? deadlineDateInput
+        : formatThaiDate(deadline),
+  }
 }
 
 export interface CaseDurationInput {
@@ -145,7 +225,9 @@ export function calculateCaseDuration(
       (ticket.updatedAt ? new Date(ticket.updatedAt) : null)
 
     if (reportedDate && closeDate && closeDate >= reportedDate) {
-      const diffMs = closeDate.getTime() - reportedDate.getTime()
+      const closeMidnight = new Date(closeDate.getFullYear(), closeDate.getMonth(), closeDate.getDate()).getTime()
+      const reportedMidnight = new Date(reportedDate.getFullYear(), reportedDate.getMonth(), reportedDate.getDate()).getTime()
+      const diffMs = closeMidnight - reportedMidnight
       elapsedDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
     } else if (ticket.ageDays) {
       // Parse existing numeric age if available
@@ -153,14 +235,18 @@ export function calculateCaseDuration(
       if (match && parseInt(match[1], 10) > 0) {
         elapsedDays = parseInt(match[1], 10)
       } else if (reportedDate) {
-        const diffMs = currentDate.getTime() - reportedDate.getTime()
+        const currentMidnight = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()).getTime()
+        const reportedMidnight = new Date(reportedDate.getFullYear(), reportedDate.getMonth(), reportedDate.getDate()).getTime()
+        const diffMs = currentMidnight - reportedMidnight
         elapsedDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
       }
     }
   } else {
     // For active/open cases: dynamically calculate from reported date to today
     if (reportedDate) {
-      const diffMs = currentDate.getTime() - reportedDate.getTime()
+      const currentMidnight = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()).getTime()
+      const reportedMidnight = new Date(reportedDate.getFullYear(), reportedDate.getMonth(), reportedDate.getDate()).getTime()
+      const diffMs = currentMidnight - reportedMidnight
       elapsedDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
     } else if (ticket.ageDays) {
       const match = String(ticket.ageDays).match(/(\d+)/)

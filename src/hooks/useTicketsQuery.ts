@@ -14,6 +14,7 @@ export interface Ticket {
   status: string
   statusCode: number
   date: string
+  deadlineDate?: string
   ageDays: string
   isOverdue?: boolean
   overdueText?: string

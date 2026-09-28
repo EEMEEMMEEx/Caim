@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.6] - 2026-09-28
+
+### Fixed & Enhanced
+- **Case Detail View (CLM-2026-001) End-to-End Synchronization, Unified Date Calculations & Real-Time Subscription**:
+  - **End-to-End Field Synchronization**:
+    - Reactively bound all sections across `TicketDetailView.tsx` (Top Header, 5-stage Horizontal Stepper, Case Summary Sidebar 'ข้อมูลเคส' / 'อุปกรณ์', and Timeline 'ลำดับเหตุการณ์') to the latest database record.
+    - Enabled instant revalidation and re-rendering across all dependent fields upon editing details or transitioning status without requiring a manual browser refresh.
+  - **Uniform Day & Timestamp Calculations**:
+    - Harmonized Elapsed Case Age ('อายุงาน') between the top summary card (`107 อายุงาน (วัน)`) and sidebar table row (`อายุงาน: 107 วัน`) using normalized calendar midnight subtraction (`currentDate - reportedDate` from 13 มิ.ย. 2569 to 28 ก.ย. 2569 = 107 วัน).
+    - Dynamically computed Remaining Days ('กำหนดแล้วเสร็จ') in `calculateRemainingDays` as `dueDate - currentDate`, keeping progress circle stroke offset, remaining days counter, and overdue indicators in exact sync with calendar dates.
+    - Synchronized active stage duration in the timeline (`ค้างอยู่ 107 วัน`) with the overall case age and stage transitions.
+    - Extended `parseThaiDate` in `caseDuration.ts` to support optional timestamp components (`HH:mm:ss`), preventing date parsing fallback failures.
+  - **Real-Time Subscription & Cache Invalidation**:
+    - Attached live listeners to `caim:realtime:ticket`, `caim:tickets:invalidated`, `visibilitychange`, and `focus` events to synchronize data from concurrent sessions or external edit modals immediately.
+    - Integrated direct single-ticket fetching (`/api/tickets?id=...`) and automated cache invalidation via `invalidateTicketsCache()`.
+
 ## [0.22.5] - 2026-09-28
 
 ### Fixed & Enhanced
