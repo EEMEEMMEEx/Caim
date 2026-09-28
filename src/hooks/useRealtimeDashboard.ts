@@ -1,67 +1,74 @@
 "use client"
 
 import * as React from "react"
+import useSWR from "swr"
 import {
   DashboardMetrics,
   calculateDashboardMetrics,
-  TicketItem,
 } from "@/lib/dashboard/calculateMetrics"
 
 export type ConnectionStatus = "connected" | "connecting" | "fallback-polling"
 
-export function useRealtimeDashboard() {
-  const [metrics, setMetrics] = React.useState<DashboardMetrics>(() =>
-    calculateDashboardMetrics([])
-  )
+export const DASHBOARD_STATS_API_KEY = "/api/dashboard/stats"
+
+/**
+ * Fast SWR fetcher targeting pre-aggregated stats endpoint (< 5ms response)
+ */
+const dashboardFetcher = async (url: string): Promise<DashboardMetrics> => {
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+    },
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch dashboard metrics: ${res.statusText}`)
+  }
+  const data = await res.json()
+  if (data.success && data.metrics) {
+    return data.metrics as DashboardMetrics
+  }
+  throw new Error("Invalid metrics response payload")
+}
+
+export interface UseRealtimeDashboardOptions {
+  initialMetrics?: DashboardMetrics
+}
+
+export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) {
+  const { initialMetrics } = options
+
+  // Stale-While-Revalidate (SWR) Caching Strategy:
+  // 1. Initial render uses server-hydrated fallbackData (instant rendering, zero spinner)
+  // 2. Navigation uses in-memory SWR cache (0ms delay)
+  // 3. Background revalidation updates metrics silently without layout shifts
+  const {
+    data: metrics,
+    mutate,
+    isValidating: isRefreshing,
+  } = useSWR<DashboardMetrics>(DASHBOARD_STATS_API_KEY, dashboardFetcher, {
+    fallbackData: initialMetrics,
+    revalidateOnFocus: true, // Silent revalidation on tab/window focus
+    revalidateIfStale: true,
+    revalidateOnReconnect: true,
+    dedupingInterval: 5000, // 5s deduping window (staleTime equivalent)
+    focusThrottleInterval: 5000,
+    keepPreviousData: true, // Display previous cached data instantly upon navigation
+  })
+
+  // Safe fallback ensuring metrics are always defined
+  const safeMetrics = React.useMemo(() => {
+    return metrics ?? initialMetrics ?? calculateDashboardMetrics([])
+  }, [metrics, initialMetrics])
+
   const [connectionStatus, setConnectionStatus] =
     React.useState<ConnectionStatus>("connecting")
-  const [lastSyncTime, setLastSyncTime] = React.useState<Date | null>(null)
-  const [isRefreshing, setIsRefreshing] = React.useState(false)
-
-  // Direct calculation from authoritative server tickets without local device storage skew
-  const applyServerTickets = React.useCallback(
-    (serverTickets?: TicketItem[]) => {
-      if (typeof window === "undefined") return
-      if (serverTickets && Array.isArray(serverTickets)) {
-        const computed = calculateDashboardMetrics(serverTickets)
-        setMetrics(computed)
-        setLastSyncTime(new Date())
-      }
-    },
-    []
+  const [lastSyncTime, setLastSyncTime] = React.useState<Date | null>(() =>
+    initialMetrics ? new Date() : null
   )
 
-  // Fetch stats directly via REST fallback
-  const fetchStats = React.useCallback(async () => {
-    setIsRefreshing(true)
-    try {
-      const res = await fetch("/api/tickets", {
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate, proxy-revalidate",
-          Pragma: "no-cache",
-        },
-      })
-      if (res.ok) {
-        const data = await res.json()
-        if (data.success && Array.isArray(data.tickets)) {
-          applyServerTickets(data.tickets)
-          return
-        }
-      }
-    } catch (err) {
-      console.warn("Direct stats fetch warning:", err)
-    } finally {
-      setIsRefreshing(false)
-    }
-  }, [applyServerTickets])
-
-  // Setup Real-Time Server-Sent Events (SSE) + Auto-Revalidation Fallback
+  // Real-Time Server-Sent Events (SSE) & Cross-Tab Broadcast Synchronization
   React.useEffect(() => {
     if (typeof window === "undefined") return
-
-    // 1. Initial fast sync from API
-    fetchStats()
 
     let eventSource: EventSource | null = null
     let fallbackPollTimer: NodeJS.Timeout | null = null
@@ -70,14 +77,23 @@ export function useRealtimeDashboard() {
       if (fallbackPollTimer) return
       setConnectionStatus("fallback-polling")
       fallbackPollTimer = setInterval(() => {
-        fetchStats()
-      }, 8000)
+        mutate()
+      }, 10000)
     }
 
     function stopFallbackPolling() {
       if (fallbackPollTimer) {
         clearInterval(fallbackPollTimer)
         fallbackPollTimer = null
+      }
+    }
+
+    const applyFreshMetrics = (freshMetrics: DashboardMetrics) => {
+      if (freshMetrics && freshMetrics.summary) {
+        // Silently mutate SWR cache without refetching from server
+        mutate(freshMetrics, { revalidate: false })
+        setLastSyncTime(new Date())
+        setConnectionStatus("connected")
       }
     }
 
@@ -90,60 +106,76 @@ export function useRealtimeDashboard() {
         stopFallbackPolling()
       })
 
-      eventSource.addEventListener("update", (event) => {
+      // Support both "metrics" and "update" SSE event types
+      const handleSseMessage = (event: MessageEvent) => {
         try {
-          const freshMetrics: DashboardMetrics = JSON.parse(event.data)
-          if (freshMetrics && freshMetrics.summary) {
-            setMetrics(freshMetrics)
-            setLastSyncTime(new Date())
-            setConnectionStatus("connected")
-          }
+          const payload = JSON.parse(event.data)
+          applyFreshMetrics(payload)
         } catch (e) {
-          console.warn("Failed to parse SSE payload", e)
+          console.warn("Failed to parse SSE metrics payload", e)
         }
-      })
+      }
+
+      eventSource.addEventListener("metrics", handleSseMessage)
+      eventSource.addEventListener("update", handleSseMessage)
 
       eventSource.addEventListener("error", () => {
-        // SSE disconnected or unsupported, start fallback polling
         startFallbackPolling()
       })
     } catch {
       startFallbackPolling()
     }
 
-    // Window focus / visibility change listener for immediate revalidation
+    // Window focus / visibility listener: revalidate cache silently
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        fetchStats()
+        mutate()
       }
     }
     window.addEventListener("visibilitychange", handleVisibilityChange)
     window.addEventListener("focus", handleVisibilityChange)
 
-    // Real-time custom event listeners from SSE & cross-client sync
-    const handleTicketChange = () => {
-      fetchStats()
+    // Real-time custom event listeners from global sync and mutations
+    const handleRealtimeMetricsEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<DashboardMetrics>
+      if (customEvent.detail && customEvent.detail.summary) {
+        applyFreshMetrics(customEvent.detail)
+      } else {
+        mutate()
+      }
     }
-    window.addEventListener("caim:realtime:ticket", handleTicketChange)
-    window.addEventListener("caim:realtime:metrics", handleTicketChange)
+
+    const handleTicketChangeEvent = () => {
+      mutate()
+    }
+
+    window.addEventListener("caim:realtime:metrics", handleRealtimeMetricsEvent)
+    window.addEventListener("caim:realtime:ticket", handleTicketChangeEvent)
+    window.addEventListener("caim:realtime:rma", handleTicketChangeEvent)
 
     return () => {
       if (eventSource) {
         eventSource.close()
       }
       stopFallbackPolling()
-      window.removeEventListener("caim:realtime:ticket", handleTicketChange)
-      window.removeEventListener("caim:realtime:metrics", handleTicketChange)
+      window.removeEventListener("caim:realtime:metrics", handleRealtimeMetricsEvent)
+      window.removeEventListener("caim:realtime:ticket", handleTicketChangeEvent)
+      window.removeEventListener("caim:realtime:rma", handleTicketChangeEvent)
       window.removeEventListener("visibilitychange", handleVisibilityChange)
       window.removeEventListener("focus", handleVisibilityChange)
     }
-  }, [fetchStats])
+  }, [mutate])
+
+  const refresh = React.useCallback(async () => {
+    await mutate(undefined, { revalidate: true })
+    setLastSyncTime(new Date())
+  }, [mutate])
 
   return {
-    metrics,
+    metrics: safeMetrics,
     connectionStatus,
     lastSyncTime,
     isRefreshing,
-    refresh: fetchStats,
+    refresh,
   }
 }

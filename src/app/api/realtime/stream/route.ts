@@ -1,9 +1,8 @@
 import { NextRequest } from "next/server"
 import { getDb, isMongoConfigured } from "@/lib/mongodb"
-import { calculateDashboardMetrics, TicketItem } from "@/lib/dashboard/calculateMetrics"
 import { realtimeEmitter, REALTIME_EVENTS } from "@/lib/events/realtimeEmitter"
 import { TransactionLogDocument } from "@/types/database"
-import { getPersistentTickets } from "@/lib/storage/serverTicketStorage"
+import { getPrecomputedDashboardMetrics } from "@/lib/dashboard/dashboardStatsService"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -13,21 +12,7 @@ export async function GET(req: NextRequest) {
   const encoder = new TextEncoder()
 
   async function getMetrics() {
-    let tickets: TicketItem[] = []
-    if (isMongoConfigured()) {
-      const db = await getDb()
-      if (db) {
-        tickets = await db
-          .collection<TicketItem>("tickets")
-          .find({})
-          .sort({ createdAt: -1 })
-          .toArray()
-      }
-    }
-    if (tickets.length === 0) {
-      tickets = getPersistentTickets() as unknown as TicketItem[]
-    }
-    return calculateDashboardMetrics(tickets)
+    return getPrecomputedDashboardMetrics()
   }
 
   const stream = new ReadableStream({

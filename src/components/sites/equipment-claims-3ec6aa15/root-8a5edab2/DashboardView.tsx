@@ -19,10 +19,15 @@ import {
   Activity
 } from "lucide-react"
 import { useRealtimeDashboard } from "@/hooks/useRealtimeDashboard"
+import type { DashboardMetrics } from "@/lib/dashboard/calculateMetrics"
 
-export function DashboardView() {
+export interface DashboardViewProps {
+  initialMetrics?: DashboardMetrics
+}
+
+export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
   const { metrics, connectionStatus, lastSyncTime, isRefreshing, refresh } =
-    useRealtimeDashboard()
+    useRealtimeDashboard({ initialMetrics })
 
   const formattedSyncTime = React.useMemo(() => {
     if (!lastSyncTime) return "กำลังเชื่อมต่อ..."
