@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.1] - 2026-09-28
+
+### Fixed
+- **Resolved React Minified Error #418 (SSR / Client Hydration Mismatch)**:
+  - **Deterministic Initial Date & Timestamp State**:
+    - Refactored `lastSyncTime` in `useRealtimeDashboard.ts` to initialize as `null` on both server and client initially, hydrating `new Date()` exclusively post-mount via `useEffect`.
+    - Added `mounted` state flag (`const [mounted, setMounted] = useState(false)`) in `DashboardView.tsx` to prevent server/client timestamp drift and locale ICU formatting discrepancy (`toLocaleTimeString`).
+  - **Hydration Boundary Protection**:
+    - Added `suppressHydrationWarning` on the dynamic status badge and formatted sync time text nodes.
+    - Added `suppressHydrationWarning` across summary card numbers (`metrics.summary.*`), KPI performance numbers (`metrics.kpi.*`), and weekly calendar day headers (`metrics.weekly.daysBreakdown`).
+    - Guaranteed identical initial DOM output during SSR and client hydration with zero console warnings.
+
 ## [0.22.0] - 2026-09-28
 
 ### Added & Optimized

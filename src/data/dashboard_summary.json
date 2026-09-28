@@ -1,0 +1,166 @@
+{
+  "summary": {
+    "total": 1,
+    "inProgress": 1,
+    "inProgressPct": 100,
+    "closed": 0,
+    "closedPct": 0,
+    "rejected": 0,
+    "rejectedPct": 0
+  },
+  "kpi": {
+    "pendingMedianDays": 0,
+    "pendingCount": 1,
+    "overdueCount": 0,
+    "overduePct": 0,
+    "closedOnTimeText": "ยังไม่มีเคสในประเทศที่ปิดแล้ว",
+    "closedMedianDays": 0,
+    "closedCount": 0
+  },
+  "workStatus": [
+    {
+      "code": 1,
+      "name": "รับแจ้ง/รอตรวจสภาพ",
+      "color": "#0d9488",
+      "count": 1,
+      "pct": 100
+    },
+    {
+      "code": 2,
+      "name": "ส่งศูนย์บริการแล้ว",
+      "color": "#7c3aed",
+      "count": 0,
+      "pct": 0
+    },
+    {
+      "code": 3,
+      "name": "รออะไหล่/กำลังซ่อม",
+      "color": "#d97706",
+      "count": 0,
+      "pct": 0
+    },
+    {
+      "code": 4,
+      "name": "ซ่อมเสร็จ/รอส่งมอบ",
+      "color": "#2563eb",
+      "count": 0,
+      "pct": 0
+    },
+    {
+      "code": 5,
+      "name": "ปิดเคส (รับคืนเรียบร้อย)",
+      "color": "#16a34a",
+      "count": 0,
+      "pct": 0,
+      "isClosedGroup": true
+    },
+    {
+      "code": 6,
+      "name": "ปฏิเสธเคลม (นอกเงื่อนไข)",
+      "color": "#db2777",
+      "count": 0,
+      "pct": 0,
+      "isClosedGroup": true
+    }
+  ],
+  "weekly": {
+    "thisWeekCount": 1,
+    "lastWeekCount": 0,
+    "trendPct": 100,
+    "isPositiveTrend": true,
+    "daysBreakdown": [
+      {
+        "day": "อ.",
+        "count": 0
+      },
+      {
+        "day": "พ.",
+        "count": 0
+      },
+      {
+        "day": "พฤ.",
+        "count": 0
+      },
+      {
+        "day": "ศ.",
+        "count": 0
+      },
+      {
+        "day": "ส.",
+        "count": 0
+      },
+      {
+        "day": "อา.",
+        "count": 0
+      },
+      {
+        "day": "จ.",
+        "count": 0
+      }
+    ],
+    "boxReceived": 1,
+    "boxRepaired": 0,
+    "boxClosed": 0
+  },
+  "bottlenecks": [
+    {
+      "code": 1,
+      "name": "รับแจ้ง/รอตรวจสภาพ",
+      "color": "#0d9488",
+      "completedText": "1 วัน n=0",
+      "completedDays": 1,
+      "pendingCount": 1,
+      "pendingDays": 0,
+      "maxDays": 0
+    },
+    {
+      "code": 2,
+      "name": "ส่งศูนย์บริการแล้ว",
+      "color": "#7c3aed",
+      "completedText": "1 วัน n=0",
+      "completedDays": 1,
+      "pendingCount": 0,
+      "pendingDays": 0,
+      "maxDays": 0
+    },
+    {
+      "code": 3,
+      "name": "รออะไหล่/กำลังซ่อม",
+      "color": "#d97706",
+      "completedText": "0 วัน n=0",
+      "completedDays": 0,
+      "pendingCount": 0,
+      "pendingDays": 0,
+      "maxDays": 0
+    },
+    {
+      "code": 4,
+      "name": "ซ่อมเสร็จ/รอส่งมอบ",
+      "color": "#2563eb",
+      "completedText": "0 วัน n=0",
+      "completedDays": 0,
+      "pendingCount": 0,
+      "pendingDays": 0,
+      "maxDays": 0
+    }
+  ],
+  "serviceCenters": [
+    {
+      "vendor": "Huawei",
+      "totalCases": 0,
+      "atCenterNow": 0,
+      "avgDaysText": "— ยังไม่เคยเข้าขั้นส่งศูนย์",
+      "maxDaysText": "—",
+      "overdueCount": 0
+    },
+    {
+      "vendor": "Hytera",
+      "totalCases": 1,
+      "atCenterNow": 0,
+      "avgDaysText": "— ยังไม่เคยเข้าขั้นส่งศูนย์",
+      "maxDaysText": "—",
+      "overdueCount": 0
+    }
+  ],
+  "lastCalculated": "2026-09-28T02:16:22.086Z"
+}

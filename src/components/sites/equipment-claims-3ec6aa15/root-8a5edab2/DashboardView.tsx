@@ -28,15 +28,24 @@ export interface DashboardViewProps {
 export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
   const { metrics, connectionStatus, lastSyncTime, isRefreshing, refresh } =
     useRealtimeDashboard({ initialMetrics })
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const formattedSyncTime = React.useMemo(() => {
-    if (!lastSyncTime) return "กำลังเชื่อมต่อ..."
-    return lastSyncTime.toLocaleTimeString("th-TH", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    })
-  }, [lastSyncTime])
+    if (!mounted || !lastSyncTime) return "พร้อมใช้งาน"
+    try {
+      return lastSyncTime.toLocaleTimeString("th-TH", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    } catch {
+      return "พร้อมใช้งาน"
+    }
+  }, [mounted, lastSyncTime])
 
   return (
     <main id="main" className="flex-1 bg-slate-50/50 py-6">
@@ -106,16 +115,18 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   }`}
                 />
               </span>
-              <span className="font-medium text-slate-700">
-                {connectionStatus === "connected"
-                  ? "ระบบออนไลน์ · ซิงค์สดอัตโนมัติ"
-                  : connectionStatus === "fallback-polling"
-                  ? "ระบบออนไลน์ · สำรองแบบ Polling"
-                  : "กำลังเชื่อมต่อ..."}
+              <span suppressHydrationWarning className="font-medium text-slate-700">
+                {mounted
+                  ? connectionStatus === "connected"
+                    ? "ระบบออนไลน์ · ซิงค์สดอัตโนมัติ"
+                    : connectionStatus === "fallback-polling"
+                    ? "ระบบออนไลน์ · สำรองแบบ Polling"
+                    : "กำลังเชื่อมต่อ..."
+                  : "ระบบออนไลน์ · ซิงค์สดอัตโนมัติ"}
               </span>
               <span className="text-slate-300">|</span>
-              <span className="text-[11px] text-slate-400">
-                {formattedSyncTime}
+              <span suppressHydrationWarning className="text-[11px] text-slate-400">
+                {mounted ? formattedSyncTime : "พร้อมใช้งาน"}
               </span>
             </div>
 
@@ -146,7 +157,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   <span className="flex size-9 items-center justify-center rounded-lg bg-[#2563eb] text-white shadow-2xs">
                     <ClipboardList className="size-5" />
                   </span>
-                  <span className="tabular font-semibold text-3xl text-slate-900 sm:text-4xl transition-all">
+                  <span suppressHydrationWarning className="tabular font-semibold text-3xl text-slate-900 sm:text-4xl transition-all">
                     {metrics.summary.total}
                   </span>
                 </div>
@@ -167,7 +178,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   <span className="flex size-9 items-center justify-center rounded-lg bg-[#d97706] text-white shadow-2xs">
                     <Sun className="size-5" />
                   </span>
-                  <span className="tabular font-semibold text-3xl text-slate-900 sm:text-4xl transition-all">
+                  <span suppressHydrationWarning className="tabular font-semibold text-3xl text-slate-900 sm:text-4xl transition-all">
                     {metrics.summary.inProgress}
                   </span>
                 </div>
@@ -196,7 +207,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   <span className="flex size-9 items-center justify-center rounded-lg bg-[#16a34a] text-white shadow-2xs">
                     <CheckCircle2 className="size-5" />
                   </span>
-                  <span className="tabular font-semibold text-3xl text-slate-900 sm:text-4xl transition-all">
+                  <span suppressHydrationWarning className="tabular font-semibold text-3xl text-slate-900 sm:text-4xl transition-all">
                     {metrics.summary.closed}
                   </span>
                 </div>
@@ -225,7 +236,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   <span className="flex size-9 items-center justify-center rounded-lg bg-[#db2777] text-white shadow-2xs">
                     <Ban className="size-5" />
                   </span>
-                  <span className="tabular font-semibold text-3xl text-slate-900 sm:text-4xl transition-all">
+                  <span suppressHydrationWarning className="tabular font-semibold text-3xl text-slate-900 sm:text-4xl transition-all">
                     {metrics.summary.rejected}
                   </span>
                 </div>
@@ -266,7 +277,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
               <div className="p-4 sm:p-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="tabular text-xl font-bold text-slate-900 sm:text-2xl">
+                    <span suppressHydrationWarning className="tabular text-xl font-bold text-slate-900 sm:text-2xl">
                       {metrics.kpi.pendingMedianDays} วัน
                     </span>
                     <span className="ml-1 text-xs text-slate-400">
@@ -286,7 +297,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
               {/* Metric 2: เกินกำหนด */}
               <div className="p-4 sm:p-5">
                 <div className="flex items-start justify-between">
-                  <span className="tabular text-xl font-bold text-[#dc2626] sm:text-2xl">
+                  <span suppressHydrationWarning className="tabular text-xl font-bold text-[#dc2626] sm:text-2xl">
                     {metrics.kpi.overdueCount}
                   </span>
                   <span className="flex size-7 items-center justify-center rounded-md bg-red-50 text-[#dc2626]">
@@ -302,7 +313,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
               {/* Metric 3: ปิดทันกำหนด */}
               <div className="p-4 sm:p-5">
                 <div className="flex items-start justify-between">
-                  <span className="tabular text-xl font-bold text-slate-700 sm:text-2xl">
+                  <span suppressHydrationWarning className="tabular text-xl font-bold text-slate-700 sm:text-2xl">
                     {metrics.kpi.closedCount > 0 ? metrics.kpi.closedOnTimeText : "—"}
                   </span>
                   <span className="flex size-7 items-center justify-center rounded-md bg-slate-100 text-slate-500">
@@ -320,7 +331,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
               <div className="p-4 sm:p-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="tabular text-xl font-bold text-slate-900 sm:text-2xl">
+                    <span suppressHydrationWarning className="tabular text-xl font-bold text-slate-900 sm:text-2xl">
                       {metrics.kpi.closedCount > 0 ? `${metrics.kpi.closedMedianDays} วัน` : "—"}
                     </span>
                     <span className="ml-1 text-xs text-slate-400">
@@ -429,9 +440,9 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
               </div>
 
               {/* Compact Calendar Days Header */}
-              <div className="mt-6 flex justify-end gap-5 text-xs text-slate-400 pr-2">
+              <div suppressHydrationWarning className="mt-6 flex justify-end gap-5 text-xs text-slate-400 pr-2">
                 {metrics.weekly.daysBreakdown.map((d, i) => (
-                  <span key={i} className="text-center w-5">{d.day}</span>
+                  <span key={i} suppressHydrationWarning className="text-center w-5">{d.day}</span>
                 ))}
               </div>
 

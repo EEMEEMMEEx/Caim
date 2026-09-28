@@ -62,9 +62,14 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
 
   const [connectionStatus, setConnectionStatus] =
     React.useState<ConnectionStatus>("connecting")
-  const [lastSyncTime, setLastSyncTime] = React.useState<Date | null>(() =>
-    initialMetrics ? new Date() : null
-  )
+  const [lastSyncTime, setLastSyncTime] = React.useState<Date | null>(null)
+
+  // Hydrate lastSyncTime on client after mount to prevent SSR/client time difference
+  React.useEffect(() => {
+    if (initialMetrics) {
+      setLastSyncTime(new Date())
+    }
+  }, [initialMetrics])
 
   // Real-Time Server-Sent Events (SSE) & Cross-Tab Broadcast Synchronization
   React.useEffect(() => {
