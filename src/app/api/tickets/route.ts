@@ -293,8 +293,9 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { id, ...updates } = body
+    const body = await request.json().catch(() => ({}))
+    const { searchParams } = new URL(request.url)
+    const id = body.id || searchParams.get("id")
 
     if (!id) {
       return NextResponse.json(
@@ -303,8 +304,81 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    const updates = { ...body }
+    delete updates.id
     const nowIso = new Date().toISOString()
-    const setFields = { ...updates, updatedAt: nowIso }
+
+    // Normalize field names (support both naming conventions: problemDesc/description, serialNo/serialNumber)
+    const normalizedProblemDesc = updates.problemDesc !== undefined ? updates.problemDesc : updates.description
+    const normalizedSerialNo = updates.serialNo !== undefined ? String(updates.serialNo).trim() : updates.serialNumber ? String(updates.serialNumber).trim() : undefined
+
+    // Normalize status and statusCode
+    const STATUS_MAP: Record<number, string> = {
+      1: "รับแจ้ง",
+      2: "ส่งศูนย์",
+      3: "รออะไหล่",
+      4: "ซ่อมเสร็จ",
+      5: "ปิดเคส",
+      6: "ปฏิเสธเคลม",
+    }
+    const STATUS_TO_CODE: Record<string, number> = {
+      "รับแจ้ง": 1,
+      "ส่งศูนย์": 2,
+      "รออะไหล่": 3,
+      "ซ่อมเสร็จ": 4,
+      "ปิดเคส": 5,
+      "ปฏิเสธเคลม": 6,
+    }
+
+    let finalStatusCode = updates.statusCode !== undefined ? Number(updates.statusCode) : undefined
+    let finalStatus = updates.status ? String(updates.status).trim() : undefined
+
+    if (finalStatusCode !== undefined && !finalStatus) {
+      finalStatus = STATUS_MAP[finalStatusCode] || "รับแจ้ง"
+    } else if (finalStatus && finalStatusCode === undefined) {
+      finalStatusCode = STATUS_TO_CODE[finalStatus] || 1
+    } else if (finalStatusCode !== undefined && finalStatus) {
+      // Keep them aligned
+      finalStatus = STATUS_MAP[finalStatusCode] || finalStatus
+    }
+
+    const setFields: Record<string, unknown> = {
+      ...updates,
+      updatedAt: nowIso,
+    }
+
+    if (normalizedProblemDesc !== undefined) {
+      setFields.problemDesc = normalizedProblemDesc
+    }
+    if (normalizedSerialNo !== undefined) {
+      setFields.serialNo = normalizedSerialNo
+    }
+    if (finalStatus !== undefined) {
+      setFields.status = finalStatus
+    }
+    if (finalStatusCode !== undefined) {
+      setFields.statusCode = finalStatusCode
+    }
+
+    // Determine current record from disk or mongo to preserve and calculate duration
+    const existingTickets = getPersistentTickets()
+    const currentTicket = existingTickets.find((t) => t.id === id)
+
+    const dateToCalculate = (setFields.date as string) || currentTicket?.date || new Date().toLocaleDateString("th-TH")
+    const statusForDuration = (setFields.status as string) || currentTicket?.status || "รับแจ้ง"
+    const statusCodeForDuration = typeof setFields.statusCode === "number" ? setFields.statusCode : currentTicket?.statusCode || 1
+
+    const duration = calculateCaseDuration({
+      date: dateToCalculate,
+      status: statusForDuration,
+      statusCode: statusCodeForDuration,
+    })
+
+    setFields.ageDays = duration.text
+    setFields.isOverdue = duration.isOverdue
+    setFields.overdueText = duration.overdueText
+
+    let updatedTicketDoc: TicketDocument | null = null
 
     if (isMongoConfigured()) {
       try {
@@ -312,12 +386,13 @@ export async function PUT(request: NextRequest) {
         if (db) {
           await db.collection("tickets").updateOne({ id }, { $set: setFields })
 
-          // If status changed to closed ("ปิดเคส"), free up equipment
-          if (updates.status === "ปิดเคส") {
-            const currentTicket = await db.collection<TicketDocument>("tickets").findOne({ id })
-            if (currentTicket && currentTicket.serialNo) {
+          // If status changed to closed ("ปิดเคส" / 5) or rejected ("ปฏิเสธเคลม" / 6), release equipment
+          if (finalStatusCode === 5 || finalStatusCode === 6 || finalStatus === "ปิดเคส" || finalStatus === "ปฏิเสธเคลม") {
+            const mongoTicket = await db.collection<TicketDocument>("tickets").findOne({ id })
+            const sNo = (setFields.serialNo as string) || mongoTicket?.serialNo
+            if (sNo && sNo !== "-") {
               await db.collection<EquipmentDocument>("equipments").updateOne(
-                { serial: currentTicket.serialNo },
+                { serial: sNo },
                 { $set: { status: "active", currentClaimId: undefined, updatedAt: nowIso } }
               )
             }
@@ -329,9 +404,14 @@ export async function PUT(request: NextRequest) {
             action: "CLAIM_UPDATED",
             targetType: "ticket",
             targetId: id,
-            details: updates,
+            details: setFields,
             timestamp: nowIso,
           })
+
+          const fetched = await db.collection<TicketDocument>("tickets").findOne({ id })
+          if (fetched) {
+            updatedTicketDoc = enrichTicket(fetched)
+          }
         }
       } catch (dbErr) {
         console.warn("[Tickets API] MongoDB update failed:", dbErr)
@@ -339,16 +419,31 @@ export async function PUT(request: NextRequest) {
     }
 
     // Always update persistent disk store
-    const existingTickets = getPersistentTickets()
-    const target = existingTickets.find((t) => t.id === id)
-    if (target) {
-      savePersistentTicket({ ...target, ...setFields })
-    }
+    const diskTicket: TicketDocument = {
+      ...(currentTicket || {
+        id,
+        title: String(setFields.title || ""),
+        problemDesc: String(setFields.problemDesc || ""),
+        vendor: String(setFields.vendor || "Other"),
+        model: String(setFields.model || "-"),
+        serialNo: String(setFields.serialNo || "-"),
+        status: String(setFields.status || "รับแจ้ง"),
+        statusCode: Number(setFields.statusCode || 1),
+        date: dateToCalculate,
+        ageDays: duration.text,
+        createdAt: nowIso,
+      }),
+      ...setFields,
+    } as TicketDocument
+
+    savePersistentTicket(diskTicket)
+
+    const finalEnrichedTicket = updatedTicketDoc || enrichTicket(diskTicket)
 
     realtimeEmitter.emit(REALTIME_EVENTS.TICKETS_CHANGED, {
       type: "ticket",
       action: "update",
-      data: { id, updates: setFields },
+      data: finalEnrichedTicket,
       timestamp: nowIso,
     })
     realtimeEmitter.emit(REALTIME_EVENTS.METRICS_CHANGED, {
@@ -361,14 +456,19 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: `อัปเดตข้อมูลเคส ${id} เรียบร้อยแล้ว`,
+        ticket: finalEnrichedTicket,
+        message: `อัปเดตข้อมูลเคส ${id} ในฐานข้อมูลเรียบร้อยแล้ว`,
       },
-      { headers: NO_CACHE_HEADERS }
+      { status: 200, headers: NO_CACHE_HEADERS }
     )
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to update ticket"
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
+}
+
+export async function PATCH(request: NextRequest) {
+  return PUT(request)
 }
 
 export async function DELETE(request: NextRequest) {

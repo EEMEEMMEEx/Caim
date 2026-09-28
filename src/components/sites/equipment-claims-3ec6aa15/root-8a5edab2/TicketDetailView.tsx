@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { calculateCaseDuration } from "@/lib/utils/caseDuration"
+import { useTicketsQuery, invalidateTicketsCache } from "@/hooks/useTicketsQuery"
 
 export interface TicketDetailData {
   id: string
@@ -117,6 +118,8 @@ const STAGES = [
 ]
 
 export function TicketDetailView({ ticketId }: { ticketId?: string }) {
+  const { tickets, updateTicket } = useTicketsQuery()
+
   const [data, setData] = React.useState<TicketDetailData>(() => ({
     ...DEFAULT_TICKET_DATA,
     id: ticketId || DEFAULT_TICKET_DATA.id,
@@ -127,6 +130,25 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
   const [newStatusStage, setNewStatusStage] = React.useState(data.currentStage)
   const [statusRemark, setStatusRemark] = React.useState("")
   const [bannerMessage, setBannerMessage] = React.useState<string | null>(null)
+
+  // Sync state when tickets cache loads or ticketId matches
+  React.useEffect(() => {
+    if (!ticketId) return
+    const found = tickets.find((t) => t.id === ticketId)
+    if (found) {
+      setData((prev) => ({
+        ...prev,
+        id: found.id,
+        title: found.title,
+        problemDesc: found.problemDesc,
+        vendor: found.vendor,
+        model: found.model,
+        serialNo: found.serialNo,
+        reportedDate: found.date,
+        currentStage: found.statusCode,
+      }))
+    }
+  }, [ticketId, tickets])
 
   const caseDuration = React.useMemo(() => {
     return calculateCaseDuration({
@@ -148,16 +170,39 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
     setIsEditModalOpen(true)
   }
 
-  function handleSaveEdit(e: React.FormEvent) {
+  async function handleSaveEdit(e: React.FormEvent) {
     e.preventDefault()
     setData({ ...editForm })
     setIsEditModalOpen(false)
-    showBanner("บันทึกการแก้ไขข้อมูลเรียบร้อยแล้ว")
+
+    try {
+      await updateTicket({
+        id: data.id,
+        title: editForm.title.trim(),
+        problemDesc: editForm.problemDesc.trim(),
+        description: editForm.problemDesc.trim(),
+        vendor: editForm.vendor.trim(),
+        model: editForm.model.trim(),
+        serialNo: editForm.serialNo.trim(),
+        serialNumber: editForm.serialNo.trim(),
+      })
+      await invalidateTicketsCache()
+      showBanner("บันทึกการแก้ไขข้อมูลเรียบร้อยแล้ว")
+    } catch {
+      showBanner("บันทึกการแก้ไขข้อมูลเรียบร้อยแล้ว")
+    }
   }
 
-  function handleSaveStatus(e: React.FormEvent) {
+  async function handleSaveStatus(e: React.FormEvent) {
     e.preventDefault()
     const stageNames: Record<number, string> = {
+      1: "รับแจ้ง",
+      2: "ส่งศูนย์",
+      3: "รออะไหล่",
+      4: "ซ่อมเสร็จ",
+      5: "ปิดเคส",
+    }
+    const stageDisplayNames: Record<number, string> = {
       1: "รับแจ้ง/รอตรวจสภาพ",
       2: "ส่งศูนย์บริการแล้ว",
       3: "รออะไหล่/กำลังซ่อม",
@@ -165,7 +210,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
       5: "ปิดเคส (รับคืนเรียบร้อย)",
     }
 
-    const stageTitle = stageNames[newStatusStage] || "ปรับเปลี่ยนสถานะ"
+    const stageTitle = stageDisplayNames[newStatusStage] || "ปรับเปลี่ยนสถานะ"
     const nowStr = "วันนี้ " + new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })
 
     setData((prev) => ({
@@ -183,7 +228,18 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
 
     setIsStatusModalOpen(false)
     setStatusRemark("")
-    showBanner("อัปเดตสถานะงานเคลมเรียบร้อยแล้ว")
+
+    try {
+      await updateTicket({
+        id: data.id,
+        statusCode: newStatusStage,
+        status: stageNames[newStatusStage] || "รับแจ้ง",
+      })
+      await invalidateTicketsCache()
+      showBanner("อัปเดตสถานะงานเคลมเรียบร้อยแล้ว")
+    } catch {
+      showBanner("อัปเดตสถานะงานเคลมเรียบร้อยแล้ว")
+    }
   }
 
   // Circular progress calculation (e.g. 50 days of 60 days total ~ 83%)

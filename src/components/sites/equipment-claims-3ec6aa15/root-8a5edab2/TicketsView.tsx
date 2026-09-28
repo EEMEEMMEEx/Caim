@@ -17,13 +17,14 @@ import {
   MapPin,
   RotateCcw,
   Trash2,
-  Wifi
+  Wifi,
+  Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { type Station } from "./stationsData"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
-import { useTicketsQuery, type Ticket } from "@/hooks/useTicketsQuery"
+import { useTicketsQuery, invalidateTicketsCache, type Ticket } from "@/hooks/useTicketsQuery"
 import { calculateCaseDuration } from "@/lib/utils/caseDuration"
 
 /**
@@ -437,6 +438,32 @@ export function TicketsView() {
     )
   }, [])
 
+  const STATUS_MAP: Record<number, string> = React.useMemo(
+    () => ({
+      1: "รับแจ้ง",
+      2: "ส่งศูนย์",
+      3: "รออะไหล่",
+      4: "ซ่อมเสร็จ",
+      5: "ปิดเคส",
+      6: "ปฏิเสธเคลม",
+    }),
+    []
+  )
+
+  const STATUS_TO_CODE: Record<string, number> = React.useMemo(
+    () => ({
+      "รับแจ้ง": 1,
+      "ส่งศูนย์": 2,
+      "รออะไหล่": 3,
+      "ซ่อมเสร็จ": 4,
+      "ปิดเคส": 5,
+      "ปฏิเสธเคลม": 6,
+    }),
+    []
+  )
+
+  const [isSaving, setIsSaving] = React.useState(false)
+
   // Modal handlers
   const handleView = React.useCallback((ticket: Ticket) => {
     setSelectedTicket(ticket)
@@ -444,66 +471,95 @@ export function TicketsView() {
     setSaveSuccess(false)
   }, [])
 
-  const handleEdit = React.useCallback((ticket: Ticket) => {
-    setSelectedTicket(ticket)
-    setEditForm({ ...ticket })
-    setModalMode("edit")
-    setSaveSuccess(false)
-  }, [])
+  const handleEdit = React.useCallback(
+    (ticket: Ticket) => {
+      const code = Number(ticket.statusCode) || STATUS_TO_CODE[ticket.status] || 1
+      const label = ticket.status || STATUS_MAP[code] || "รับแจ้ง"
+
+      setSelectedTicket(ticket)
+      setEditForm({
+        ...ticket,
+        statusCode: code,
+        status: label,
+      })
+      setModalMode("edit")
+      setSaveSuccess(false)
+    },
+    [STATUS_MAP, STATUS_TO_CODE]
+  )
 
   const handleCloseModal = React.useCallback(() => {
     setSelectedTicket(null)
     setEditForm(null)
     setSaveSuccess(false)
+    setIsSaving(false)
   }, [])
 
-  const handleStatusChange = React.useCallback((newStatusCode: number) => {
-    const statusMap: Record<number, string> = {
-      1: "รับแจ้ง",
-      2: "ส่งศูนย์",
-      3: "รออะไหล่",
-      4: "ซ่อมเสร็จ",
-      5: "ปิดเคส",
-      6: "ปฏิเสธเคลม",
-    }
-    setEditForm((prev) =>
-      prev
-        ? {
-            ...prev,
-            statusCode: newStatusCode,
-            status: statusMap[newStatusCode] || prev.status,
-          }
-        : null
-    )
-  }, [])
+  const handleStatusChange = React.useCallback(
+    (newStatusCode: number) => {
+      setEditForm((prev) =>
+        prev
+          ? {
+              ...prev,
+              statusCode: newStatusCode,
+              status: STATUS_MAP[newStatusCode] || prev.status,
+            }
+          : null
+      )
+    },
+    [STATUS_MAP]
+  )
 
   const handleSaveTicket = React.useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
-      if (!editForm) return
+      if (!editForm || isSaving) return
 
-      setSelectedTicket(editForm)
-      setSaveSuccess(true)
+      setIsSaving(true)
 
-      // Transactional Database Update via useTicketsQuery
+      // Transactional Database Update & Realtime Propagation via useTicketsQuery
       try {
-        const res = await updateTicket(editForm)
+        const payload = {
+          id: editForm.id,
+          title: editForm.title.trim(),
+          problemDesc: editForm.problemDesc.trim(),
+          description: editForm.problemDesc.trim(),
+          vendor: editForm.vendor.trim(),
+          model: editForm.model.trim(),
+          serialNo: editForm.serialNo.trim(),
+          serialNumber: editForm.serialNo.trim(),
+          status: editForm.status,
+          statusCode: editForm.statusCode,
+          date: editForm.date,
+          stationId: editForm.stationId,
+          station: editForm.station,
+          province: editForm.province,
+          district: editForm.district,
+          subdistrict: editForm.subdistrict,
+        }
+
+        const res = await updateTicket(payload)
         if (!res.success) {
           throw new Error(res.error || "Failed to update ticket")
         }
-        showToast(`อัปเดตข้อมูลเคส ${editForm.id} ในฐานข้อมูลเรียบร้อยแล้ว`)
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "API update failed"
-        console.warn("[TicketsView] API update error:", message)
-        showToast(message)
-      }
 
-      setTimeout(() => {
-        setSaveSuccess(false)
-        setModalMode("view")
-      }, 700)
+        // Show confirmation toast notification
+        showToast(`อัปเดตข้อมูลเคส ${editForm.id} ในฐานข้อมูลเรียบร้อยแล้ว`)
+
+        // Invalidate parent table query cache immediately so outer table updates in real time
+        await invalidateTicketsCache()
+
+        // Close modal automatically upon successful save as requested
+        handleCloseModal()
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึกข้อมูล"
+        console.error("[TicketsView] API update error:", message)
+        showToast(message)
+      } finally {
+        setIsSaving(false)
+      }
     },
-    [editForm, updateTicket, showToast]
+    [editForm, isSaving, updateTicket, showToast, handleCloseModal]
   )
 
   return (
@@ -993,6 +1049,12 @@ export function TicketsView() {
                               <span>ปฏิเสธเคลม</span>
                             </span>
                           )}
+                          {(!item.statusCode || item.statusCode < 1 || item.statusCode > 6) && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-700">
+                              <span className="size-1.5 rounded-full bg-slate-500" />
+                              <span>{item.status || "รับแจ้ง"}</span>
+                            </span>
+                          )}
                         </td>
 
                         {/* รับแจ้ง (Date) */}
@@ -1366,20 +1428,24 @@ export function TicketsView() {
                             { code: 4, label: "ซ่อมเสร็จ" },
                             { code: 5, label: "ปิดเคส" },
                             { code: 6, label: "ปฏิเสธเคลม" },
-                          ].map((st) => (
-                            <button
-                              key={st.code}
-                              type="button"
-                              onClick={() => handleStatusChange(st.code)}
-                              className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
-                                editForm.statusCode === st.code
-                                  ? "border-blue-600 bg-blue-50 text-blue-700"
-                                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                              }`}
-                            >
-                              {st.label}
-                            </button>
-                          ))}
+                          ].map((st) => {
+                            const isSelected = editForm.statusCode === st.code || editForm.status === st.label
+                            return (
+                              <button
+                                key={st.code}
+                                type="button"
+                                onClick={() => handleStatusChange(st.code)}
+                                aria-pressed={isSelected}
+                                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-all cursor-pointer ${
+                                  isSelected
+                                    ? "border-blue-600 bg-blue-50 text-blue-700 ring-2 ring-blue-500/20 font-semibold shadow-xs"
+                                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+                                }`}
+                              >
+                                {st.label}
+                              </button>
+                            )
+                          })}
                         </div>
                       </div>
 
@@ -1388,18 +1454,29 @@ export function TicketsView() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => setModalMode("view")}
-                          className="text-xs"
+                          disabled={isSaving}
+                          onClick={handleCloseModal}
+                          className="text-xs cursor-pointer"
                         >
                           ยกเลิก
                         </Button>
                         <Button
                           type="submit"
+                          disabled={isSaving}
                           size="sm"
-                          className="gap-1.5 bg-[#0c1a30] text-white hover:bg-[#1e293b] text-xs"
+                          className="gap-1.5 bg-[#0c1a30] text-white hover:bg-[#1e293b] text-xs disabled:opacity-60 cursor-pointer"
                         >
-                          <Check className="size-3.5" />
-                          <span>บันทึกการแก้ไข</span>
+                          {isSaving ? (
+                            <>
+                              <Loader2 className="size-3.5 animate-spin" />
+                              <span>กำลังบันทึก...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Check className="size-3.5" />
+                              <span>บันทึกการแก้ไข</span>
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>

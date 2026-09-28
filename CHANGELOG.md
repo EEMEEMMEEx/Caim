@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.5] - 2026-09-28
+
+### Fixed & Enhanced
+- **Claim Edit Modal Save Mutation, Status Selector Binding & Parent Cache Synchronization**:
+  - **Database Persistence & API Mutation**:
+    - Enhanced `/api/tickets` controller with dual `PUT` and `PATCH` HTTP method handlers.
+    - Added support for record lookup via body ID or query param ID (`CLM-2026-001`).
+    - Normalized field name aliases (`problemDesc` / `description`, `serialNo` / `serialNumber`).
+    - Recalculated dynamic duration and overdue state via `calculateCaseDuration` upon save, updating `ageDays` and `isOverdue`.
+    - Handled automatic equipment status release when status changes to 'ปิดเคส' (5) or 'ปฏิเสธเคลม' (6).
+    - Guaranteed dual persistence across MongoDB Atlas (with Transaction Log) and persistent disk store, returning HTTP 200 OK.
+  - **Status Badge Selection & Value Binding**:
+    - Normalized `statusCode` and `status` label in `handleEdit` and `handleStatusChange` within `TicketsView.tsx`.
+    - Bound pill buttons (`รับแจ้ง`, `ส่งศูนย์`, `รออะไหล่`, `ซ่อมเสร็จ`, `ปิดเคส`, `ปฏิเสธเคลม`) accurately using dual criteria (`editForm.statusCode === st.code || editForm.status === st.label`).
+    - Added accessible `aria-pressed` and enhanced active ring visual styling.
+  - **Parent Table & Cache Invalidation**:
+    - Dispatched `updateTicket` mutation directly to backend with optimistic update and rollback protection in `useTicketsQuery`.
+    - Invalidated query cache immediately (`invalidateTicketsCache()`) on save success to re-render parent table status badges and details in real time without page reload.
+    - Automated modal closure (`handleCloseModal()`) upon successful save with confirmation toast notification.
+    - Added loading state indicator with `Loader2` spinner on submit button during active network mutations.
+
 ## [0.22.4] - 2026-09-28
 
 ### Added & Enhanced

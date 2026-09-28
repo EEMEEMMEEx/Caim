@@ -122,10 +122,10 @@ export async function invalidateTicketsCache(): Promise<Ticket[]> {
   return fetchTicketsFromApi(true)
 }
 
-/**
- * Optimistically apply ticket mutation in memory
- */
-export function applyTicketMutation(action: "create" | "update" | "delete", data: Partial<Ticket> & { id: string }) {
+export function applyTicketMutation(
+  action: "create" | "update" | "delete",
+  data: Partial<Ticket> & { id: string; description?: string; serialNumber?: string }
+) {
   if (!data || !data.id) return
 
   const targetId = data.id
@@ -134,7 +134,17 @@ export function applyTicketMutation(action: "create" | "update" | "delete", data
     const filtered = globalTicketsCache.filter((t) => t.id !== targetId)
     globalTicketsCache = [data as Ticket, ...filtered]
   } else if (action === "update") {
-    globalTicketsCache = globalTicketsCache.map((t) => (t.id === targetId ? { ...t, ...data } : t))
+    globalTicketsCache = globalTicketsCache.map((t) => {
+      if (t.id !== targetId) return t
+      const merged = { ...t, ...data }
+      if (data.problemDesc || data.description) {
+        merged.problemDesc = data.problemDesc || data.description || t.problemDesc
+      }
+      if (data.serialNo || data.serialNumber) {
+        merged.serialNo = data.serialNo || data.serialNumber || t.serialNo
+      }
+      return merged
+    })
   } else if (action === "delete") {
     globalTicketsCache = globalTicketsCache.filter((t) => t.id !== targetId)
   }
@@ -256,30 +266,63 @@ export function useTicketsQuery() {
   )
 
   /**
-   * Update Ticket Mutation
+   * Update Ticket Mutation (Database Persistence & Instant State Synchronization)
    */
   const updateTicket = React.useCallback(
-    async (ticket: Ticket): Promise<{ success: boolean; message?: string; error?: string }> => {
-      // Optimistic update
+    async (
+      ticket: Partial<Ticket> & { id: string; description?: string; serialNumber?: string }
+    ): Promise<{ success: boolean; data?: Ticket; message?: string; error?: string }> => {
+      if (!ticket || !ticket.id) {
+        return { success: false, error: "Missing ticket id" }
+      }
+
+      // 1. Snapshot previous state for rollback on transaction failure
+      const previousCache = [...globalTicketsCache]
+
+      // 2. Optimistic UI update
       applyTicketMutation("update", ticket)
 
       try {
+        const payload = {
+          ...ticket,
+          // Support alias field names for compatibility
+          description: ticket.problemDesc || ticket.description,
+          serialNumber: ticket.serialNo || ticket.serialNumber,
+        }
+
         const res = await fetch("/api/tickets", {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
           },
-          body: JSON.stringify(ticket),
+          body: JSON.stringify(payload),
         })
-        const data = await res.json()
-        if (!res.ok || !data.success) {
-          throw new Error(data.error || "Failed to update ticket")
+
+        if (!res.ok) {
+          throw new Error(`Server returned HTTP ${res.status}`)
         }
 
+        const data = await res.json()
+        if (!data || !data.success) {
+          throw new Error(data?.error || "Database update failed")
+        }
+
+        // 3. Immediately invalidate and refetch parent query cache to sync server-calculated fields
         await invalidateTicketsCache()
-        return { success: true, message: data.message }
+
+        return {
+          success: true,
+          data: data.ticket,
+          message: data.message || `อัปเดตข้อมูลเคส ${ticket.id} เรียบร้อยแล้ว`,
+        }
       } catch (err: unknown) {
+        // Rollback optimistic update
+        console.error("[useTicketsQuery] Update failed, rolling back state:", err)
+        globalTicketsCache = previousCache
+        broadcastCacheUpdate()
+
         const message = err instanceof Error ? err.message : "Failed to update ticket"
         return { success: false, error: message }
       }
