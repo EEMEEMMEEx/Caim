@@ -64,8 +64,13 @@ export interface TicketDocument {
   warrantyStatus?: string
   serviceCenter?: string
   sentDate?: string
+  sentDateIso?: string
   lastTrackDate?: string
+  lastTrackDateIso?: string
   returnDate?: string
+  returnDateIso?: string
+  reportedDateIso?: string
+  deadlineDateIso?: string
   reporter?: string
   assignee?: string
   stationId?: string // Foreign Key -> StationDocument.id

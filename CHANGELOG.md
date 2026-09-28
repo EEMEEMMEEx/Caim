@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.9] - 2026-09-28
+
+### Added & Enhanced
+- **Interactive Calendar Date Pickers & Localized Thai BE Formatting Across Claim Edit Form**:
+  - **Interactive Date Pickers Component (`DatePickerInput.tsx`)**:
+    - Replaced static text inputs across all 5 date fields: 'วันที่รับแจ้ง (Reported Date)', 'กำหนดแล้วเสร็จ (SLA 60 วัน)', 'วันที่ส่งศูนย์บริการ', 'ติดตามล่าสุด', and 'วันที่รับคืน'.
+    - Integrated native HTML5 date input with `showPicker()` trigger, allowing users to click either the input box or the calendar icon adornment to immediately open the date selection dialog.
+    - Provided seamless date clearing via a dedicated reset button (`X`) for optional timestamps (`sentDate`, `lastTrackDate`, `returnDate`, `deadlineDate`) permitting empty / `—` state transitions without friction.
+  - **Calendar Formatting & Thai Buddhist Era (BE) Support**:
+    - Localized display dates cleanly into Thai Buddhist Era format (e.g., `13 มิ.ย. 2569`) while internally storing and sending standard ISO format (`YYYY-MM-DD`) in API payloads (`reportedDateIso`, `sentDateIso`, `deadlineDateIso`, `lastTrackDateIso`, `returnDateIso`).
+    - Implemented timezone-safe local date parsing in `caseDuration.ts` (`parseThaiDate`, `formatISODate`, `toISODateString`, `formatDisplayThaiDate`), eliminating timezone offset shifts, hydration warnings, and NaN errors.
+  - **Dynamic SLA Recalculation**:
+    - When modifying or picking 'วันที่รับแจ้ง (Reported Date)', the system automatically recomputes and pre-fills 'กำหนดแล้วเสร็จ (SLA 60 วัน)' by strictly adding 60 days to the selected date.
+    - Synchronized date displays across the detail sidebar, claim list table, and modals.
+
 ## [0.22.8] - 2026-09-28
 
 ### Fixed & Enhanced

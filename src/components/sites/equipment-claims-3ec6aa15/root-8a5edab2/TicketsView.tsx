@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input"
 import { type Station } from "./stationsData"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useTicketsQuery, invalidateTicketsCache, type Ticket } from "@/hooks/useTicketsQuery"
-import { calculateCaseDuration } from "@/lib/utils/caseDuration"
+import { calculateCaseDuration, formatDisplayThaiDate } from "@/lib/utils/caseDuration"
 
 /**
  * Helper to construct URLSearchParams for claim list API queries
@@ -1059,7 +1059,7 @@ export function TicketsView() {
 
                         {/* รับแจ้ง (Date) */}
                         <td className="px-4 py-3.5 text-slate-600 whitespace-nowrap">
-                          {item.date}
+                          {formatDisplayThaiDate(item.date)}
                         </td>
 
                         {/* อายุงาน (Duration & Overdue Alert) */}
@@ -1284,7 +1284,7 @@ export function TicketsView() {
                   <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
                     <div>
                       <p className="text-slate-500 font-medium">วันที่รับแจ้ง</p>
-                      <p className="mt-1 text-slate-900">{selectedTicket.date}</p>
+                      <p className="mt-1 text-slate-900">{formatDisplayThaiDate(selectedTicket.date)}</p>
                     </div>
                     <div>
                       <p className="text-slate-500 font-medium">อายุงาน</p>

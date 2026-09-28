@@ -20,7 +20,14 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { calculateCaseDuration, calculateRemainingDays, calculateDueDate } from "@/lib/utils/caseDuration"
+import { DatePickerInput } from "@/components/ui/DatePickerInput"
+import {
+  calculateCaseDuration,
+  calculateRemainingDays,
+  calculateDueDate,
+  formatDisplayThaiDate,
+  toISODateString,
+} from "@/lib/utils/caseDuration"
 import { useTicketsQuery, invalidateTicketsCache } from "@/hooks/useTicketsQuery"
 
 export interface TicketDetailData {
@@ -322,6 +329,11 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
         returnDate: editForm.returnDate.trim(),
         reporter: editForm.reporter.trim(),
         assignee: editForm.assignee.trim(),
+        reportedDateIso: toISODateString(editForm.reportedDate),
+        sentDateIso: toISODateString(editForm.sentDate),
+        deadlineDateIso: toISODateString(effectiveDeadline),
+        lastTrackDateIso: toISODateString(editForm.lastTrackDate),
+        returnDateIso: toISODateString(editForm.returnDate),
       })
       await invalidateTicketsCache()
       if (typeof window !== "undefined") {
@@ -794,13 +806,13 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">วันที่รับแจ้ง</span>
-                    <span className="text-foreground">{data.reportedDate}</span>
+                    <span className="text-foreground">{formatDisplayThaiDate(data.reportedDate)}</span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">
                       วันที่ส่งศูนย์บริการ
                     </span>
-                    <span className="text-muted-foreground">{data.sentDate}</span>
+                    <span className="text-muted-foreground">{formatDisplayThaiDate(data.sentDate)}</span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">กำหนดแล้วเสร็จ</span>
@@ -820,12 +832,12 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">ติดตามล่าสุด</span>
                     <span className="text-muted-foreground">
-                      {data.lastTrackDate}
+                      {formatDisplayThaiDate(data.lastTrackDate)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">วันที่รับคืน</span>
-                    <span className="text-muted-foreground">{data.returnDate}</span>
+                    <span className="text-muted-foreground">{formatDisplayThaiDate(data.returnDate)}</span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">อายุงาน</span>
@@ -1034,60 +1046,84 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
-                      <label className="font-medium text-foreground">วันที่รับแจ้ง (Reported Date)</label>
-                      <Input
+                      <label className="font-medium text-foreground">
+                        วันที่รับแจ้ง (Reported Date) <span className="text-red-500">*</span>
+                      </label>
+                      <DatePickerInput
                         value={editForm.reportedDate}
-                        onChange={(e) => {
-                          const newReported = e.target.value
-                          const autoDue = calculateDueDate(newReported, 60).dueDateStr
-                          setEditForm({
-                            ...editForm,
-                            reportedDate: newReported,
+                        onChange={(thaiStr, isoStr) => {
+                          const autoDue = calculateDueDate(isoStr || thaiStr, 60).dueDateStr
+                          setEditForm((prev) => ({
+                            ...prev,
+                            reportedDate: thaiStr,
                             deadlineDate: autoDue,
-                          })
+                          }))
                         }}
-                        className="h-8 text-xs"
-                        placeholder="เช่น 13 มิ.ย. 2569"
+                        placeholder="เลือกวันที่รับแจ้ง"
                         required
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="font-medium text-foreground">กำหนดแล้วเสร็จ (SLA 60 วัน)</label>
-                      <Input
+                      <label className="font-medium text-foreground">
+                        กำหนดแล้วเสร็จ (SLA 60 วัน)
+                      </label>
+                      <DatePickerInput
                         value={editForm.deadlineDate}
-                        onChange={(e) => setEditForm({ ...editForm, deadlineDate: e.target.value })}
-                        className="h-8 text-xs"
-                        placeholder="เช่น 12 ส.ค. 2569"
+                        onChange={(thaiStr) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            deadlineDate: thaiStr || "—",
+                          }))
+                        }
+                        placeholder="เลือกกำหนดแล้วเสร็จ"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="flex flex-col gap-1">
-                      <label className="font-medium text-foreground">วันที่ส่งศูนย์บริการ</label>
-                      <Input
+                      <label className="font-medium text-foreground">
+                        วันที่ส่งศูนย์บริการ
+                      </label>
+                      <DatePickerInput
                         value={editForm.sentDate}
-                        onChange={(e) => setEditForm({ ...editForm, sentDate: e.target.value })}
-                        className="h-8 text-xs"
-                        placeholder="เช่น 15 มิ.ย. 2569 หรือ —"
+                        onChange={(thaiStr) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            sentDate: thaiStr || "—",
+                          }))
+                        }
+                        placeholder="เลือกวันที่ส่งศูนย์"
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="font-medium text-foreground">ติดตามล่าสุด</label>
-                      <Input
+                      <label className="font-medium text-foreground">
+                        ติดตามล่าสุด
+                      </label>
+                      <DatePickerInput
                         value={editForm.lastTrackDate}
-                        onChange={(e) => setEditForm({ ...editForm, lastTrackDate: e.target.value })}
-                        className="h-8 text-xs"
-                        placeholder="เช่น 20 มิ.ย. 2569 หรือ —"
+                        onChange={(thaiStr) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            lastTrackDate: thaiStr || "—",
+                          }))
+                        }
+                        placeholder="เลือกวันที่ติดตามล่าสุด"
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="font-medium text-foreground">วันที่รับคืน</label>
-                      <Input
+                      <label className="font-medium text-foreground">
+                        วันที่รับคืน
+                      </label>
+                      <DatePickerInput
                         value={editForm.returnDate}
-                        onChange={(e) => setEditForm({ ...editForm, returnDate: e.target.value })}
-                        className="h-8 text-xs"
-                        placeholder="เช่น 12 ส.ค. 2569 หรือ —"
+                        onChange={(thaiStr) =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            returnDate: thaiStr || "—",
+                          }))
+                        }
+                        placeholder="เลือกวันที่รับคืน"
                       />
                     </div>
                   </div>

@@ -47,7 +47,25 @@ export function parseThaiDate(dateStr?: string | Date | null): Date | null {
   }
 
   const trimmed = String(dateStr).trim()
-  if (!trimmed) return null
+  if (!trimmed || trimmed === "—" || trimmed === "-") return null
+
+  // 0. Check for ISO string: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss (parse in local time to avoid timezone shifts)
+  const isoMatch = trimmed.match(
+    /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?)?/
+  )
+  if (isoMatch) {
+    let year = parseInt(isoMatch[1], 10)
+    const month = parseInt(isoMatch[2], 10) - 1
+    const day = parseInt(isoMatch[3], 10)
+    const hour = isoMatch[4] ? parseInt(isoMatch[4], 10) : 0
+    const minute = isoMatch[5] ? parseInt(isoMatch[5], 10) : 0
+    const second = isoMatch[6] ? parseInt(isoMatch[6], 10) : 0
+
+    if (year >= 2400) {
+      year -= 543
+    }
+    return new Date(year, month, day, hour, minute, second, 0)
+  }
 
   // 1. Check for Thai text date pattern: e.g. "13 มิ.ย. 2569", "13 มิ.ย. 2569 07:00", "13 มิถุนายน 2569 01:09"
   const thaiTextMatch = trimmed.match(
@@ -117,6 +135,52 @@ export function formatThaiDate(date: Date): string {
 }
 
 /**
+ * Convert Date object to standard ISO YYYY-MM-DD string using local calendar values (timezone-safe)
+ */
+export function formatISODate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+/**
+ * Convert any date representation (Thai BE, slash date, Date, ISO) into standard ISO YYYY-MM-DD.
+ * Returns empty string "" if date is missing, empty, or "—".
+ */
+export function toISODateString(dateInput?: string | Date | null): string {
+  if (!dateInput) return ""
+  if (typeof dateInput === "string") {
+    const trimmed = dateInput.trim()
+    if (!trimmed || trimmed === "—" || trimmed === "-") return ""
+  }
+  const parsed = parseThaiDate(dateInput)
+  if (!parsed || isNaN(parsed.getTime())) return ""
+  return formatISODate(parsed)
+}
+
+/**
+ * Display format for Thai Buddhist Era (e.g. "13 มิ.ย. 2569").
+ * Transparently accepts ISO string ("2026-06-13"), Thai text, slash dates, or Date.
+ * If empty, invalid, or "—", returns the specified fallback (default "—").
+ */
+export function formatDisplayThaiDate(
+  dateInput?: string | Date | null,
+  fallback: string = "—"
+): string {
+  if (!dateInput) return fallback
+  if (typeof dateInput === "string") {
+    const trimmed = dateInput.trim()
+    if (!trimmed || trimmed === "—" || trimmed === "-") return fallback
+  }
+  const parsed = parseThaiDate(dateInput)
+  if (!parsed || isNaN(parsed.getTime())) {
+    return typeof dateInput === "string" ? dateInput : fallback
+  }
+  return formatThaiDate(parsed)
+}
+
+/**
  * Calculates target completion date strictly based on standard 60-day SLA after the case reported date.
  * (วันที่รับแจ้ง + 60 วัน)
  * Example: '13 มิ.ย. 2569' + 60 วัน = '12 ส.ค. 2569'
@@ -124,12 +188,13 @@ export function formatThaiDate(date: Date): string {
 export function calculateDueDate(
   reportedDateInput?: string | Date | null,
   slaDays: number = 60
-): { dueDate: Date; dueDateStr: string } {
+): { dueDate: Date; dueDateStr: string; dueDateIso: string } {
   const reported = parseThaiDate(reportedDateInput) || new Date()
   const dueDate = new Date(reported.getFullYear(), reported.getMonth(), reported.getDate() + slaDays)
   return {
     dueDate,
     dueDateStr: formatThaiDate(dueDate),
+    dueDateIso: formatISODate(dueDate),
   }
 }
 
