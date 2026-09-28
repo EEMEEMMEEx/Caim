@@ -32,6 +32,18 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: "/claims",
+        destination: "/tickets",
+      },
+      {
+        source: "/claims/:path*",
+        destination: "/tickets/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

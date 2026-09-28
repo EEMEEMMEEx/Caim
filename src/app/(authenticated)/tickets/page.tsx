@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { TicketsView } from "@/components/sites/equipment-claims-3ec6aa15/root-8a5edab2/TicketsView"
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function TicketsPage() {
-  return <TicketsView />
+  return (
+    <Suspense fallback={<div className="flex-1 p-6 text-xs text-slate-400">กำลังโหลดรายการงานเคลม...</div>}>
+      <TicketsView />
+    </Suspense>
+  )
 }

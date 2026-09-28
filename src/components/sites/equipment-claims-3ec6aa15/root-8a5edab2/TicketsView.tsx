@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import {
   ClipboardList,
   Search,
@@ -59,6 +60,7 @@ export function buildClaimFiltersQuery(filters: ClaimFilterParams): URLSearchPar
 }
 
 export function TicketsView() {
+  const searchParams = useSearchParams()
   const { tickets, deleteTicket, updateTicket } = useTicketsQuery()
   const [stationsList, setStationsList] = React.useState<Station[]>([])
 
@@ -130,6 +132,7 @@ export function TicketsView() {
     subdistrict: "all",
     station: "all",
     onlyOverdue: false,
+    onTime: false,
   })
 
   // Selected Checkboxes
@@ -144,6 +147,14 @@ export function TicketsView() {
   // =========================================================================
   // CASCADING LOCATION & STATION DATA EXTRACTION FROM STATIONS DATABASE
   // =========================================================================
+
+  // Dynamic Vendors extracted from database & default presets
+  const availableVendors = React.useMemo(() => {
+    const defaultList = ["Huawei", "Hytera", "Dell", "Lenovo", "Syndome", "Vertiv", "Forth", "Cisco"]
+    const fromTickets = tickets.map((t) => t.vendor).filter(Boolean)
+    const set = new Set([...defaultList, ...fromTickets])
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "th"))
+  }, [tickets])
 
   // 1. Province ('จังหวัด'): Distinct provinces extracted directly from stationsList
   const availableProvinces = React.useMemo(() => {
@@ -212,34 +223,82 @@ export function TicketsView() {
     setStationFilter(newStation)
   }, [])
 
-  // Sync query params if present (on initial mount)
+  // Reactive synchronization with URL Query Search Parameters (e.g. from Dashboard click-throughs)
   React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search)
-      const st = params.get("status")
-      const prov = params.get("province")
-      const dist = params.get("district")
-      const sub = params.get("subdistrict")
-      const sta = params.get("station")
+    if (!searchParams) return
 
-      if (st) setStatusFilter(st)
-      if (prov) setProvinceFilter(prov)
-      if (dist) setDistrictFilter(dist)
-      if (sub) setSubdistrictFilter(sub)
-      if (sta) setStationFilter(sta)
+    const rawStatus = searchParams.get("status") || searchParams.get("stage")
+    const rawOverdue = searchParams.get("overdue") || searchParams.get("onlyOverdue")
+    const rawVendor = searchParams.get("vendor")
+    const rawCategory = searchParams.get("category")
+    const rawSn = searchParams.get("sn")
+    const rawCaseNo = searchParams.get("caseNo")
+    const rawProv = searchParams.get("province")
+    const rawDist = searchParams.get("district")
+    const rawSub = searchParams.get("subdistrict")
+    const rawSta = searchParams.get("station")
+    const rawOnTime = searchParams.get("onTime")
 
-      if (st || prov || dist || sub || sta) {
-        setAppliedFilters((prev) => ({
-          ...prev,
-          status: st || prev.status,
-          province: prov || prev.province,
-          district: dist || prev.district,
-          subdistrict: sub || prev.subdistrict,
-          station: sta || prev.station,
-        }))
-      }
+    // Map status & stage aliases into canonical form
+    let resolvedStatus: string | undefined = undefined
+    if (rawStatus) {
+      const lower = rawStatus.toLowerCase()
+      if (lower === "all") resolvedStatus = "all"
+      else if (lower === "in_progress" || lower === "pending") resolvedStatus = "in_progress"
+      else if (lower === "closed" || lower === "5") resolvedStatus = "5"
+      else if (lower === "rejected" || lower === "6") resolvedStatus = "6"
+      else if (lower === "waiting_inspection" || lower === "1") resolvedStatus = "1"
+      else if (lower === "sent_center" || lower === "2") resolvedStatus = "2"
+      else if (lower === "waiting_parts" || lower === "3") resolvedStatus = "3"
+      else if (lower === "repaired" || lower === "4") resolvedStatus = "4"
+      else resolvedStatus = rawStatus
     }
-  }, [])
+
+    const isOverdueParam = rawOverdue === "true" || rawOverdue === "1"
+    const isOnTimeParam = rawOnTime === "true" || rawOnTime === "1"
+
+    if (resolvedStatus !== undefined) setStatusFilter(resolvedStatus)
+    if (isOverdueParam) setOnlyOverdue(true)
+    if (rawVendor) setVendorFilter(rawVendor)
+    if (rawCategory) setCategoryFilter(rawCategory)
+    if (rawSn) setSnFilter(rawSn)
+    if (rawCaseNo) setCaseNoFilter(rawCaseNo)
+    if (rawProv) setProvinceFilter(rawProv)
+    if (rawDist) setDistrictFilter(rawDist)
+    if (rawSub) setSubdistrictFilter(rawSub)
+    if (rawSta) setStationFilter(rawSta)
+
+    if (
+      resolvedStatus !== undefined ||
+      isOverdueParam ||
+      rawVendor ||
+      rawCategory ||
+      rawSn ||
+      rawCaseNo ||
+      rawProv ||
+      rawDist ||
+      rawSub ||
+      rawSta ||
+      isOnTimeParam
+    ) {
+      setIsTableCleared(false)
+      setCurrentPage(1)
+      setAppliedFilters((prev) => ({
+        ...prev,
+        status: resolvedStatus !== undefined ? resolvedStatus : prev.status,
+        onlyOverdue: isOverdueParam ? true : prev.onlyOverdue,
+        vendor: rawVendor || prev.vendor,
+        category: rawCategory || prev.category,
+        sn: rawSn || prev.sn,
+        caseNo: rawCaseNo || prev.caseNo,
+        province: rawProv || prev.province,
+        district: rawDist || prev.district,
+        subdistrict: rawSub || prev.subdistrict,
+        station: rawSta || prev.station,
+        onTime: isOnTimeParam,
+      }))
+    }
+  }, [searchParams])
 
   const handleSearch = React.useCallback(() => {
     // Re-enable table rendering upon manual search trigger
@@ -257,6 +316,7 @@ export function TicketsView() {
       subdistrict: subdistrictFilter,
       station: stationFilter,
       onlyOverdue,
+      onTime: false,
     })
   }, [
     statusFilter,
@@ -301,6 +361,7 @@ export function TicketsView() {
       subdistrict: "all",
       station: "all",
       onlyOverdue: false,
+      onTime: false,
     })
   }, [])
 
@@ -343,15 +404,32 @@ export function TicketsView() {
     }
 
     return tickets.filter((t) => {
-      if (
-        appliedFilters.status !== "all" &&
-        String(t.statusCode) !== appliedFilters.status
-      ) {
-        return false
+      if (appliedFilters.status !== "all") {
+        if (appliedFilters.status === "in_progress") {
+          // In-progress: stages 1 to 4 (not closed and not rejected)
+          if (
+            t.statusCode === 5 ||
+            t.statusCode === 6 ||
+            t.status === "ปิดเคส" ||
+            t.status === "ปฏิเสธเคลม"
+          ) {
+            return false
+          }
+        } else if (appliedFilters.status === "closed" || appliedFilters.status === "5") {
+          if (t.statusCode !== 5 && t.status !== "ปิดเคส") {
+            return false
+          }
+        } else if (appliedFilters.status === "rejected" || appliedFilters.status === "6") {
+          if (t.statusCode !== 6 && t.status !== "ปฏิเสธเคลม") {
+            return false
+          }
+        } else if (String(t.statusCode) !== appliedFilters.status) {
+          return false
+        }
       }
       if (
         appliedFilters.vendor !== "all" &&
-        t.vendor !== appliedFilters.vendor
+        t.vendor.toLowerCase() !== appliedFilters.vendor.toLowerCase()
       ) {
         return false
       }
@@ -368,6 +446,9 @@ export function TicketsView() {
         return false
       }
       if (appliedFilters.onlyOverdue && !t.isOverdue) {
+        return false
+      }
+      if (appliedFilters.onTime && (t.isOverdue || t.statusCode !== 5)) {
         return false
       }
       // Location Hierarchy Filters
@@ -608,12 +689,13 @@ export function TicketsView() {
                   className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="all">ทุกสถานะ</option>
-                  <option value="1">รับแจ้ง / รอตรวจสภาพ</option>
-                  <option value="2">ส่งศูนย์บริการแล้ว</option>
-                  <option value="3">รออะไหล่ / กำลังซ่อม</option>
-                  <option value="4">ซ่อมเสร็จ / รอส่งมอบ</option>
-                  <option value="5">ปิดเคส (รับคืนเรียบร้อย)</option>
-                  <option value="6">ปฏิเสธเคลม (นอกเงื่อนไข)</option>
+                  <option value="in_progress">อยู่ระหว่างดำเนินการ (In Progress)</option>
+                  <option value="1">1. รับแจ้ง / รอตรวจสภาพ</option>
+                  <option value="2">2. ส่งศูนย์บริการแล้ว</option>
+                  <option value="3">3. รออะไหล่ / กำลังซ่อม</option>
+                  <option value="4">4. ซ่อมเสร็จ / รอส่งมอบ</option>
+                  <option value="5">5. เคลมสำเร็จ / ปิดเคส</option>
+                  <option value="6">6. ปฏิเสธเคลม (นอกเงื่อนไข)</option>
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
               </div>
@@ -669,13 +751,12 @@ export function TicketsView() {
                   onChange={(e) => setVendorFilter(e.target.value)}
                   className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
                 >
-                  <option value="all">ทุกศูนย์บริการ</option>
-                  <option value="Huawei">Huawei</option>
-                  <option value="Hytera">Hytera</option>
-                  <option value="Dell">Dell</option>
-                  <option value="Lenovo">Lenovo</option>
-                  <option value="Syndome">Syndome</option>
-                  <option value="Vertiv">Vertiv</option>
+                  <option value="all">ทุกศูนย์บริการ ({availableVendors.length} ราย)</option>
+                  {availableVendors.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
               </div>

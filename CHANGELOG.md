@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-09-28
+
+### Added & Enhanced
+- **Interactive Dashboard Deep-Navigation & Pre-Filtered Query Routing Across Modules**:
+  - **Top Overview Metric Cards Navigation**:
+    - Wrapped all 4 primary metric cards ('เคสทั้งหมด', 'อยู่ระหว่างดำเนินการ', 'เคลมสำเร็จ / ปิดเคส', 'ปฏิเสธเคลม') with interactive Next.js `<Link>` elements and subtle hover transitions (`hover:-translate-y-1 hover:shadow-md`, scale transitions on iconography, and direct action affordance links).
+    - Mapped routing directly to the Claim List module (`/claims` and `/tickets`) with respective pre-applied query parameters:
+      - 'เคสทั้งหมด': `/tickets?status=all`
+      - 'อยู่ระหว่างดำเนินการ': `/tickets?status=in_progress`
+      - 'เคลมสำเร็จ / ปิดเคส': `/tickets?status=closed`
+      - 'ปฏิเสธเคลม': `/tickets?status=rejected`
+  - **Performance KPIs & Overdue Routing**:
+    - 'เกินกำหนด (Overdue)': Navigates to `/tickets?overdue=true`, dynamically toggling on the 'เฉพาะที่เกินกำหนด' checkbox filter in the target list table.
+    - 'อายุงานค้างกลาง': Navigates to `/tickets?status=in_progress` to inspect ongoing active cases.
+    - 'ปิดทันกำหนด': Navigates to `/tickets?status=closed&onTime=true` for compliant completed cases.
+    - 'เวลาปิดงานกลาง': Navigates to `/tickets?status=closed` to examine turnaround times for closed cases.
+  - **Status Breakdown Rows ('สถานะงาน')**:
+    - Attached interactive click handlers to each of the 6 individual workflow stages (รับแจ้ง/รอตรวจสภาพ, ส่งศูนย์บริการแล้ว, รออะไหล่/กำลังซ่อม, ซ่อมเสร็จ/รอส่งมอบ, ปิดเคส, ปฏิเสธเคลม).
+    - Clicking any row navigates to the claim table pre-filtered by that specific stage identifier (e.g., `/tickets?stage=1&status=1`).
+  - **Service Center Breakdown Table ('ระยะเวลาที่งานอยู่กับศูนย์บริการ')**:
+    - Entire vendor rows (e.g., Huawei, Hytera, etc.) are clickable, routing to `/tickets?vendor=${vendor}`.
+    - Clicking the overdue badge within any vendor row directly filters cases for that vendor that are overdue (`/tickets?vendor=${vendor}&overdue=true`).
+  - **Claim List (`TicketsView`) Target Filter Synchronization Logic**:
+    - Integrated `useSearchParams` to reactively synchronize URL query parameters (`status`, `stage`, `overdue`, `onlyOverdue`, `vendor`, `onTime`) into component state and `appliedFilters`.
+    - Added aggregate status support for `in_progress` (matching stages 1 through 4), `closed` (stage 5), and `rejected` (stage 6).
+    - Dynamic population of available service centers from active ticket records.
+    - Wrapped `TicketsView` with `<Suspense>` boundary in `src/app/(authenticated)/tickets/page.tsx` for clean Next.js App Router client rendering.
+    - Configured Next.js rewrites in `next.config.ts` mapping `/claims` directly to `/tickets`.
+
 ## [0.22.9] - 2026-09-28
 
 ### Added & Enhanced
