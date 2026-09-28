@@ -137,13 +137,24 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
           id: t.id,
           title: t.title || prev.title,
           problemDesc: t.problemDesc || prev.problemDesc,
+          repairResult: t.repairResult !== undefined ? t.repairResult : prev.repairResult,
+          remarks: t.remarks !== undefined ? t.remarks : prev.remarks,
           vendor: t.vendor || prev.vendor,
           model: t.model || prev.model,
           serialNo: t.serialNo || prev.serialNo,
+          category: t.category !== undefined ? t.category : prev.category,
+          deviceType: t.deviceType !== undefined ? t.deviceType : prev.deviceType,
+          location: t.location || [t.subdistrict, t.district, t.province].filter(Boolean).join(" ") || t.station || prev.location,
+          warrantyStatus: t.warrantyStatus !== undefined ? t.warrantyStatus : prev.warrantyStatus,
+          serviceCenter: t.serviceCenter !== undefined ? t.serviceCenter : prev.serviceCenter,
           reportedDate: t.date || prev.reportedDate,
+          sentDate: t.sentDate !== undefined ? t.sentDate : prev.sentDate,
           deadlineDate: t.deadlineDate || prev.deadlineDate,
+          lastTrackDate: t.lastTrackDate !== undefined ? t.lastTrackDate : prev.lastTrackDate,
+          returnDate: t.returnDate !== undefined ? t.returnDate : prev.returnDate,
+          reporter: t.reporter !== undefined ? t.reporter : prev.reporter,
+          assignee: t.assignee !== undefined ? t.assignee : prev.assignee,
           currentStage: Number(t.statusCode) || prev.currentStage,
-          location: [t.subdistrict, t.district, t.province].filter(Boolean).join(" ") || t.station || prev.location,
         }))
       }
     } catch (err) {
@@ -164,13 +175,24 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
         id: found.id,
         title: found.title,
         problemDesc: found.problemDesc,
+        repairResult: found.repairResult !== undefined ? found.repairResult : prev.repairResult,
+        remarks: found.remarks !== undefined ? found.remarks : prev.remarks,
         vendor: found.vendor,
         model: found.model,
         serialNo: found.serialNo,
+        category: found.category !== undefined ? found.category : prev.category,
+        deviceType: found.deviceType !== undefined ? found.deviceType : prev.deviceType,
+        location: found.location || [found.subdistrict, found.district, found.province].filter(Boolean).join(" ") || found.station || prev.location,
+        warrantyStatus: found.warrantyStatus !== undefined ? found.warrantyStatus : prev.warrantyStatus,
+        serviceCenter: found.serviceCenter !== undefined ? found.serviceCenter : prev.serviceCenter,
         reportedDate: found.date,
+        sentDate: found.sentDate !== undefined ? found.sentDate : prev.sentDate,
         deadlineDate: found.deadlineDate || prev.deadlineDate,
+        lastTrackDate: found.lastTrackDate !== undefined ? found.lastTrackDate : prev.lastTrackDate,
+        returnDate: found.returnDate !== undefined ? found.returnDate : prev.returnDate,
+        reporter: found.reporter !== undefined ? found.reporter : prev.reporter,
+        assignee: found.assignee !== undefined ? found.assignee : prev.assignee,
         currentStage: Number(found.statusCode) || prev.currentStage,
-        location: [found.subdistrict, found.district, found.province].filter(Boolean).join(" ") || found.station || prev.location,
       }))
     }
 
@@ -281,12 +303,25 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
         title: editForm.title.trim(),
         problemDesc: editForm.problemDesc.trim(),
         description: editForm.problemDesc.trim(),
+        repairResult: editForm.repairResult.trim(),
+        remarks: editForm.remarks.trim(),
         vendor: editForm.vendor.trim(),
         model: editForm.model.trim(),
         serialNo: editForm.serialNo.trim(),
         serialNumber: editForm.serialNo.trim(),
+        category: editForm.category.trim(),
+        deviceType: editForm.deviceType.trim(),
+        location: editForm.location.trim(),
+        warrantyStatus: editForm.warrantyStatus.trim(),
+        serviceCenter: editForm.serviceCenter.trim(),
         date: editForm.reportedDate,
+        reportedDate: editForm.reportedDate,
+        sentDate: editForm.sentDate.trim(),
         deadlineDate: effectiveDeadline,
+        lastTrackDate: editForm.lastTrackDate.trim(),
+        returnDate: editForm.returnDate.trim(),
+        reporter: editForm.reporter.trim(),
+        assignee: editForm.assignee.trim(),
       })
       await invalidateTicketsCache()
       if (typeof window !== "undefined") {
@@ -823,10 +858,10 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
           onClick={() => setIsEditModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl p-5 animate-in zoom-in-95 text-xs"
+            className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl border border-border bg-card shadow-2xl p-5 sm:p-6 animate-in zoom-in-95 text-xs"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-border pb-3">
+            <div className="flex items-center justify-between border-b border-border pb-3 shrink-0">
               <div className="flex items-center gap-2">
                 <Pencil className="size-4 text-brand" />
                 <h3 className="text-sm font-semibold text-foreground">
@@ -836,130 +871,252 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="rounded p-1 text-muted-foreground hover:bg-muted"
+                className="rounded p-1 text-muted-foreground hover:bg-muted cursor-pointer"
               >
                 <X className="size-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="flex flex-col gap-3 pt-4">
-              <div className="flex flex-col gap-1">
-                <label className="font-medium text-foreground">หัวข้อเลขที่เคลม</label>
-                <Input
-                  value={editForm.title}
-                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="h-8 text-xs"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-medium text-foreground">อาการเสีย / ปัญหาที่พบ</label>
-                <textarea
-                  value={editForm.problemDesc}
-                  onChange={(e) => setEditForm({ ...editForm, problemDesc: e.target.value })}
-                  rows={2}
-                  className="rounded-md border border-input bg-background p-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="font-medium text-foreground">วันที่รับแจ้ง</label>
-                  <Input
-                    value={editForm.reportedDate}
-                    onChange={(e) => {
-                      const newReported = e.target.value
-                      const autoDue = calculateDueDate(newReported, 60).dueDateStr
-                      setEditForm({
-                        ...editForm,
-                        reportedDate: newReported,
-                        deadlineDate: autoDue,
-                      })
-                    }}
-                    className="h-8 text-xs"
-                    placeholder="เช่น 13 มิ.ย. 2569"
-                    required
-                  />
+            <form onSubmit={handleSaveEdit} className="flex flex-col flex-1 overflow-hidden pt-4">
+              <div className="overflow-y-auto pr-2 space-y-5 flex-1 max-h-[calc(90vh-140px)]">
+                {/* กลุ่มที่ 1: ข้อมูลพื้นฐานงานเคลม */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-foreground border-b border-border/60 pb-1.5 flex items-center gap-1.5">
+                    <ClipboardList className="size-3.5 text-brand" />
+                    <span>ข้อมูลงานเคลม</span>
+                  </h4>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-medium text-foreground">หัวข้อเลขที่เคลม</label>
+                    <Input
+                      value={editForm.title}
+                      onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      className="h-8 text-xs"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-medium text-foreground">อาการเสีย / ปัญหาที่พบ</label>
+                    <textarea
+                      value={editForm.problemDesc}
+                      onChange={(e) => setEditForm({ ...editForm, problemDesc: e.target.value })}
+                      rows={2}
+                      className="rounded-md border border-input bg-background p-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">ผลการซ่อม / การแก้ไข</label>
+                      <Input
+                        value={editForm.repairResult}
+                        onChange={(e) => setEditForm({ ...editForm, repairResult: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="เช่น ยังไม่มีผลการซ่อม, เปลี่ยนโมดูลใหม่"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">หมายเหตุ</label>
+                      <Input
+                        value={editForm.remarks}
+                        onChange={(e) => setEditForm({ ...editForm, remarks: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="หมายเหตุเพิ่มเติม"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-medium text-foreground">กำหนดแล้วเสร็จ (SLA 60 วัน)</label>
-                  <Input
-                    value={editForm.deadlineDate}
-                    onChange={(e) => setEditForm({ ...editForm, deadlineDate: e.target.value })}
-                    className="h-8 text-xs"
-                    placeholder="เช่น 12 ส.ค. 2569"
-                  />
+
+                {/* กลุ่มที่ 2: ข้อมูลอุปกรณ์ (Equipment) */}
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-semibold text-foreground border-b border-border/60 pb-1.5 flex items-center gap-1.5">
+                    <Cpu className="size-3.5 text-brand" />
+                    <span>ข้อมูลอุปกรณ์ (Equipment)</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="flex flex-col gap-1 sm:col-span-1">
+                      <label className="font-medium text-foreground">Serial No. (S/N)</label>
+                      <Input
+                        value={editForm.serialNo}
+                        onChange={(e) => setEditForm({ ...editForm, serialNo: e.target.value })}
+                        className="h-8 font-mono text-xs"
+                        placeholder="หมายเลขเครื่อง"
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">ยี่ห้อ (Brand / Vendor)</label>
+                      <Input
+                        value={editForm.vendor}
+                        onChange={(e) => setEditForm({ ...editForm, vendor: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="เช่น Huawei, Forth, Hytera"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">รุ่น (Model)</label>
+                      <Input
+                        value={editForm.model}
+                        onChange={(e) => setEditForm({ ...editForm, model: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="เช่น OMXD30000"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">หมวดหมู่อุปกรณ์ (Category)</label>
+                      <Input
+                        value={editForm.category}
+                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="เช่น ระบบบริหารจัดการ Software-Defined WAN"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">ประเภท / กลุ่ม (Group / Device Type)</label>
+                      <Input
+                        value={editForm.deviceType}
+                        onChange={(e) => setEditForm({ ...editForm, deviceType: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="เช่น Optical Transceiver, Router"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="font-medium text-foreground">สถานที่ติดตั้ง (Installation Location)</label>
+                    <Input
+                      value={editForm.location}
+                      onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                      className="h-8 text-xs"
+                      placeholder="เช่น ที่ว่าการอำเภอเลาขวัญ จ.กาญจนบุรี"
+                    />
+                  </div>
+                </div>
+
+                {/* กลุ่มที่ 3: ข้อมูลเคสและการติดตาม (Case Information & Timestamps) */}
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-semibold text-foreground border-b border-border/60 pb-1.5 flex items-center gap-1.5">
+                    <ShieldCheck className="size-3.5 text-brand" />
+                    <span>ข้อมูลเคสและการติดตาม (Case Information & Timestamps)</span>
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">สถานะประกัน (Warranty Status)</label>
+                      <select
+                        value={editForm.warrantyStatus}
+                        onChange={(e) => setEditForm({ ...editForm, warrantyStatus: e.target.value })}
+                        className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        <option value="อยู่ในประกัน">อยู่ในประกัน</option>
+                        <option value="หมดประกัน">หมดประกัน</option>
+                        <option value="รอตรวจสอบ">รอตรวจสอบ</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">ศูนย์บริการ (Service Center)</label>
+                      <select
+                        value={editForm.serviceCenter}
+                        onChange={(e) => setEditForm({ ...editForm, serviceCenter: e.target.value })}
+                        className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        <option value="Huawei">Huawei</option>
+                        <option value="Forth">Forth</option>
+                        <option value="Hytera">Hytera</option>
+                        <option value="Cisco">Cisco</option>
+                        <option value="ศูนย์บริการภายนอก">ศูนย์บริการภายนอก</option>
+                        <option value="ศูนย์ซ่อมหลัก">ศูนย์ซ่อมหลัก</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">วันที่รับแจ้ง (Reported Date)</label>
+                      <Input
+                        value={editForm.reportedDate}
+                        onChange={(e) => {
+                          const newReported = e.target.value
+                          const autoDue = calculateDueDate(newReported, 60).dueDateStr
+                          setEditForm({
+                            ...editForm,
+                            reportedDate: newReported,
+                            deadlineDate: autoDue,
+                          })
+                        }}
+                        className="h-8 text-xs"
+                        placeholder="เช่น 13 มิ.ย. 2569"
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">กำหนดแล้วเสร็จ (SLA 60 วัน)</label>
+                      <Input
+                        value={editForm.deadlineDate}
+                        onChange={(e) => setEditForm({ ...editForm, deadlineDate: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="เช่น 12 ส.ค. 2569"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">วันที่ส่งศูนย์บริการ</label>
+                      <Input
+                        value={editForm.sentDate}
+                        onChange={(e) => setEditForm({ ...editForm, sentDate: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="เช่น 15 มิ.ย. 2569 หรือ —"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">ติดตามล่าสุด</label>
+                      <Input
+                        value={editForm.lastTrackDate}
+                        onChange={(e) => setEditForm({ ...editForm, lastTrackDate: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="เช่น 20 มิ.ย. 2569 หรือ —"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">วันที่รับคืน</label>
+                      <Input
+                        value={editForm.returnDate}
+                        onChange={(e) => setEditForm({ ...editForm, returnDate: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="เช่น 12 ส.ค. 2569 หรือ —"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">ผู้แจ้ง (Reporter)</label>
+                      <Input
+                        value={editForm.reporter}
+                        onChange={(e) => setEditForm({ ...editForm, reporter: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="ชื่อผู้แจ้ง"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="font-medium text-foreground">ผู้รับผิดชอบ (Assignee)</label>
+                      <Input
+                        value={editForm.assignee}
+                        onChange={(e) => setEditForm({ ...editForm, assignee: e.target.value })}
+                        className="h-8 text-xs"
+                        placeholder="ชื่อผู้รับผิดชอบ"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="font-medium text-foreground">ผู้ผลิต (Vendor)</label>
-                  <Input
-                    value={editForm.vendor}
-                    onChange={(e) => setEditForm({ ...editForm, vendor: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-medium text-foreground">รุ่น (Model)</label>
-                  <Input
-                    value={editForm.model}
-                    onChange={(e) => setEditForm({ ...editForm, model: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-medium text-foreground">หมายเลขเครื่อง (S/N)</label>
-                <Input
-                  value={editForm.serialNo}
-                  onChange={(e) => setEditForm({ ...editForm, serialNo: e.target.value })}
-                  className="h-8 font-mono text-xs"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-medium text-foreground">ผลการซ่อม / การแก้ไข</label>
-                <Input
-                  value={editForm.repairResult}
-                  onChange={(e) => setEditForm({ ...editForm, repairResult: e.target.value })}
-                  className="h-8 text-xs"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-medium text-foreground">หมายเหตุ</label>
-                <Input
-                  value={editForm.remarks}
-                  onChange={(e) => setEditForm({ ...editForm, remarks: e.target.value })}
-                  className="h-8 text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="font-medium text-foreground">ผู้แจ้ง</label>
-                  <Input
-                    value={editForm.reporter}
-                    onChange={(e) => setEditForm({ ...editForm, reporter: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-medium text-foreground">ผู้รับผิดชอบ</label>
-                  <Input
-                    value={editForm.assignee}
-                    onChange={(e) => setEditForm({ ...editForm, assignee: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 border-t border-border pt-4 mt-2">
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-2 border-t border-border pt-4 mt-4 shrink-0">
                 <Button
                   type="button"
                   variant="outline"

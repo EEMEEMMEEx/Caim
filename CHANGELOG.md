@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.8] - 2026-09-28
+
+### Fixed & Enhanced
+- **Full Field Editing in Edit Claim Modal, Transactional Persistence & End-to-End View Synchronization**:
+  - **Make All Fields Editable**:
+    - Expanded Edit Claim modal (`TicketDetailView.tsx`) to support comprehensive editing for all attributes under 'อุปกรณ์' (`serialNo`, `vendor`, `model`, `category`, `deviceType`, `location`) and 'ข้อมูลเคส' (`warrantyStatus`, `serviceCenter`, `reportedDate`, `sentDate`, `deadlineDate`, `lastTrackDate`, `returnDate`, `reporter`, `assignee`).
+    - Added appropriate input controls: native `<select>` dropdowns for Warranty Status and Service Center, date/timestamp inputs with auto 60-day deadline recalculation, and responsive text inputs.
+    - Organized modal into clean, responsive sections with scrollable container and loading indicators.
+  - **Transactional Database Persistence**:
+    - Expanded `TicketDocument` schema in `database.ts` and `Ticket` interface in `useTicketsQuery.ts` with all sidebar attributes.
+    - Updated `updateTicket` mutation handler to dispatch all modified fields to backend `PUT`/`PATCH` API, committing updates to both MongoDB Atlas and persistent disk storage without dropping payload properties.
+  - **Synchronize All Views & Dynamic Calculations**:
+    - Immediate optimistic update and cache invalidation (`invalidateTicketsCache()`) on save success.
+    - Synchronized all dependent views (Detail Sidebar, Top Summary Cards, Horizontal Stepper, Claim List table, and Dashboard) in real time without manual browser refresh.
+    - Dynamically recalculated case age ('อายุงาน') and overdue status ('เกินกำหนด X วัน') based on updated timestamps.
+
 ## [0.22.7] - 2026-09-28
 
 ### Fixed & Enhanced

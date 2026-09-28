@@ -14,10 +14,23 @@ export interface Ticket {
   status: string
   statusCode: number
   date: string
+  reportedDate?: string
   deadlineDate?: string
   ageDays: string
   isOverdue?: boolean
   overdueText?: string
+  repairResult?: string
+  remarks?: string
+  category?: string
+  deviceType?: string
+  location?: string
+  warrantyStatus?: string
+  serviceCenter?: string
+  sentDate?: string
+  lastTrackDate?: string
+  returnDate?: string
+  reporter?: string
+  assignee?: string
   stationId?: string
   station?: string
   province?: string

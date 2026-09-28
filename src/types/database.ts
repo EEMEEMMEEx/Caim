@@ -51,10 +51,23 @@ export interface TicketDocument {
   status: string // "รับแจ้ง", "ส่งศูนย์", "ปิดเคส", etc.
   statusCode: number
   date: string
+  reportedDate?: string
   deadlineDate?: string
   ageDays: string
   isOverdue?: boolean
   overdueText?: string
+  repairResult?: string
+  remarks?: string
+  category?: string
+  deviceType?: string
+  location?: string
+  warrantyStatus?: string
+  serviceCenter?: string
+  sentDate?: string
+  lastTrackDate?: string
+  returnDate?: string
+  reporter?: string
+  assignee?: string
   stationId?: string // Foreign Key -> StationDocument.id
   station?: string // Station name
   province?: string
