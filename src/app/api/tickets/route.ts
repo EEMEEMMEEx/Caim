@@ -9,6 +9,17 @@ import {
   deletePersistentTicket,
   getPersistentDeletedTicketIds,
 } from "@/lib/storage/serverTicketStorage"
+import { calculateCaseDuration } from "@/lib/utils/caseDuration"
+
+function enrichTicket(ticket: TicketDocument): TicketDocument {
+  const duration = calculateCaseDuration(ticket)
+  return {
+    ...ticket,
+    ageDays: duration.text,
+    isOverdue: duration.isOverdue,
+    overdueText: duration.overdueText || ticket.overdueText,
+  }
+}
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -28,11 +39,13 @@ export async function GET(request: NextRequest) {
           if (id) {
             const item = await collection.findOne({ id })
             if (item && !persistentDeletedIds.includes(item.id)) {
-              return NextResponse.json({ success: true, ticket: item, source: "mongodb" }, { headers: NO_CACHE_HEADERS })
+              return NextResponse.json({ success: true, ticket: enrichTicket(item), source: "mongodb" }, { headers: NO_CACHE_HEADERS })
             }
           } else {
             const tickets = await collection.find({}).sort({ createdAt: -1 }).toArray()
-            const filteredTickets = tickets.filter((t) => !persistentDeletedIds.includes(t.id))
+            const filteredTickets = tickets
+              .filter((t) => !persistentDeletedIds.includes(t.id))
+              .map(enrichTicket)
             return NextResponse.json(
               {
                 success: true,
@@ -50,7 +63,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const diskTickets = getPersistentTickets()
+    const diskTickets = getPersistentTickets().map(enrichTicket)
 
     if (id) {
       const found = diskTickets.find((t) => t.id === id)
@@ -138,6 +151,20 @@ export async function POST(request: NextRequest) {
           )
         }
 
+        const reportedDateStr = body.date || new Date().toLocaleDateString("th-TH", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+        const duration = calculateCaseDuration({
+          date: reportedDateStr,
+          createdAt: nowIso,
+          status: body.status || "รับแจ้ง",
+          statusCode: body.statusCode || 1,
+          isOverdue: body.isOverdue,
+          overdueText: body.overdueText,
+        })
+
         // 3. Insert Ticket Document
         const newTicketDoc: TicketDocument = {
           id: ticketId,
@@ -148,14 +175,10 @@ export async function POST(request: NextRequest) {
           serialNo: serialNo || "-",
           status: body.status || "รับแจ้ง",
           statusCode: body.statusCode || 1,
-          date: body.date || new Date().toLocaleDateString("th-TH", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }),
-          ageDays: body.ageDays || "0 วัน",
-          isOverdue: Boolean(body.isOverdue),
-          overdueText: body.overdueText || "",
+          date: reportedDateStr,
+          ageDays: duration.text,
+          isOverdue: duration.isOverdue,
+          overdueText: duration.overdueText,
           stationId,
           station: stationName,
           province,
@@ -212,6 +235,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const fallbackReportedDate = body.date || new Date().toLocaleDateString("th-TH")
+    const fallbackDuration = calculateCaseDuration({
+      date: fallbackReportedDate,
+      createdAt: nowIso,
+      status: body.status || "รับแจ้ง",
+      statusCode: body.statusCode || 1,
+      isOverdue: body.isOverdue,
+      overdueText: body.overdueText,
+    })
+
     // Fallback store
     const fallbackDoc: TicketDocument = {
       id: ticketId,
@@ -222,8 +255,10 @@ export async function POST(request: NextRequest) {
       serialNo: serialNo || "-",
       status: body.status || "รับแจ้ง",
       statusCode: body.statusCode || 1,
-      date: body.date || new Date().toLocaleDateString("th-TH"),
-      ageDays: body.ageDays || "0 วัน",
+      date: fallbackReportedDate,
+      ageDays: fallbackDuration.text,
+      isOverdue: fallbackDuration.isOverdue,
+      overdueText: fallbackDuration.overdueText,
       stationId,
       station: stationName,
       province,

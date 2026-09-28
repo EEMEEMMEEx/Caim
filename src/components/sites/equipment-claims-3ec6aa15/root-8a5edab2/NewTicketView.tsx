@@ -29,6 +29,7 @@ import { StoredTicket } from "@/lib/storage/recordStorage"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useEquipmentsQuery } from "@/hooks/useEquipmentsQuery"
 import { invalidateTicketsCache } from "@/hooks/useTicketsQuery"
+import { calculateCaseDuration } from "@/lib/utils/caseDuration"
 
 export function NewTicketView() {
   const router = useRouter()
@@ -248,6 +249,12 @@ export function NewTicketView() {
       year: "numeric",
     })
 
+    const initialDuration = calculateCaseDuration({
+      date: dateFormatted,
+      status: "รับแจ้ง",
+      statusCode: 1,
+    })
+
     const newTicket: StoredTicket = {
       id: ticketTitle.trim(),
       title: ticketTitle.trim(),
@@ -258,8 +265,9 @@ export function NewTicketView() {
       status: "รับแจ้ง",
       statusCode: 1,
       date: dateFormatted,
-      ageDays: "0 วัน",
-      isOverdue: false,
+      ageDays: initialDuration.text,
+      isOverdue: initialDuration.isOverdue,
+      overdueText: initialDuration.overdueText,
       stationId: selectedStation?.id || undefined,
       station: selectedStation?.name || "",
       province: selectedStation?.province || selectedProvince || "",

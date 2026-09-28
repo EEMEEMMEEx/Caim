@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.2] - 2026-09-28
+
+### Fixed
+- **Dynamic Case Duration Calculation & Thai Buddhist Era (BE) Date Parsing ('อายุงาน' Column)**:
+  - **Dynamic Elapsed Days Calculation**:
+    - Created centralized date utility `src/lib/utils/caseDuration.ts` implementing `Math.floor((currentDate - reportedDate) / (1000 * 60 * 60 * 24))`.
+    - Resolved bug where active open cases (e.g. reported on 13 มิ.ย. 2569) erroneously displayed static "0 วัน".
+    - Active cases compute elapsed days dynamically relative to current date; closed or rejected cases (`statusCode: 5 | 6`) freeze duration at completion date (`closedAt` / `updatedAt`).
+  - **Thai Buddhist Era (BE) & Calendar Date Parsing Support**:
+    - Implemented `parseThaiDate` supporting Thai abbreviated and full month names (ม.ค. - ธ.ค., มกราคม - ธันวาคม) and converting Buddhist Era years (BE >= 2400 subtracted by 543 to CE, e.g. 2569 -> 2026) across both text formats and slash/dash formats.
+    - Prevents `NaN` or negative day values when subtracting reported dates from current dates.
+  - **SLA Overdue Threshold & Alert Styling**:
+    - Added automatic overdue detection against the 7-day SLA threshold.
+    - Rendered highlighted overdue styling with deep red text (`text-[#dc2626]`), warning badge (`bg-[#fee2e2]/70` with `AlertTriangle` icon), and table row soft red tinting (`bg-[#fff5f5]`).
+  - **System-Wide Metric Synchronization**:
+    - Integrated `calculateCaseDuration` into `TicketsView.tsx`, `TicketDetailView.tsx`, `NewTicketView.tsx`, `/api/tickets`, and dashboard KPI calculations (`calculateMetrics.ts`), ensuring complete data consistency across all views.
+
 ## [0.22.1] - 2026-09-28
 
 ### Fixed

@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { calculateCaseDuration } from "@/lib/utils/caseDuration"
 
 export interface TicketDetailData {
   id: string
@@ -126,6 +127,14 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
   const [newStatusStage, setNewStatusStage] = React.useState(data.currentStage)
   const [statusRemark, setStatusRemark] = React.useState("")
   const [bannerMessage, setBannerMessage] = React.useState<string | null>(null)
+
+  const caseDuration = React.useMemo(() => {
+    return calculateCaseDuration({
+      date: data.reportedDate,
+      statusCode: data.currentStage,
+      ageDays: data.ageDays,
+    })
+  }, [data.reportedDate, data.currentStage, data.ageDays])
 
   function showBanner(msg: string) {
     setBannerMessage(msg)
@@ -241,7 +250,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
           {/* Card 1: อายุงาน (วัน) */}
           <div className="flex flex-col justify-between rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs">
             <p className="tabular text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
-              {data.ageDays}
+              {caseDuration.days}
             </p>
             <p className="text-xs text-muted-foreground mt-1">อายุงาน (วัน)</p>
           </div>
@@ -588,7 +597,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">อายุงาน</span>
                     <span className="font-medium text-foreground">
-                      {data.ageDays} วัน
+                      {caseDuration.text}
                     </span>
                   </div>
                   <div className="flex items-center justify-between py-2">

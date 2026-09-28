@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input"
 import { type Station } from "./stationsData"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useTicketsQuery, type Ticket } from "@/hooks/useTicketsQuery"
+import { calculateCaseDuration } from "@/lib/utils/caseDuration"
 
 /**
  * Helper to construct URLSearchParams for claim list API queries
@@ -893,7 +894,8 @@ export function TicketsView() {
                 ) : (
                   paginatedTickets.map((item) => {
                     const isSelected = selectedIds.includes(item.id)
-                    const isOverdue = item.isOverdue
+                    const duration = calculateCaseDuration(item)
+                    const isOverdue = duration.isOverdue
 
                     return (
                       <tr
@@ -1003,15 +1005,15 @@ export function TicketsView() {
                           {isOverdue ? (
                             <div className="leading-tight">
                               <p className="font-bold text-[#dc2626]">
-                                {item.ageDays}
+                                {duration.text}
                               </p>
                               <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-red-200/80 bg-[#fee2e2]/70 px-1.5 py-0.5 text-[10px] font-medium text-[#dc2626]">
                                 <AlertTriangle className="size-2.5" />
-                                <span>{item.overdueText || "เกินกำหนด"}</span>
+                                <span>{duration.overdueText}</span>
                               </span>
                             </div>
                           ) : (
-                            <span className="text-slate-600">{item.ageDays}</span>
+                            <span className="text-slate-600">{duration.text}</span>
                           )}
                         </td>
 
@@ -1224,7 +1226,7 @@ export function TicketsView() {
                     </div>
                     <div>
                       <p className="text-slate-500 font-medium">อายุงาน</p>
-                      <p className="mt-1 text-slate-900">{selectedTicket.ageDays}</p>
+                      <p className="mt-1 text-slate-900 font-semibold">{calculateCaseDuration(selectedTicket).text}</p>
                     </div>
                   </div>
 

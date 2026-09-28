@@ -1,3 +1,5 @@
+import { calculateCaseDuration } from "@/lib/utils/caseDuration"
+
 export interface TicketItem {
   id: string
   title: string
@@ -80,18 +82,6 @@ export interface DashboardMetrics {
   lastCalculated: string
 }
 
-function parseDays(ageStr?: string, createdAt?: string): number {
-  if (ageStr) {
-    const match = ageStr.match(/(\d+(\.\d+)?)/)
-    if (match) return parseFloat(match[1])
-  }
-  if (createdAt) {
-    const diffMs = Date.now() - new Date(createdAt).getTime()
-    return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
-  }
-  return 0
-}
-
 function median(nums: number[]): number {
   if (nums.length === 0) return 0
   const sorted = [...nums].sort((a, b) => a - b)
@@ -121,18 +111,16 @@ export function calculateDashboardMetrics(tickets: TicketItem[]): DashboardMetri
   const rejectedPct = total > 0 ? Math.round((rejected / total) * 100) : 0
 
   // 2. Performance KPIs
-  const pendingAges = inProgressTickets.map((t) => parseDays(t.ageDays, t.createdAt))
+  const pendingAges = inProgressTickets.map((t) => calculateCaseDuration(t).days)
   const pendingMedianDays = median(pendingAges)
 
-  const overdueTickets = inProgressTickets.filter(
-    (t) => Boolean(t.isOverdue) || parseDays(t.ageDays, t.createdAt) > 7
-  )
+  const overdueTickets = inProgressTickets.filter((t) => calculateCaseDuration(t).isOverdue)
   const overdueCount = overdueTickets.length
   const overduePct = inProgress > 0 ? Math.round((overdueCount / inProgress) * 100) : 0
 
-  const closedAges = closedTickets.map((t) => parseDays(t.ageDays, t.createdAt))
+  const closedAges = closedTickets.map((t) => calculateCaseDuration(t).days)
   const closedMedianDays = median(closedAges)
-  const closedOnTimeCount = closedTickets.filter((t) => !t.isOverdue).length
+  const closedOnTimeCount = closedTickets.filter((t) => !calculateCaseDuration(t).isOverdue).length
 
   // 3. Work Status Breakdown
   const statusCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
@@ -198,7 +186,7 @@ export function calculateDashboardMetrics(tickets: TicketItem[]): DashboardMetri
   let boxClosed = 0
 
   for (const t of tickets) {
-    const age = parseDays(t.ageDays, t.createdAt)
+    const age = calculateCaseDuration(t).days
     if (age <= 7) {
       thisWeekCount++
       if (t.statusCode === 1) boxReceived++
@@ -232,8 +220,8 @@ export function calculateDashboardMetrics(tickets: TicketItem[]): DashboardMetri
       completedText: `1 วัน n=${tickets.filter((t) => (t.statusCode ?? 1) > 1).length}`,
       completedDays: 1,
       pendingCount: statusCounts[1],
-      pendingDays: statusCounts[1] > 0 ? median(tickets.filter((t) => t.statusCode === 1).map((t) => parseDays(t.ageDays, t.createdAt))) : 0,
-      maxDays: statusCounts[1] > 0 ? Math.max(...tickets.filter((t) => t.statusCode === 1).map((t) => parseDays(t.ageDays, t.createdAt)), 0) : 0,
+      pendingDays: statusCounts[1] > 0 ? median(tickets.filter((t) => t.statusCode === 1).map((t) => calculateCaseDuration(t).days)) : 0,
+      maxDays: statusCounts[1] > 0 ? Math.max(...tickets.filter((t) => t.statusCode === 1).map((t) => calculateCaseDuration(t).days), 0) : 0,
     },
     {
       code: 2,
@@ -242,8 +230,8 @@ export function calculateDashboardMetrics(tickets: TicketItem[]): DashboardMetri
       completedText: `1 วัน n=${tickets.filter((t) => (t.statusCode ?? 1) > 2).length}`,
       completedDays: 1,
       pendingCount: statusCounts[2],
-      pendingDays: statusCounts[2] > 0 ? median(tickets.filter((t) => t.statusCode === 2).map((t) => parseDays(t.ageDays, t.createdAt))) : 0,
-      maxDays: statusCounts[2] > 0 ? Math.max(...tickets.filter((t) => t.statusCode === 2).map((t) => parseDays(t.ageDays, t.createdAt)), 0) : 0,
+      pendingDays: statusCounts[2] > 0 ? median(tickets.filter((t) => t.statusCode === 2).map((t) => calculateCaseDuration(t).days)) : 0,
+      maxDays: statusCounts[2] > 0 ? Math.max(...tickets.filter((t) => t.statusCode === 2).map((t) => calculateCaseDuration(t).days), 0) : 0,
     },
     {
       code: 3,
@@ -252,8 +240,8 @@ export function calculateDashboardMetrics(tickets: TicketItem[]): DashboardMetri
       completedText: `0 วัน n=${tickets.filter((t) => (t.statusCode ?? 1) > 3).length}`,
       completedDays: 0,
       pendingCount: statusCounts[3],
-      pendingDays: statusCounts[3] > 0 ? median(tickets.filter((t) => t.statusCode === 3).map((t) => parseDays(t.ageDays, t.createdAt))) : 0,
-      maxDays: statusCounts[3] > 0 ? Math.max(...tickets.filter((t) => t.statusCode === 3).map((t) => parseDays(t.ageDays, t.createdAt)), 0) : 0,
+      pendingDays: statusCounts[3] > 0 ? median(tickets.filter((t) => t.statusCode === 3).map((t) => calculateCaseDuration(t).days)) : 0,
+      maxDays: statusCounts[3] > 0 ? Math.max(...tickets.filter((t) => t.statusCode === 3).map((t) => calculateCaseDuration(t).days), 0) : 0,
     },
     {
       code: 4,
@@ -262,8 +250,8 @@ export function calculateDashboardMetrics(tickets: TicketItem[]): DashboardMetri
       completedText: `0 วัน n=${tickets.filter((t) => (t.statusCode ?? 1) > 4).length}`,
       completedDays: 0,
       pendingCount: statusCounts[4],
-      pendingDays: statusCounts[4] > 0 ? median(tickets.filter((t) => t.statusCode === 4).map((t) => parseDays(t.ageDays, t.createdAt))) : 0,
-      maxDays: statusCounts[4] > 0 ? Math.max(...tickets.filter((t) => t.statusCode === 4).map((t) => parseDays(t.ageDays, t.createdAt)), 0) : 0,
+      pendingDays: statusCounts[4] > 0 ? median(tickets.filter((t) => t.statusCode === 4).map((t) => calculateCaseDuration(t).days)) : 0,
+      maxDays: statusCounts[4] > 0 ? Math.max(...tickets.filter((t) => t.statusCode === 4).map((t) => calculateCaseDuration(t).days), 0) : 0,
     },
   ]
 
@@ -277,9 +265,9 @@ export function calculateDashboardMetrics(tickets: TicketItem[]): DashboardMetri
 
   const serviceCenters: ServiceCenterStat[] = Object.entries(vendorsMap).map(([vendor, list]) => {
     const atCenter = list.filter((t) => t.statusCode === 2 || t.statusCode === 3)
-    const atCenterAges = atCenter.map((t) => parseDays(t.ageDays, t.createdAt))
+    const atCenterAges = atCenter.map((t) => calculateCaseDuration(t).days)
     const maxDay = atCenterAges.length > 0 ? Math.max(...atCenterAges) : 0
-    const overdues = atCenter.filter((t) => Boolean(t.isOverdue) || parseDays(t.ageDays, t.createdAt) > 7).length
+    const overdues = atCenter.filter((t) => calculateCaseDuration(t).isOverdue).length
     const medianDay = median(atCenterAges)
 
     return {
