@@ -31,7 +31,11 @@ import { type Asset } from "./assetsData"
 import { saveRmaApi } from "@/lib/storage/recordStorage"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useRmaQuery, type RmaItem } from "@/hooks/useRmaQuery"
-import { calculateRmaMetrics } from "@/lib/utils/rmaDuration"
+import {
+  calculateRmaMetrics,
+  calculateStageDuration,
+  calculateCumulativeStagesDays,
+} from "@/lib/utils/rmaDuration"
 
 interface ClaimCaseOption {
   id: string
@@ -243,13 +247,20 @@ export function OverseasView() {
 
     setActualDateTime(getInitialDateTimeLocal())
 
-    // If item already has persistent stageHistory, load directly
+    // If item already has persistent stageHistory, refresh dynamic elapsed days for active steps
     if (
       Array.isArray(timelineItem.stageHistory) &&
       timelineItem.stageHistory.length === 8
     ) {
-      setRetroactiveStages(timelineItem.stageHistory)
-      setStagesSnapshot(JSON.parse(JSON.stringify(timelineItem.stageHistory)))
+      const refreshedStages: StageHistoryItem[] = timelineItem.stageHistory.map((s) => {
+        const duration = calculateStageDuration(s)
+        return {
+          ...s,
+          actualDays: duration.elapsedDays,
+        }
+      })
+      setRetroactiveStages(refreshedStages)
+      setStagesSnapshot(JSON.parse(JSON.stringify(refreshedStages)))
       setIsRetroactiveEditing(false)
       return
     }
@@ -279,7 +290,13 @@ export function OverseasView() {
       } else if (stageNum === currentNum) {
         status = "active"
         startStr = toDateTimeLocalString(runningDate)
-        actualDays = parseInt(timelineItem.stageWaitDays || "0") || 1
+        const duration = calculateStageDuration({
+          startDate: startStr,
+          endDate: "",
+          status: "active",
+          standardDays: cfg.standardDays,
+        })
+        actualDays = duration.elapsedDays || parseInt(timelineItem.stageWaitDays || "0") || 1
         endStr = ""
       } else {
         status = "pending"
@@ -322,9 +339,7 @@ export function OverseasView() {
 
   // Dynamic Overall Summary Counter: Recalculate total elapsed days live
   const totalRecomputedDays = React.useMemo(() => {
-    return retroactiveStages
-      .filter((s) => s.status === "completed" || s.status === "active")
-      .reduce((sum, s) => sum + (Number(s.actualDays) || 0), 0)
+    return calculateCumulativeStagesDays(retroactiveStages)
   }, [retroactiveStages])
 
   // Dynamic Duration Handler: Update start/end date-time and recalculate days immediately
@@ -341,22 +356,14 @@ export function OverseasView() {
         const startStr = field === "startDate" ? value : stage.startDate
         const endStr = field === "endDate" ? value : stage.endDate
 
-        if (startStr && endStr) {
-          const start = new Date(startStr).getTime()
-          const end = new Date(endStr).getTime()
-          if (!isNaN(start) && !isNaN(end) && end >= start) {
-            const diffMs = end - start
-            const diffDays = Math.round(diffMs / 86400000)
-            updatedStage.actualDays = Math.max(0, diffDays)
-          }
-        } else if (startStr && !endStr && stage.status === "active") {
-          const start = new Date(startStr).getTime()
-          const now = Date.now()
-          if (!isNaN(start) && now >= start) {
-            const diffDays = Math.round((now - start) / 86400000)
-            updatedStage.actualDays = Math.max(0, diffDays)
-          }
-        }
+        const duration = calculateStageDuration({
+          startDate: startStr,
+          endDate: endStr,
+          status: stage.status,
+          standardDays: stage.standardDays,
+          actualDays: stage.actualDays,
+        })
+        updatedStage.actualDays = duration.elapsedDays
 
         return updatedStage
       })
@@ -381,7 +388,13 @@ export function OverseasView() {
             updated.startDate = getInitialDateTimeLocal()
           }
           updated.endDate = ""
-          updated.actualDays = 1
+          const duration = calculateStageDuration({
+            startDate: updated.startDate,
+            endDate: "",
+            status: "active",
+            standardDays: stage.standardDays,
+          })
+          updated.actualDays = duration.elapsedDays || 1
         } else if (newStatus === "completed") {
           if (!updated.startDate) {
             updated.startDate = getInitialDateTimeLocal()
@@ -390,8 +403,14 @@ export function OverseasView() {
             const startD = new Date(updated.startDate)
             const endD = new Date(startD.getTime() + (stage.standardDays || 2) * 86400000)
             updated.endDate = toDateTimeLocalString(endD)
-            updated.actualDays = stage.standardDays || 2
           }
+          const duration = calculateStageDuration({
+            startDate: updated.startDate,
+            endDate: updated.endDate,
+            status: "completed",
+            standardDays: stage.standardDays,
+          })
+          updated.actualDays = duration.elapsedDays || stage.standardDays || 2
         }
         return updated
       })
@@ -490,9 +509,17 @@ export function OverseasView() {
 
       // Stage 6 penalty calculation (จีน — เข้ากระบวนการซ่อม, standard 14 days)
       const chinaStage = retroactiveStages.find((s) => s.stageNumber === 6)
-      const isOverduePenalty =
-        Boolean(chinaStage && chinaStage.actualDays > (chinaStage.standardDays || 14))
-      const penaltyDaysStr = chinaStage ? `${chinaStage.actualDays} วัน` : "0 วัน"
+      const chinaDuration = chinaStage ? calculateStageDuration(chinaStage) : null
+      const isOverduePenalty = Boolean(chinaDuration && chinaDuration.isOverStandard)
+      const overdueDays = chinaDuration?.overdueDays || 0
+      const penaltyDaysStr =
+        !chinaStage || chinaStage.status === "pending"
+          ? "0 วัน"
+          : isOverduePenalty
+          ? `เกิน ${overdueDays} วัน`
+          : `${chinaDuration?.elapsedDays || 0} วัน`
+      const penaltyStandardStr =
+        chinaStage?.status === "completed" ? "จาก 14 วัน · ซ่อมเสร็จแล้ว" : "จาก 14 วัน"
 
       const updates: Partial<RmaItem> & { id: string } = {
         id: timelineItem.id,
@@ -503,18 +530,18 @@ export function OverseasView() {
         statusBadge: isCompleted ? "returned" : "in_progress",
         statusBadgeText: isCompleted ? "ของกลับถึงแล้ว" : "กำลังดำเนินการ",
         penaltyDays: penaltyDaysStr,
-        penaltyStandard: "จาก 14 วัน",
+        penaltyStandard: penaltyStandardStr,
         isOverduePenalty,
         stageHistory: retroactiveStages,
       }
 
       const res = await updateRma(updates)
       if (res.success) {
-        showToast("บันทึกการแก้ไขวันและเวลาเรียบร้อยแล้ว")
+        showToast("บันทึกการแก้ไขวันและเวลาเรียบร้อยแล้ว — ตารางหลักอัปเดตทันที")
         setTimelineItem((prev) => (prev ? { ...prev, ...updates } : null))
         setStagesSnapshot(JSON.parse(JSON.stringify(retroactiveStages)))
         setIsRetroactiveEditing(false)
-        refetchRma()
+        await refetchRma()
       } else {
         showToast(res.error || "ไม่สามารถบันทึกข้อมูลย้อนหลังได้")
       }
@@ -1351,7 +1378,8 @@ export function OverseasView() {
                     const isPending = stage.status === "pending"
                     const isEditableStep = isCompleted || isActive
                     const hasDateError = Boolean(dateValidationErrors[stage.stageNumber])
-                    const isOverStandard = stage.actualDays > stage.standardDays
+                    const stageDuration = calculateStageDuration(stage)
+                    const isOverStandard = stageDuration.isOverStandard
 
                     return (
                       <div
@@ -1545,7 +1573,7 @@ export function OverseasView() {
                                     {isOverStandard && (
                                       <AlertTriangle className="size-3 mr-1 text-[#ea580c]" />
                                     )}
-                                    ({stage.actualDays} วัน)
+                                    {stageDuration.parenthesizedText}
                                   </span>
                                 </div>
                               ) : (
@@ -1563,7 +1591,7 @@ export function OverseasView() {
                               {/* Stage Standard / Penalty Warning Highlight */}
                               {isOverStandard && !hasDateError && (
                                 <div className="flex items-center gap-1 text-[10px] font-medium text-[#ea580c] animate-in fade-in">
-                                  <span>เกินมาตรฐาน {stage.actualDays - stage.standardDays} วัน</span>
+                                  <span>เกินมาตรฐาน {stageDuration.overdueDays} วัน</span>
                                   {stage.hasVendorPenalty && (
                                     <span className="font-bold underline decoration-orange-400">· เข้าเกณฑ์คิดบทปรับ</span>
                                   )}
@@ -1581,19 +1609,41 @@ export function OverseasView() {
                                   </span>
                                   <span
                                     className={
-                                      stage.actualDays > stage.standardDays
+                                      isOverStandard
                                         ? "font-bold text-[#ea580c]"
                                         : "text-slate-500"
                                     }
                                   >
-                                    ({stage.actualDays} วัน)
+                                    {stageDuration.parenthesizedText}
                                   </span>
+                                  {isOverStandard && (
+                                    <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#ea580c]">
+                                      <AlertTriangle className="size-2.5" />
+                                      <span>เกิน SLA +{stageDuration.overdueDays} วัน</span>
+                                    </span>
+                                  )}
                                 </div>
                               )}
                               {isActive && (
-                                <div className="text-slate-700 font-medium">
-                                  {stage.startDate ? formatDisplayDate(stage.startDate) : ""}{" "}
-                                  ({stage.actualDays} วัน)
+                                <div>
+                                  <span className="text-slate-700 font-medium">
+                                    {stage.startDate ? formatDisplayDate(stage.startDate) : ""}{" "}
+                                  </span>
+                                  <span
+                                    className={
+                                      isOverStandard
+                                        ? "font-bold text-[#ea580c]"
+                                        : "text-slate-700 font-medium"
+                                    }
+                                  >
+                                    {stageDuration.parenthesizedText}
+                                  </span>
+                                  {isOverStandard && (
+                                    <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#ea580c]">
+                                      <AlertTriangle className="size-2.5" />
+                                      <span>เกิน SLA +{stageDuration.overdueDays} วัน</span>
+                                    </span>
+                                  )}
                                 </div>
                               )}
                               {isPending && (
@@ -1678,7 +1728,7 @@ export function OverseasView() {
                      ========================================================================= */
                   <>
                     <p className="text-xs text-slate-600 font-medium leading-relaxed mb-3">
-                      ใช้ไปแล้ว {timelineItem.totalDays || `${totalRecomputedDays} วัน`} · แผนมาตรฐานรวม 60 วัน (ไม่ใช่วันครบกำหนด — กระบวนการจริงราว 2-3 เดือน)
+                      ใช้ไปแล้ว <span className="font-bold text-slate-900">{totalRecomputedDays} วัน</span> · แผนมาตรฐานรวม 60 วัน (ไม่ใช่วันครบกำหนด — กระบวนการจริงราว 2-3 เดือน)
                     </p>
 
                     <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3">

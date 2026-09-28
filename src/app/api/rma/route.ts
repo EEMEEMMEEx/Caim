@@ -237,11 +237,13 @@ export async function PUT(request: NextRequest) {
     }
 
     const nowIso = new Date().toISOString()
-    const setFields = { ...updates, updatedAt: nowIso }
-
-    // Update persistent disk
     const diskItems = getPersistentRma()
     const foundItem = diskItems.find((r) => r.id === id)
+    const mergedDoc = { ...(foundItem || {}), ...updates, id }
+    const enriched = enrichRma(mergedDoc as RmaDocument)
+    const setFields = { ...updates, ...enriched, updatedAt: nowIso }
+
+    // Update persistent disk
     if (foundItem) {
       savePersistentRma({ ...foundItem, ...setFields })
     }

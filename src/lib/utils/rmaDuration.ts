@@ -332,3 +332,82 @@ export function calculateRmaMetrics(
 
   return { total, penalty }
 }
+
+export interface StageDurationResult {
+  elapsedDays: number
+  isOverStandard: boolean
+  overdueDays: number
+  parenthesizedText: string
+  badgeText: string
+  textColor: string
+  badgeStyle: string
+}
+
+/**
+ * 4. Dynamic Stage Elapsed Days Calculation for Timeline Steps
+ * - Completed step: endDate - startDate
+ * - Active step: currentDate - stageStartDate
+ * - Automatic SLA highlight when actual duration > standardDays
+ */
+export function calculateStageDuration(
+  stage: {
+    startDate?: string | null
+    endDate?: string | null
+    status: "completed" | "active" | "pending"
+    standardDays?: number
+    actualDays?: number
+  },
+  currentDateInput: Date = new Date()
+): StageDurationResult {
+  const currentMidnight = toLocalMidnight(currentDateInput) || new Date()
+  let elapsedDays = 0
+
+  if (stage.status === "completed") {
+    const start = parseRmaCalendarDate(stage.startDate)
+    const end = parseRmaCalendarDate(stage.endDate)
+    if (start && end) {
+      const diffMs = end.getTime() - start.getTime()
+      elapsedDays = Math.max(0, Math.round(diffMs / 86400000))
+    } else {
+      elapsedDays = stage.actualDays || 0
+    }
+  } else if (stage.status === "active") {
+    const start = parseRmaCalendarDate(stage.startDate)
+    if (start) {
+      const diffMs = currentMidnight.getTime() - start.getTime()
+      elapsedDays = Math.max(0, Math.floor(diffMs / 86400000))
+    } else {
+      elapsedDays = stage.actualDays || 1
+    }
+  } else {
+    elapsedDays = 0
+  }
+
+  const standardDays = stage.standardDays || 0
+  const isOverStandard = standardDays > 0 && elapsedDays > standardDays
+  const overdueDays = isOverStandard ? elapsedDays - standardDays : 0
+
+  return {
+    elapsedDays,
+    isOverStandard,
+    overdueDays,
+    parenthesizedText: `(${elapsedDays} วัน)`,
+    badgeText: isOverStandard ? `เกินมาตรฐาน ${overdueDays} วัน` : `ตามเกณฑ์ (${elapsedDays}/${standardDays} วัน)`,
+    textColor: isOverStandard ? "text-[#ea580c] font-bold" : "text-slate-500",
+    badgeStyle: isOverStandard
+      ? "bg-orange-100 text-[#ea580c] border border-orange-200"
+      : "bg-slate-100 text-slate-700 border border-slate-200",
+  }
+}
+
+/**
+ * 5. Calculate Cumulative Duration Across All Steps
+ */
+export function calculateCumulativeStagesDays(
+  stages: Array<{ actualDays?: number; status?: string }>
+): number {
+  if (!Array.isArray(stages)) return 0
+  return stages
+    .filter((s) => s.status === "completed" || s.status === "active")
+    .reduce((sum, s) => sum + (Number(s.actualDays) || 0), 0)
+}

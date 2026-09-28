@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.4] - 2026-09-28
+
+### Added & Enhanced
+- **Dynamic Stage Elapsed Days & Reactive Summary Synchronization for Overseas RMA Timeline Modal**:
+  - **Dynamic Stage Elapsed Days (Parenthesized '(X วัน)')**:
+    - Implemented `calculateStageDuration` in `src/lib/utils/rmaDuration.ts`.
+    - Completed steps dynamically compute elapsed duration as `endDate - startDate` (e.g. `(1 วัน)`, `(5 วัน)`, `(6 วัน)`).
+    - Active steps (e.g. Stage 6 'จีน — เข้ากระบวนการซ่อม') dynamically compute live elapsed days from stage start timestamp up to current date/time (`currentDate - stageStartDate`).
+    - Automatically applies orange/red warning highlight (`font-bold text-[#ea580c]` with SLA overdue badge) when actual duration exceeds standard SLA days.
+  - **Bidirectional Recalculation on Manual Date Edits**:
+    - When timestamps are modified via 'แก้ไขที่รายขั้น (กรอกย้อนหลัง)', instantly recomputes the specific stage's elapsed days without lag.
+    - Immediately propagates and recalculates modal bottom cumulative counter (`calculateCumulativeStagesDays`, e.g. 'ใช้ไปแล้ว 82 วัน') based on updated intervals.
+  - **Outer Module Totals Synchronization (Parent Table & Dashboard)**:
+    - Saving stage adjustments immediately synchronizes the outer RMA table's columns—specifically 'รวม' (Total Days) and 'บทปรับผู้ขาย' (Vendor Penalty Days)—without requiring a full page refresh.
+    - Persists updated timestamps and recalculated metrics to database (`PUT /api/rma`) and disk storage.
+
 ## [0.22.3] - 2026-09-28
 
 ### Added & Fixed
