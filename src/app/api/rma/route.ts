@@ -9,10 +9,24 @@ import {
   deletePersistentRma,
   getPersistentDeletedRmaIds,
 } from "@/lib/storage/serverRmaStorage"
+import { calculateRmaMetrics } from "@/lib/utils/rmaDuration"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 export const fetchCache = "force-no-store"
+
+function enrichRma(doc: RmaDocument): RmaDocument {
+  const metrics = calculateRmaMetrics(doc)
+  return {
+    ...doc,
+    totalDays: metrics.total.text,
+    statusBadge: metrics.total.statusBadge,
+    statusBadgeText: metrics.total.statusBadgeText,
+    penaltyDays: metrics.penalty.penaltyDaysText,
+    penaltyStandard: metrics.penalty.penaltyStandardText,
+    isOverduePenalty: metrics.penalty.isOverdue,
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,10 +47,13 @@ export async function GET(request: NextRequest) {
             )
           }
           const item = await collection.findOne({ id })
-          return NextResponse.json({ success: true, rma: item }, { headers: NO_CACHE_HEADERS })
+          return NextResponse.json(
+            { success: true, rma: item ? enrichRma(item) : null },
+            { headers: NO_CACHE_HEADERS }
+          )
         }
         const list = await collection.find({}).sort({ createdAt: -1 }).toArray()
-        const filteredList = list.filter((r) => !deletedSet.has(r.id))
+        const filteredList = list.filter((r) => !deletedSet.has(r.id)).map(enrichRma)
         return NextResponse.json(
           {
             success: true,
@@ -58,14 +75,18 @@ export async function GET(request: NextRequest) {
         )
       }
       const found = diskRma.find((r) => r.id === id)
-      return NextResponse.json({ success: true, rma: found || null }, { headers: NO_CACHE_HEADERS })
+      return NextResponse.json(
+        { success: true, rma: found ? enrichRma(found) : null },
+        { headers: NO_CACHE_HEADERS }
+      )
     }
 
+    const enrichedDisk = diskRma.map(enrichRma)
     return NextResponse.json(
       {
         success: true,
         source: "persistent-disk",
-        items: diskRma,
+        items: enrichedDisk,
         deletedIds: persistentDeletedIds,
       },
       { headers: NO_CACHE_HEADERS }
@@ -92,6 +113,18 @@ export async function POST(request: NextRequest) {
     const ticketId = body.ticketId ? String(body.ticketId).trim() : undefined
     const nowIso = new Date().toISOString()
 
+    const rmaOpenDate = body.openDate || new Date().toLocaleDateString("th-TH")
+    const metrics = calculateRmaMetrics({
+      openDate: rmaOpenDate,
+      createdAt: nowIso,
+      currentStageNumber: body.currentStageNumber || 1,
+      status: body.status,
+      statusBadge: body.statusBadge || "in_progress",
+      stageWaitDays: body.stageWaitDays,
+      penaltyDays: body.penaltyDays,
+      stageHistory: body.stageHistory,
+    })
+
     const newRma: RmaDocument = {
       id: rmaId,
       rmaNo: body.rmaNo,
@@ -102,22 +135,22 @@ export async function POST(request: NextRequest) {
       model: body.model || "-",
       destination: body.destination || "ต่างประเทศ",
       status: body.status || "กำลังดำเนินการ",
-      statusBadge: body.statusBadge || "in_progress",
-      statusBadgeText: body.statusBadgeText || "กำลังดำเนินการ",
+      statusBadge: metrics.total.statusBadge,
+      statusBadgeText: metrics.total.statusBadgeText,
       currentStageNumber: body.currentStageNumber || 1,
       totalStages: body.totalStages || 8,
       currentStageName: body.currentStageName || "1. ระบบใบ RMA",
       stageWaitDays: body.stageWaitDays || "ค้างมา 0 วัน",
-      openDate: body.openDate || new Date().toLocaleDateString("th-TH"),
+      openDate: rmaOpenDate,
       sentDate: body.sentDate || new Date().toLocaleDateString("th-TH"),
       trackNo: body.trackNo || "-",
       carrier: body.carrier || "-",
       notes: body.notes || body.remarks || "",
       remarks: body.remarks || body.notes || "",
-      totalDays: body.totalDays || "0 วัน",
-      penaltyDays: body.penaltyDays || "0 วัน",
-      penaltyStandard: body.penaltyStandard || "จาก 14 วัน",
-      isOverduePenalty: Boolean(body.isOverduePenalty),
+      totalDays: metrics.total.text,
+      penaltyDays: metrics.penalty.penaltyDaysText,
+      penaltyStandard: metrics.penalty.penaltyStandardText,
+      isOverduePenalty: metrics.penalty.isOverdue,
       createdAt: nowIso,
       updatedAt: nowIso,
     }

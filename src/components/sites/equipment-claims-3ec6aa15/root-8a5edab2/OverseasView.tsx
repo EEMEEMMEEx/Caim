@@ -31,6 +31,7 @@ import { type Asset } from "./assetsData"
 import { saveRmaApi } from "@/lib/storage/recordStorage"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useRmaQuery, type RmaItem } from "@/hooks/useRmaQuery"
+import { calculateRmaMetrics } from "@/lib/utils/rmaDuration"
 
 interface ClaimCaseOption {
   id: string
@@ -686,8 +687,11 @@ export function OverseasView() {
       if (appliedFilters.vendor !== "all" && item.vendor !== appliedFilters.vendor) {
         return false
       }
-      if (appliedFilters.onlyOverdue && !item.isOverduePenalty) {
-        return false
+      if (appliedFilters.onlyOverdue) {
+        const metrics = calculateRmaMetrics(item)
+        if (!metrics.penalty.isOverdue) {
+          return false
+        }
       }
       return true
     })
@@ -751,6 +755,13 @@ export function OverseasView() {
       text: "กำลังดำเนินการ",
     }
 
+    const rmaOpenDate = newRmaForm.openDate.split(" ")[0] || "24 ก.ย. 2569"
+    const initialMetrics = calculateRmaMetrics({
+      openDate: rmaOpenDate,
+      statusBadge: badgeInfo.badge,
+      currentStageNumber: 1,
+    })
+
     const newItem: RmaItem = {
       id: String(Date.now()),
       rmaNo: generatedRmaNo,
@@ -762,13 +773,13 @@ export function OverseasView() {
       totalStages: 8,
       currentStageName: "1. ระบบใบ RMA",
       stageWaitDays: "ค้างมา 0 วัน",
-      openDate: newRmaForm.openDate.split(" ")[0] || "24 ก.ย. 2569",
-      totalDays: "0 วัน",
-      statusBadge: badgeInfo.badge,
-      statusBadgeText: badgeInfo.text,
-      penaltyDays: "0 วัน",
-      penaltyStandard: "จาก 14 วัน",
-      isOverduePenalty: false,
+      openDate: rmaOpenDate,
+      totalDays: initialMetrics.total.text,
+      statusBadge: initialMetrics.total.statusBadge,
+      statusBadgeText: initialMetrics.total.statusBadgeText,
+      penaltyDays: initialMetrics.penalty.penaltyDaysText,
+      penaltyStandard: initialMetrics.penalty.penaltyStandardText,
+      isOverduePenalty: initialMetrics.penalty.isOverdue,
     }
 
     // 1. Persist to Database API & Transaction Log, then refetch
@@ -1060,7 +1071,8 @@ export function OverseasView() {
                   </tr>
                 ) : (
                   filteredItems.map((item) => {
-                    const isOverdue = item.isOverduePenalty
+                    const metrics = calculateRmaMetrics(item)
+                    const isOverdue = metrics.penalty.isOverdue
 
                     return (
                       <tr
@@ -1101,7 +1113,7 @@ export function OverseasView() {
                                 color = "bg-emerald-500"
                               } else if (step === item.currentStageNumber) {
                                 color =
-                                  item.currentStageNumber === item.totalStages
+                                   item.currentStageNumber === item.totalStages
                                     ? "bg-emerald-500"
                                     : "bg-blue-600"
                               }
@@ -1134,15 +1146,15 @@ export function OverseasView() {
                         {/* รวม (Elapsed Days & Status Badge) */}
                         <td className="px-4 py-3.5 whitespace-nowrap">
                           <p className="text-slate-700 text-xs font-medium">
-                            {item.totalDays}
+                            {metrics.total.text}
                           </p>
-                          {item.statusBadge === "in_progress" ? (
+                          {metrics.total.statusBadge === "in_progress" ? (
                             <span className="mt-1 inline-block rounded-full border border-blue-200/60 bg-[#eff6ff] px-2 py-0.5 text-[10px] font-medium text-[#2563eb]">
-                              {item.statusBadgeText}
+                              {metrics.total.statusBadgeText}
                             </span>
                           ) : (
                             <span className="mt-1 inline-block rounded-full border border-emerald-200/60 bg-[#ecfdf5] px-2 py-0.5 text-[10px] font-medium text-[#059669]">
-                              {item.statusBadgeText}
+                              {metrics.total.statusBadgeText}
                             </span>
                           )}
                         </td>
@@ -1151,20 +1163,26 @@ export function OverseasView() {
                         <td className="px-4 py-3.5 whitespace-nowrap">
                           {isOverdue ? (
                             <div>
-                              <p className="font-bold text-[#dc2626] text-xs">
-                                {item.penaltyDays}
-                              </p>
+                              <div className="flex items-center gap-1.5">
+                                <p className="font-bold text-[#dc2626] text-xs">
+                                  {metrics.penalty.penaltyDaysText}
+                                </p>
+                                <span className="inline-flex items-center gap-0.5 rounded-md border border-red-200/80 bg-[#fee2e2]/70 px-1.5 py-0.5 text-[10px] font-medium text-[#dc2626]">
+                                  <AlertTriangle className="size-2.5" />
+                                  <span>เกินกำหนด</span>
+                                </span>
+                              </div>
                               <p className="text-[11px] text-slate-500 mt-0.5">
-                                {item.penaltyStandard}
+                                {metrics.penalty.penaltyStandardText}
                               </p>
                             </div>
                           ) : (
                             <div>
                               <p className="text-slate-700 text-xs font-medium">
-                                {item.penaltyDays}
+                                {metrics.penalty.penaltyDaysText}
                               </p>
                               <p className="text-[11px] text-slate-400 mt-0.5">
-                                {item.penaltyStandard}
+                                {metrics.penalty.penaltyStandardText}
                               </p>
                             </div>
                           )}

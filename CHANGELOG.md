@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.3] - 2026-09-28
+
+### Added & Fixed
+- **Dynamic Elapsed Total Days & Vendor Penalty Days Calculation for Overseas RMA Table ('รวม' & 'บทปรับผู้ขาย')**:
+  - **Dynamic Total Days Calculation ('รวม')**:
+    - Created dedicated calculation utility `src/lib/utils/rmaDuration.ts` implementing `calculateRmaTotalDays`.
+    - Computes elapsed days dynamically from RMA issue date (`openDate` / 'เปิดใบ') up to the current date (`Math.floor((currentDate - issueDate) / 86400000)`).
+    - Ensures active RMA cases (`statusBadge === "in_progress"` / 'กำลังดำเนินการ') increment daily in real time.
+    - Freezes total days at delivery/completion date when RMA shipment is completed (`statusBadge === "returned"` / 'ของกลับถึงแล้ว').
+  - **Vendor Penalty Days Calculation ('บทปรับผู้ขาย')**:
+    - Implemented `calculateRmaPenaltyDays` strictly counting elapsed penalty days starting when the case enters stage 6 ('จีน (เข้ากระบวนการซ่อม)' / `hasVendorPenalty: true`).
+    - Provides live elapsed penalty days against the 14-day vendor standard limit (`{elapsedPenaltyDays} วัน / จาก 14 วัน`).
+    - Automatically triggers overdue warning badges and deep red styling (`text-[#dc2626]`, `bg-[#fee2e2]/70` badge, and table row highlight) when exceeding 14 days (`เกิน X วัน`).
+    - Accurately freezes penalty duration upon stage 6 completion or overall case return.
+  - **Date Parser & Timezone Consistency**:
+    - Built `parseRmaCalendarDate` and `toLocalMidnight` supporting Gregorian (YYYY-MM-DD, ISO, YYYY-MM-DD HH:mm) and Thai Buddhist Era (BE >= 2400) formats.
+    - Completely eliminates timezone conversion drift and off-by-one errors during calendar day subtraction.
+  - **Full System Integration**:
+    - Integrated dynamic calculation into `OverseasView.tsx` table cells, filter handlers (`onlyOverduePenalty`), and `GET /api/rma` / `POST /api/rma` API endpoints.
+
 ## [0.22.2] - 2026-09-28
 
 ### Fixed
