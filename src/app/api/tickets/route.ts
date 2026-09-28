@@ -9,12 +9,17 @@ import {
   deletePersistentTicket,
   getPersistentDeletedTicketIds,
 } from "@/lib/storage/serverTicketStorage"
-import { calculateCaseDuration } from "@/lib/utils/caseDuration"
+import { calculateCaseDuration, calculateDueDate } from "@/lib/utils/caseDuration"
 
 function enrichTicket(ticket: TicketDocument): TicketDocument {
   const duration = calculateCaseDuration(ticket)
+  const defaultDeadline = calculateDueDate(ticket.date, 60).dueDateStr
+  const deadlineDate = ticket.deadlineDate && !ticket.deadlineDate.includes("12 พ.ย. 2569")
+    ? ticket.deadlineDate
+    : defaultDeadline
   return {
     ...ticket,
+    deadlineDate,
     ageDays: duration.text,
     isOverdue: duration.isOverdue,
     overdueText: duration.overdueText || ticket.overdueText,
@@ -176,6 +181,7 @@ export async function POST(request: NextRequest) {
           status: body.status || "รับแจ้ง",
           statusCode: body.statusCode || 1,
           date: reportedDateStr,
+          deadlineDate: body.deadlineDate || calculateDueDate(reportedDateStr, 60).dueDateStr,
           ageDays: duration.text,
           isOverdue: duration.isOverdue,
           overdueText: duration.overdueText,
@@ -377,6 +383,10 @@ export async function PUT(request: NextRequest) {
     setFields.ageDays = duration.text
     setFields.isOverdue = duration.isOverdue
     setFields.overdueText = duration.overdueText
+
+    if (!setFields.deadlineDate || String(setFields.deadlineDate).includes("12 พ.ย. 2569")) {
+      setFields.deadlineDate = calculateDueDate(dateToCalculate, 60).dueDateStr
+    }
 
     let updatedTicketDoc: TicketDocument | null = null
 

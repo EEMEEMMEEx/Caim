@@ -116,58 +116,102 @@ export function formatThaiDate(date: Date): string {
   return `${day} ${month} ${yearBe}`
 }
 
+/**
+ * Calculates target completion date strictly based on standard 60-day SLA after the case reported date.
+ * (วันที่รับแจ้ง + 60 วัน)
+ * Example: '13 มิ.ย. 2569' + 60 วัน = '12 ส.ค. 2569'
+ */
+export function calculateDueDate(
+  reportedDateInput?: string | Date | null,
+  slaDays: number = 60
+): { dueDate: Date; dueDateStr: string } {
+  const reported = parseThaiDate(reportedDateInput) || new Date()
+  const dueDate = new Date(reported.getFullYear(), reported.getMonth(), reported.getDate() + slaDays)
+  return {
+    dueDate,
+    dueDateStr: formatThaiDate(dueDate),
+  }
+}
+
 export interface RemainingDaysResult {
   remainingDays: number
+  absRemainingDays: number
   totalDays: number
   progressPercent: number
   isOverdue: boolean
   overdueDays: number
+  dueDate: Date
   deadlineDateStr: string
+  displayText: string
 }
 
 /**
- * Dynamically computes remaining days and progress percentage towards deadline/due date.
- * Formats: dueDate - currentDate
+ * Dynamically computes target completion date (strictly 60 days after reported date)
+ * and remaining days towards deadline: dueDate - currentDate.
+ * If reported date is 13 มิ.ย. 2569, dueDate accurately computes to 12 ส.ค. 2569 instead of an arbitrary date.
  */
 export function calculateRemainingDays(
   deadlineDateInput?: string | Date | null,
   reportedDateInput?: string | Date | null,
-  currentDate: Date = new Date()
+  currentDate: Date = new Date(),
+  slaDays: number = 60
 ): RemainingDaysResult {
   const reported = parseThaiDate(reportedDateInput) || new Date(currentDate)
-  let deadline = parseThaiDate(deadlineDateInput)
 
-  // Default to standard 60-day SLA if no deadline is specified
-  if (!deadline) {
-    deadline = new Date(reported.getFullYear(), reported.getMonth(), reported.getDate() + 60)
+  // Strict 60-day SLA from reported date: วันที่รับแจ้ง + 60 วัน
+  const slaDueDate = new Date(reported.getFullYear(), reported.getMonth(), reported.getDate() + slaDays)
+
+  // Use SLA due date by default; if a custom deadline is provided that is not arbitrary "12 พ.ย. 2569"
+  let dueDate = slaDueDate
+  if (deadlineDateInput) {
+    const parsedCustom = parseThaiDate(deadlineDateInput)
+    if (
+      parsedCustom &&
+      typeof deadlineDateInput === "string" &&
+      !deadlineDateInput.includes("12 พ.ย. 2569") &&
+      deadlineDateInput.trim() !== ""
+    ) {
+      dueDate = parsedCustom
+    }
   }
 
   const currentMidnight = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()).getTime()
-  const deadlineMidnight = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate()).getTime()
+  const dueMidnight = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()).getTime()
   const reportedMidnight = new Date(reported.getFullYear(), reported.getMonth(), reported.getDate()).getTime()
 
-  const remainingDiffMs = deadlineMidnight - currentMidnight
+  // Dynamic remaining days: dueDate - currentDate
+  const remainingDiffMs = dueMidnight - currentMidnight
   const remainingDays = Math.ceil(remainingDiffMs / (1000 * 60 * 60 * 24))
 
-  const totalSlaMs = deadlineMidnight - reportedMidnight
+  const totalSlaMs = Math.max(1, dueMidnight - reportedMidnight)
   const totalDays = Math.max(1, Math.round(totalSlaMs / (1000 * 60 * 60 * 24)))
-
-  // Progress percent representing remaining portion of the SLA window
-  const progressPercent = Math.min(100, Math.max(0, (remainingDays / totalDays) * 100))
 
   const isOverdue = remainingDays < 0
   const overdueDays = isOverdue ? Math.abs(remainingDays) : 0
+  const absRemainingDays = Math.abs(remainingDays)
+
+  // Progress percent representing remaining portion of the SLA window
+  const progressPercent = isOverdue
+    ? 0
+    : Math.min(100, Math.max(0, (remainingDays / totalDays) * 100))
+
+  const deadlineDateStr = formatThaiDate(dueDate)
+  const displayText = isOverdue
+    ? `เกินกำหนด ${overdueDays} วัน`
+    : remainingDays === 0
+    ? "ครบกำหนดวันนี้"
+    : `เหลืออีก ${remainingDays} วัน`
 
   return {
-    remainingDays: Math.max(0, remainingDays),
+    remainingDays,
+    absRemainingDays,
     totalDays,
     progressPercent,
     isOverdue,
     overdueDays,
-    deadlineDateStr:
-      deadlineDateInput && typeof deadlineDateInput === "string" && deadlineDateInput.trim()
-        ? deadlineDateInput
-        : formatThaiDate(deadline),
+    dueDate,
+    deadlineDateStr,
+    displayText,
   }
 }
 

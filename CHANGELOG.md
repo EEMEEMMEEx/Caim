@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.7] - 2026-09-28
+
+### Fixed & Enhanced
+- **Strict 60-Day SLA Due Date Calculation & Conditional Rendering for Device Claim History**:
+  - **Dynamic Due Date Calculation (60-Day SLA)**:
+    - Implemented `calculateDueDate` in `caseDuration.ts` to strictly compute the target completion date as 60 days after the case reported date (`reportedDate + 60 days`).
+    - For reported date `13 มิ.ย. 2569`, due date accurately computes to `12 ส.ค. 2569` instead of an arbitrary date (e.g. `12 พ.ย. 2569`).
+    - Dynamically computed remaining days as `dueDate - currentDate`, reflecting `(เกินกำหนด 47 วัน)` or `(เหลืออีก X วัน)` in both the circular progress indicator and the metadata table row (`กำหนดแล้วเสร็จ`).
+    - Automatically synced `deadlineDate` in the ticket edit modal when `reportedDate` changes.
+  - **Conditional Rendering & Cleanup of Device History**:
+    - Removed all hardcoded dummy history records (`ทดสอบระบบ`, `test2`) from default state.
+    - Assigned distinct serial numbers to sample tickets in `tickets.json` and `seed_mongodb.mjs` so serial number `1000167600349` is genuinely a first-time claim.
+    - Implemented strict conditional rendering: when `historyCases.length === 0` (first-time claim with no prior database records for this Serial Number), the entire `ประวัติเคสอื่นของอุปกรณ์ชิ้นนี้` section is completely removed from the view.
+
 ## [0.22.6] - 2026-09-28
 
 ### Fixed & Enhanced

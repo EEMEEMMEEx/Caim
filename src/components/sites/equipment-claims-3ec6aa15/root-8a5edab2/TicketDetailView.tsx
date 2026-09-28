@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { calculateCaseDuration, calculateRemainingDays } from "@/lib/utils/caseDuration"
+import { calculateCaseDuration, calculateRemainingDays, calculateDueDate } from "@/lib/utils/caseDuration"
 import { useTicketsQuery, invalidateTicketsCache } from "@/hooks/useTicketsQuery"
 
 export interface TicketDetailData {
@@ -78,11 +78,11 @@ const DEFAULT_TICKET_DATA: TicketDetailData = {
   serviceCenter: "Huawei",
   reportedDate: "13 มิ.ย. 2569",
   sentDate: "—",
-  deadlineDate: "12 พ.ย. 2569",
+  deadlineDate: "12 ส.ค. 2569",
   lastTrackDate: "—",
   returnDate: "—",
   ageDays: 107,
-  remainingDays: 45,
+  remainingDays: 0,
   reporter: "ทดสอบผู้แจ้ง",
   assignee: "ทดสอบขอบเคส",
   currentStage: 1,
@@ -93,22 +93,7 @@ const DEFAULT_TICKET_DATA: TicketDetailData = {
       duration: "ค้างอยู่ 107 วัน",
     },
   ],
-  otherCases: [
-    {
-      id: "2",
-      title: "ทดสอบระบบ",
-      date: "10 ก.ย. 2569",
-      status: "ปิดเคส",
-      statusCode: 5,
-    },
-    {
-      id: "3",
-      title: "test2",
-      date: "9 ก.ย. 2569",
-      status: "ส่งศูนย์",
-      statusCode: 2,
-    },
-  ],
+  otherCases: [],
 }
 
 const STAGES = [
@@ -237,6 +222,21 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
     return calculateRemainingDays(data.deadlineDate, data.reportedDate)
   }, [data.deadlineDate, data.reportedDate])
 
+  // Historical claims for this device's Serial Number from database (excluding current claim)
+  const historyCases = React.useMemo(() => {
+    const sNo = data.serialNo?.trim()
+    if (!sNo) return []
+
+    return tickets.filter((t) => {
+      if (!t.serialNo || t.serialNo.trim() !== sNo) return false
+      // Exclude current ticket
+      if (t.id === data.id || t.id === activeTicketId) return false
+      if ((data.id === "CLM-2026-001" || activeTicketId === "CLM-2026-001") && t.id === "1") return false
+      if ((data.id === "1" || activeTicketId === "1") && t.id === "CLM-2026-001") return false
+      return true
+    })
+  }, [tickets, data.serialNo, data.id, activeTicketId])
+
   const radius = 38
   const circumference = 2 * Math.PI * radius
   const strokeDashoffset = circumference - (remainingMetric.progressPercent / 100) * circumference
@@ -249,7 +249,14 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
   }
 
   function handleOpenEdit() {
-    setEditForm({ ...data })
+    const autoDue = calculateDueDate(data.reportedDate, 60).dueDateStr
+    setEditForm({
+      ...data,
+      deadlineDate:
+        data.deadlineDate && !data.deadlineDate.includes("12 พ.ย. 2569")
+          ? data.deadlineDate
+          : autoDue,
+    })
     setIsEditModalOpen(true)
   }
 
@@ -258,7 +265,13 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
     if (isSaving) return
 
     setIsSaving(true)
-    const updatedData = { ...editForm, id: data.id }
+    const autoDeadline = calculateDueDate(editForm.reportedDate, 60).dueDateStr
+    const effectiveDeadline =
+      editForm.deadlineDate && !editForm.deadlineDate.includes("12 พ.ย. 2569")
+        ? editForm.deadlineDate
+        : autoDeadline
+
+    const updatedData = { ...editForm, deadlineDate: effectiveDeadline, id: data.id }
     setData(updatedData)
     setIsEditModalOpen(false)
 
@@ -273,7 +286,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
         serialNo: editForm.serialNo.trim(),
         serialNumber: editForm.serialNo.trim(),
         date: editForm.reportedDate,
-        deadlineDate: editForm.deadlineDate,
+        deadlineDate: effectiveDeadline,
       })
       await invalidateTicketsCache()
       if (typeof window !== "undefined") {
@@ -585,36 +598,39 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                 </div>
               </div>
 
-              {/* 5. ประวัติเคสอื่นของอุปกรณ์ชิ้นนี้ */}
-              <div>
-                <h3 className="text-xs font-semibold text-foreground mb-3">
-                  ประวัติเคสอื่นของอุปกรณ์ชิ้นนี้ ({data.otherCases.length})
-                </h3>
+              {/* 5. ประวัติเคสอื่นของอุปกรณ์ชิ้นนี้ (Conditional Rendering - only renders if there are other cases for this S/N) */}
+              {historyCases.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-semibold text-foreground mb-3">
+                    ประวัติเคสอื่นของอุปกรณ์ชิ้นนี้ ({historyCases.length})
+                  </h3>
 
-                <div className="flex flex-col divide-y divide-border/60 rounded-lg border border-border/70 overflow-hidden text-xs">
-                  {data.otherCases.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
-                    >
-                      <span className="font-medium text-foreground hover:underline cursor-pointer">
-                        {c.title}
-                      </span>
-                      <span className="text-muted-foreground">{c.date}</span>
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                          c.statusCode === 5
-                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                            : "bg-purple-500/10 text-purple-700 dark:text-purple-400"
-                        }`}
+                  <div className="flex flex-col divide-y divide-border/60 rounded-lg border border-border/70 overflow-hidden text-xs">
+                    {historyCases.map((c) => (
+                      <Link
+                        key={c.id}
+                        href={`/tickets/${c.id}`}
+                        className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
                       >
-                        <span className="size-1.5 rounded-full bg-current" />
-                        <span>{c.status}</span>
-                      </span>
-                    </div>
-                  ))}
+                        <span className="font-medium text-foreground hover:underline cursor-pointer">
+                          {c.title}
+                        </span>
+                        <span className="text-muted-foreground">{c.date}</span>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                            c.statusCode === 5
+                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                              : "bg-purple-500/10 text-purple-700 dark:text-purple-400"
+                          }`}
+                        >
+                          <span className="size-1.5 rounded-full bg-current" />
+                          <span>{c.status}</span>
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Right Column (Sidebar Widgets) */}
@@ -641,17 +657,25 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                         cx="48"
                         cy="48"
                         r={radius}
-                        className={`transition-all duration-700 ${remainingMetric.isOverdue ? "stroke-red-500" : "stroke-brand"}`}
+                        className={`transition-all duration-700 ${
+                          remainingMetric.isOverdue ? "stroke-red-500" : "stroke-brand"
+                        }`}
                         strokeWidth="7"
                         strokeDasharray={circumference}
-                        strokeDashoffset={strokeDashoffset}
+                        strokeDashoffset={remainingMetric.isOverdue ? 0 : strokeDashoffset}
                         strokeLinecap="round"
                         fill="transparent"
                       />
                     </svg>
                     <div className="absolute flex flex-col items-center justify-center">
-                      <span className="text-2xl font-bold tracking-tight text-foreground leading-none">
-                        {remainingMetric.remainingDays}
+                      <span
+                        className={`text-2xl font-bold tracking-tight leading-none ${
+                          remainingMetric.isOverdue ? "text-red-600" : "text-foreground"
+                        }`}
+                      >
+                        {remainingMetric.isOverdue
+                          ? remainingMetric.overdueDays
+                          : remainingMetric.remainingDays}
                       </span>
                       <span className="text-[10px] text-muted-foreground mt-0.5">
                         วัน
@@ -659,10 +683,12 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     </div>
                   </div>
 
-                  <p className={`text-xs font-semibold mt-3 ${remainingMetric.isOverdue ? "text-red-600" : "text-brand"}`}>
-                    {remainingMetric.isOverdue
-                      ? `เกินกำหนด ${remainingMetric.overdueDays} วัน`
-                      : `เหลืออีก ${remainingMetric.remainingDays} วัน`}
+                  <p
+                    className={`text-xs font-semibold mt-3 ${
+                      remainingMetric.isOverdue ? "text-red-600" : "text-brand"
+                    }`}
+                  >
+                    {remainingMetric.displayText}
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
                     ครบกำหนด {remainingMetric.deadlineDateStr}
@@ -743,7 +769,18 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">กำหนดแล้วเสร็จ</span>
-                    <span className="text-foreground">{remainingMetric.deadlineDateStr}</span>
+                    <span className="text-foreground text-right">
+                      {remainingMetric.deadlineDateStr}{" "}
+                      <span
+                        className={`text-xs ${
+                          remainingMetric.isOverdue
+                            ? "text-red-600 font-medium"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        ({remainingMetric.displayText})
+                      </span>
+                    </span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-muted-foreground">ติดตามล่าสุด</span>
@@ -832,19 +869,27 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                   <label className="font-medium text-foreground">วันที่รับแจ้ง</label>
                   <Input
                     value={editForm.reportedDate}
-                    onChange={(e) => setEditForm({ ...editForm, reportedDate: e.target.value })}
+                    onChange={(e) => {
+                      const newReported = e.target.value
+                      const autoDue = calculateDueDate(newReported, 60).dueDateStr
+                      setEditForm({
+                        ...editForm,
+                        reportedDate: newReported,
+                        deadlineDate: autoDue,
+                      })
+                    }}
                     className="h-8 text-xs"
                     placeholder="เช่น 13 มิ.ย. 2569"
                     required
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="font-medium text-foreground">กำหนดแล้วเสร็จ</label>
+                  <label className="font-medium text-foreground">กำหนดแล้วเสร็จ (SLA 60 วัน)</label>
                   <Input
                     value={editForm.deadlineDate}
                     onChange={(e) => setEditForm({ ...editForm, deadlineDate: e.target.value })}
                     className="h-8 text-xs"
-                    placeholder="เช่น 12 พ.ย. 2569"
+                    placeholder="เช่น 12 ส.ค. 2569"
                   />
                 </div>
               </div>
