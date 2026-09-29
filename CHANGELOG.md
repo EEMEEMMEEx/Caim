@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.2] - 2026-09-29
+
+### Removed
+- **Landing Page Highlighted Widgets & Telemetry Card (`ProcessClaimPortalLanding.tsx`)**:
+  - Completely removed the right-side floating telemetry widget card (`SHF Telemetry System`) and hardware network metrics.
+  - Removed the top-right online status / version badge pill (`ระบบออนไลน์ • โครงข่าย SHF v0.29.1`) from the header.
+  - Removed the bottom-right version pill tag and adjacent footer system labels.
+- **Background Imagery Asset**:
+  - Removed telecommunication infrastructure and city background image (`IMG_8154_enhanced_2x.webp`) and multilayered image maskings.
+
+### Changed
+- **Streamlined Dark Gradient Canvas & Refocused Hero Layout**:
+  - Established a clean, deep slate/navy canvas (`#070d18`) with soft ambient radial glows (cyan, indigo, blue) and subtle dot grid mesh behind the hero typography.
+  - Refocused and centered the hero section (`max-w-4xl`) with balanced typography, primary CTA trigger ("เข้าสู่ระบบงาน →"), and translucent feature badges.
+
 ## [0.29.1] - 2026-09-29
 
 ### Fixed
