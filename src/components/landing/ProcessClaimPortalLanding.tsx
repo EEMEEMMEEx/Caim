@@ -13,7 +13,7 @@ import {
   CheckCircle2,
 } from "lucide-react"
 import { ProcessClaimLogoMark } from "@/components/brand/ProcessClaimLogo"
-import { initDefaultSession, DEFAULT_USER_SESSION } from "@/lib/session"
+import { initDefaultSession } from "@/lib/session"
 import packageInfo from "../../../package.json"
 
 export function ProcessClaimPortalLanding() {
@@ -25,12 +25,8 @@ export function ProcessClaimPortalLanding() {
   const handleEnterPortal = React.useCallback(async () => {
     setIsPending(true)
 
-    // Initialize default active session state
-    initDefaultSession({
-      username: "indykantanat",
-      email: "indykantanat@gmail.com",
-      role: "เจ้าหน้าที่บริหารงานเคลม",
-    })
+    // Silently auto-initialize default staff session in the background
+    initDefaultSession()
 
     // Immediate seamless transition to dashboard
     router.push(next || "/dashboard")
@@ -156,13 +152,13 @@ export function ProcessClaimPortalLanding() {
             </p>
 
             {/* CTA Action Area */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full pt-2">
+            <div className="flex items-center w-full pt-2">
               {/* Primary CTA Button */}
               <button
                 type="button"
                 disabled={isPending}
                 onClick={handleEnterPortal}
-                className="group relative inline-flex h-12 sm:h-13 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-7 text-sm sm:text-base font-semibold text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+                className="group relative inline-flex h-12 sm:h-13 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-8 text-sm sm:text-base font-semibold text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
               >
                 {isPending ? (
                   <>
@@ -176,21 +172,6 @@ export function ProcessClaimPortalLanding() {
                   </>
                 )}
               </button>
-
-              {/* Active Profile Pill */}
-              <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-slate-900/60 px-3.5 py-2 backdrop-blur-md">
-                <span className="flex size-7.5 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-xs">
-                  in
-                </span>
-                <div className="flex flex-col leading-tight text-xs">
-                  <span className="font-semibold text-slate-200">
-                    {DEFAULT_USER_SESSION.username}
-                  </span>
-                  <span className="text-[11px] text-slate-400">
-                    {DEFAULT_USER_SESSION.role}
-                  </span>
-                </div>
-              </div>
             </div>
 
             {/* Feature Badges (Translucent glassmorphic pills) */}

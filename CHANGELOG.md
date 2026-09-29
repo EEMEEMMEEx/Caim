@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0] - 2026-09-29
+
+### Removed
+- **Decommissioned Legacy `/login` Route & Authentication UI**:
+  - Deleted `/login` page route and its associated legacy `LoginForm.tsx` container.
+  - Stripped out all displayed credential hints, account labels, and hardcoded User IDs/emails across the portal.
+  - Added permanent redirect in `next.config.ts` routing `/login` directly to root (`/`).
+  - Updated `AppShell.tsx` logout handler to navigate directly to root (`/`) rather than `/login`.
+
+### Changed
+- **Clean Root Landing Page (`/`)**:
+  - Established the high-tech dark 'PROCESS CLAIM PORTAL' as the dedicated primary presentation landing page at root (`/`).
+  - Removed all user profile pills and credential metadata from the hero landing screen for a clean, presentation-focused UI.
+  - Configured one-click entry CTA ("เข้าสู่ระบบงาน →") to silently auto-initialize a default staff session in the background and navigate directly to `/dashboard`.
+
 ## [0.28.0] - 2026-09-29
 
 ### Added

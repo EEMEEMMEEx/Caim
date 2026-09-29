@@ -126,7 +126,7 @@ export function AppShell({ children }: AppShellProps) {
 
   const handleLogout = React.useCallback(() => {
     clearSession()
-    router.push("/login")
+    router.push("/")
   }, [router])
 
   return (
@@ -236,13 +236,13 @@ export function AppShell({ children }: AppShellProps) {
                 onClick={() => setUserDropdownOpen((v) => !v)}
                 className="flex items-center gap-2.5 rounded-xl p-1.5 text-left w-full hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border border-slate-200/60 dark:border-white/10 bg-slate-50/60 dark:bg-[#0f172a]/90 transition-all duration-150 active:scale-[0.98]"
               >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-800 text-xs font-semibold text-white ring-1 ring-white/10 shadow-xs">
-                  in
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs font-bold text-white ring-1 ring-white/10 shadow-xs">
+                  PC
                 </span>
                 {sidebarOpen && (
                   <div className="flex min-w-0 flex-col leading-tight">
                     <span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
-                      {session.username}
+                      {session.name || session.username}
                     </span>
                     <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       <span>{session.role}</span>
@@ -257,8 +257,8 @@ export function AppShell({ children }: AppShellProps) {
             {userDropdownOpen && (
               <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] p-1.5 shadow-xl animate-in fade-in zoom-in-95">
                 <div className="px-3 py-2 text-xs border-b border-slate-100 dark:border-white/10">
-                  <p className="font-semibold text-slate-800 dark:text-slate-200">{session.email}</p>
-                  <p className="text-slate-500 dark:text-slate-400 mt-0.5">สถานะ: เข้าสู่ระบบแล้ว</p>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">{session.name || session.username}</p>
+                  <p className="text-slate-500 dark:text-slate-400 mt-0.5">{session.role} · {session.department}</p>
                 </div>
                 <button
                   type="button"

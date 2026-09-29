@@ -14,13 +14,13 @@ export interface UserSession {
 }
 
 export const DEFAULT_USER_SESSION: UserSession = {
-  username: "indykantanat",
-  name: "indykantanat",
-  email: "indykantanat@gmail.com",
+  username: "staff_operator",
+  name: "เจ้าหน้าที่ปฏิบัติการ",
+  email: "support@processclaim.internal",
   role: "เจ้าหน้าที่บริหารงานเคลม",
   department: "ฝ่ายสนับสนุนโครงข่ายวิทยุสื่อสาร SHF",
   status: "active",
-  loginTime: "2026-09-29T13:00:00.000Z",
+  loginTime: "2026-09-29T14:00:00.000Z",
 }
 
 export const SESSION_STORAGE_KEY = "caim_user_session"
