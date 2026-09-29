@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { IBM_Plex_Sans, Sarabun } from "next/font/google"
+import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -61,7 +62,11 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full font-sans antialiased">{children}</body>
+      <body className="min-h-full font-sans antialiased">
+        <ThemeProvider defaultTheme="system" storageKey="theme">
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   )
 }

@@ -934,27 +934,27 @@ export function OverseasView() {
         {/* =========================================================================
             2. FILTER & SEARCH PANEL
            ========================================================================= */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6">
+        <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs p-5 shadow-card sm:p-6 transition-all duration-300">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {/* ค้นหา */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">ค้นหา</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">ค้นหา</label>
               <Input
                 placeholder="เลขใบ RMA, เลขที่เคส, S/N, ยี่ห้อ.."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 rounded-lg border-slate-200 bg-white text-xs text-slate-700 placeholder:text-slate-400 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
+                className="h-9 rounded-lg border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
 
             {/* ขั้นตอน */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">ขั้นตอน</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">ขั้นตอน</label>
               <div className="relative">
                 <select
                   value={stageFilter}
                   onChange={(e) => setStageFilter(e.target.value)}
-                  className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                  className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="all">ทุกขั้นตอน</option>
                   <option value="1">1. ระบบใบ RMA</option>
@@ -966,41 +966,41 @@ export function OverseasView() {
                   <option value="7">7. ส่งกลับเครื่องบิน</option>
                   <option value="8">8. เคลียร์ศุลกากร</option>
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               </div>
             </div>
 
             {/* สถานะใบ */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">สถานะใบ</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">สถานะใบ</label>
               <div className="relative">
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                  className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="all">ทุกสถานะ</option>
                   <option value="in_progress">กำลังดำเนินการ</option>
                   <option value="returned">ของกลับถึงแล้ว</option>
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               </div>
             </div>
 
             {/* ศูนย์บริการ */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">ศูนย์บริการ</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">ศูนย์บริการ</label>
               <div className="relative">
                 <select
                   value={vendorFilter}
                   onChange={(e) => setVendorFilter(e.target.value)}
-                  className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                  className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="all">ทุกศูนย์บริการ</option>
                   <option value="Huawei">Huawei</option>
                   <option value="Hytera">Hytera</option>
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               </div>
             </div>
 
@@ -1011,8 +1011,8 @@ export function OverseasView() {
                 onClick={() => setOnlyOverduePenalty((v) => !v)}
                 className={`flex h-9 items-center justify-center rounded-lg border text-xs font-normal transition-all cursor-pointer ${
                   onlyOverduePenalty
-                    ? "border-red-400 bg-red-50 text-red-700 shadow-2xs"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    ? "border-red-400 dark:border-rose-500/40 bg-red-50 dark:bg-rose-950/40 text-red-700 dark:text-rose-300 shadow-2xs"
+                    : "border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
                 <span>เฉพาะที่เกินบทปรับ</span>
@@ -1025,15 +1025,15 @@ export function OverseasView() {
             <button
               type="button"
               onClick={handleResetFilters}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 cursor-pointer"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3.5 text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer shadow-2xs"
             >
-              <RotateCcw className="size-3.5 text-slate-500" />
+              <RotateCcw className="size-3.5 text-slate-500 dark:text-slate-400" />
               <span>ล้างตัวกรอง</span>
             </button>
             <button
               type="button"
               onClick={handleSearch}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0c1a30] px-4.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-[#1e293b] cursor-pointer"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0c1a30] dark:bg-blue-600 px-4.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-[#1e293b] dark:hover:bg-blue-500 cursor-pointer"
             >
               <Search className="size-3.5" />
               <span>ค้นหา</span>
@@ -1044,10 +1044,10 @@ export function OverseasView() {
         {/* =========================================================================
             3. RMA DATA TABLE & SEGMENTED PROGRESS BARS
            ========================================================================= */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
+        <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-200/80 bg-white text-slate-600">
+              <thead className="border-b border-slate-200/70 dark:border-white/10 bg-slate-50/90 dark:bg-[#0f172a] text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5 font-medium">ใบ RMA / เคส</th>
                   <th className="px-4 py-3.5 font-medium">อุปกรณ์</th>
@@ -1058,7 +1058,7 @@ export function OverseasView() {
                   <th className="px-4 py-3.5 text-right font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100/90 dark:divide-white/10">
                 {filteredItems.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-14 text-center">
@@ -1256,18 +1256,18 @@ export function OverseasView() {
           </div>
 
           {/* Pagination & Footer */}
-          <div className="flex flex-col gap-3 border-t border-slate-200/80 bg-white px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-600">
+          <div className="flex flex-col gap-3 border-t border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-600 dark:text-slate-400">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <button
                   type="button"
-                  className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer"
+                  className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-2.5 text-xs text-slate-700 dark:text-slate-200 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   <span>แถวต่อหน้า 20</span>
-                  <ChevronDown className="size-3.5 text-slate-400" />
+                  <ChevronDown className="size-3.5 text-slate-400 dark:text-slate-500" />
                 </button>
               </div>
-              <span className="text-slate-500">
+              <span className="text-slate-500 dark:text-slate-400">
                 แสดง 1–{filteredItems.length} จาก {filteredItems.length} ใบ
               </span>
             </div>
@@ -1276,13 +1276,13 @@ export function OverseasView() {
               <button
                 type="button"
                 disabled
-                className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-xs text-slate-400 cursor-not-allowed"
+                className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 px-2.5 text-xs text-slate-400 dark:text-slate-600 cursor-not-allowed"
               >
                 <ChevronLeft className="size-3.5" />
                 <span>ก่อนหน้า</span>
               </button>
 
-              <span className="px-2 text-xs font-normal text-slate-700">
+              <span className="px-2 text-xs font-normal text-slate-700 dark:text-slate-300">
                 หน้า 1/1
               </span>
 
@@ -1309,11 +1309,11 @@ export function OverseasView() {
             aria-modal="true"
           >
             <div
-              className="relative w-full max-w-xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-xl rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#1e293b] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="flex items-start justify-between border-b border-slate-200/80 px-6 py-4 bg-white">
+              <div className="flex items-start justify-between border-b border-slate-200/80 dark:border-white/10 px-6 py-4 bg-white dark:bg-[#0f172a]">
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-bold text-slate-900">
@@ -1810,7 +1810,7 @@ export function OverseasView() {
             aria-modal="true"
           >
             <div
-              className="relative w-full max-w-xl rounded-2xl border border-slate-200 bg-white shadow-2xl p-6 animate-in zoom-in-95 duration-150"
+              className="relative w-full max-w-xl rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#1e293b] shadow-2xl p-6 animate-in zoom-in-95 duration-150"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
@@ -2034,10 +2034,10 @@ export function OverseasView() {
             aria-modal="true"
           >
             <div
-              className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden p-6 animate-in zoom-in-95 duration-150"
+              className="relative w-full max-w-md rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#1e293b] shadow-2xl overflow-hidden p-6 animate-in zoom-in-95 duration-150"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
                 <h3 className="text-sm font-bold text-slate-900">
                   แก้ไขข้อมูลใบส่งซ่อม ({editingItem.rmaNo})
                 </h3>
@@ -2137,7 +2137,7 @@ export function OverseasView() {
               className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
               onClick={() => !isDeleting && setItemToDelete(null)}
             />
-            <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl transition-all z-10 animate-in fade-in zoom-in-95">
+            <div className="relative w-full max-w-md rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#1e293b] p-6 shadow-2xl transition-all z-10 animate-in fade-in zoom-in-95">
               <div className="flex items-start gap-3.5">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
                   <Trash2 className="size-5 text-red-600" />

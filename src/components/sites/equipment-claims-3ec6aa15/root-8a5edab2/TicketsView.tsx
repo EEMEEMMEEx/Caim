@@ -52,9 +52,9 @@ const TicketTableRow = React.memo(function TicketTableRow({
     <tr
       className={`transition-colors duration-150 ${
         isOverdue
-          ? "bg-rose-50/40 hover:bg-rose-50/70"
-          : "hover:bg-slate-50/80"
-      } ${isSelected ? "bg-blue-50/50" : ""}`}
+          ? "bg-rose-50/40 dark:bg-rose-950/20 hover:bg-rose-50/70 dark:hover:bg-rose-950/30"
+          : "hover:bg-slate-50/80 dark:hover:bg-slate-800/60"
+      } ${isSelected ? "bg-blue-50/50 dark:bg-blue-950/40" : ""}`}
     >
       {/* Checkbox */}
       <td className="px-4 py-3.5 text-center">
@@ -62,25 +62,25 @@ const TicketTableRow = React.memo(function TicketTableRow({
           type="checkbox"
           checked={isSelected}
           onChange={() => onToggleSelect(item.id)}
-          className="size-4 rounded border-slate-300 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
+          className="size-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
           aria-label={`เลือกเคส ${item.title}`}
         />
       </td>
 
       {/* เคส (Title & Description) */}
       <td className="px-4 py-3.5">
-        <p className="font-bold text-slate-800 text-xs">
+        <p className="font-bold text-slate-800 dark:text-slate-100 text-xs">
           {item.title}
         </p>
-        <p className="text-[11px] text-slate-500 mt-0.5 max-w-xs truncate">
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 max-w-xs truncate">
           {item.problemDesc}
         </p>
         {item.station && (
-          <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-600">
-            <MapPin className="size-3 text-slate-400 shrink-0" />
-            <span className="font-medium text-slate-700">{item.station}</span>
+          <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-400">
+            <MapPin className="size-3 text-slate-400 dark:text-slate-500 shrink-0" />
+            <span className="font-medium text-slate-700 dark:text-slate-300">{item.station}</span>
             {(item.district || item.province) && (
-              <span className="text-slate-400">
+              <span className="text-slate-400 dark:text-slate-500">
                 ({[item.district && `อ.${item.district}`, item.province && `จ.${item.province}`].filter(Boolean).join(", ")})
               </span>
             )}
@@ -91,14 +91,14 @@ const TicketTableRow = React.memo(function TicketTableRow({
       {/* อุปกรณ์ (Chip Icon & S/N) */}
       <td className="px-4 py-3.5">
         <div className="flex items-start gap-2.5">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-slate-100/80 text-slate-600 border border-slate-200/50 shadow-2xs">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-slate-100/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-white/10 shadow-2xs">
             <Cpu className="size-3.5" />
           </span>
           <div className="leading-tight">
-            <p className="text-xs font-medium text-slate-800">
+            <p className="text-xs font-medium text-slate-800 dark:text-slate-100">
               {item.vendor} / {item.model}
             </p>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+            <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
               S/N {item.serialNo}
             </p>
           </div>
@@ -108,43 +108,43 @@ const TicketTableRow = React.memo(function TicketTableRow({
       {/* สถานะ (Status Pill Badges with Pastel Background & Ring) */}
       <td className="px-4 py-3.5 whitespace-nowrap">
         {item.statusCode === 1 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-600/20 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-600/20 dark:ring-emerald-500/30 shadow-2xs">
             <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span>รับแจ้ง</span>
           </span>
         )}
         {item.statusCode === 2 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-medium text-purple-700 ring-1 ring-purple-600/20 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 dark:bg-purple-950/50 px-2.5 py-0.5 text-[11px] font-medium text-purple-700 dark:text-purple-300 ring-1 ring-purple-600/20 dark:ring-purple-500/30 shadow-2xs">
             <span className="size-1.5 rounded-full bg-purple-500" />
             <span>ส่งศูนย์</span>
           </span>
         )}
         {item.statusCode === 3 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-700 ring-1 ring-amber-600/20 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 px-2.5 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300 ring-1 ring-amber-600/20 dark:ring-amber-500/30 shadow-2xs">
             <span className="size-1.5 rounded-full bg-amber-500" />
             <span>รออะไหล่</span>
           </span>
         )}
         {item.statusCode === 4 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 ring-1 ring-blue-600/20 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 dark:text-blue-300 ring-1 ring-blue-600/20 dark:ring-blue-500/30 shadow-2xs">
             <span className="size-1.5 rounded-full bg-blue-500" />
             <span>ซ่อมเสร็จ</span>
           </span>
         )}
         {item.statusCode === 5 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-600/15 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 ring-1 ring-slate-600/15 dark:ring-white/10 shadow-2xs">
             <span className="size-1.5 rounded-full bg-slate-500" />
             <span>ปิดเคส</span>
           </span>
         )}
         {item.statusCode === 6 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700 ring-1 ring-rose-600/20 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700 dark:text-rose-300 ring-1 ring-rose-600/20 dark:ring-rose-500/30 shadow-2xs">
             <span className="size-1.5 rounded-full bg-rose-500" />
             <span>ปฏิเสธเคลม</span>
           </span>
         )}
         {(!item.statusCode || item.statusCode < 1 || item.statusCode > 6) && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-600/15 shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 ring-1 ring-slate-600/15 dark:ring-white/10 shadow-2xs">
             <span className="size-1.5 rounded-full bg-slate-500" />
             <span>{item.status || "รับแจ้ง"}</span>
           </span>
@@ -152,7 +152,7 @@ const TicketTableRow = React.memo(function TicketTableRow({
       </td>
 
       {/* รับแจ้ง (Date) */}
-      <td className="px-4 py-3.5 text-slate-600 whitespace-nowrap">
+      <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap">
         {formatDisplayThaiDate(item.date)}
       </td>
 
@@ -160,16 +160,16 @@ const TicketTableRow = React.memo(function TicketTableRow({
       <td className="px-4 py-3.5 whitespace-nowrap">
         {isOverdue ? (
           <div className="leading-tight">
-            <p className="font-bold text-rose-600">
+            <p className="font-bold text-rose-600 dark:text-rose-400">
               {duration.text}
             </p>
-            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700 ring-1 ring-rose-600/20 shadow-2xs">
+            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-rose-50 dark:bg-rose-950/50 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:text-rose-300 ring-1 ring-rose-600/20 dark:ring-rose-500/30 shadow-2xs">
               <AlertTriangle className="size-2.5" />
               <span>{duration.overdueText}</span>
             </span>
           </div>
         ) : (
-          <span className="text-slate-600">{duration.text}</span>
+          <span className="text-slate-600 dark:text-slate-300">{duration.text}</span>
         )}
       </td>
 
@@ -179,7 +179,7 @@ const TicketTableRow = React.memo(function TicketTableRow({
           <button
             type="button"
             onClick={() => onView(item)}
-            className="px-2 py-1 rounded-md text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 active:scale-95 transition-all"
+            className="px-2 py-1 rounded-md text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/50 active:scale-95 transition-all"
             aria-label={`ดูรายละเอียดเคส ${item.title}`}
           >
             ดู
@@ -187,7 +187,7 @@ const TicketTableRow = React.memo(function TicketTableRow({
           <button
             type="button"
             onClick={() => onEdit(item)}
-            className="px-2 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all"
+            className="px-2 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
             aria-label={`แก้ไขข้อมูลเคส ${item.title}`}
           >
             แก้ไข
@@ -195,11 +195,11 @@ const TicketTableRow = React.memo(function TicketTableRow({
           <button
             type="button"
             onClick={() => onConfirmDelete(item)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 active:scale-95 transition-all"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all"
             aria-label={`ลบเคส ${item.title}`}
             title="ลบเคสนี้ถาวร"
           >
-            <Trash2 className="size-3 text-rose-500" />
+            <Trash2 className="size-3 text-rose-500 dark:text-rose-400" />
             <span>ลบ</span>
           </button>
         </div>
@@ -867,7 +867,7 @@ export function TicketsView() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                  className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="all">ทุกสถานะ</option>
                   <option value="in_progress">อยู่ระหว่างดำเนินการ (In Progress)</option>
@@ -878,40 +878,40 @@ export function TicketsView() {
                   <option value="5">5. เคลมสำเร็จ / ปิดเคส</option>
                   <option value="6">6. ปฏิเสธเคลม (นอกเงื่อนไข)</option>
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               </div>
             </div>
 
             {/* เลขที่เคส */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">เลขที่เคส</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">เลขที่เคส</label>
               <Input
                 placeholder=""
                 value={caseNoFilter}
                 onChange={(e) => setCaseNoFilter(e.target.value)}
-                className="h-9 rounded-lg border-slate-200 bg-white text-xs text-slate-700 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
+                className="h-9 rounded-lg border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] text-xs text-slate-700 dark:text-slate-200 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
 
             {/* S/N */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">S/N</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">S/N</label>
               <Input
                 placeholder="หมายเลขเครื่อง"
                 value={snFilter}
                 onChange={(e) => setSnFilter(e.target.value)}
-                className="h-9 rounded-lg border-slate-200 bg-white text-xs text-slate-700 placeholder:text-slate-400 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
+                className="h-9 rounded-lg border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-none focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
 
             {/* หมวดหมู่ */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">หมวดหมู่</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">หมวดหมู่</label>
               <div className="relative">
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                  className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="all">ทุกหมวดหมู่</option>
                   <option value="module">โมดูลสื่อสาร</option>
@@ -919,18 +919,18 @@ export function TicketsView() {
                   <option value="antenna">เสาอากาศ</option>
                   <option value="power">พาวเวอร์ซัพพลาย</option>
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               </div>
             </div>
 
             {/* ศูนย์บริการ */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">ศูนย์บริการ</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">ศูนย์บริการ</label>
               <div className="relative">
                 <select
                   value={vendorFilter}
                   onChange={(e) => setVendorFilter(e.target.value)}
-                  className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                  className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="all">ทุกศูนย์บริการ ({availableVendors.length} ราย)</option>
                   {availableVendors.map((v) => (
@@ -939,7 +939,7 @@ export function TicketsView() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               </div>
             </div>
           </div>
@@ -948,12 +948,12 @@ export function TicketsView() {
           <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {/* จังหวัด */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">จังหวัด</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">จังหวัด</label>
               <div className="relative">
                 <select
                   value={provinceFilter}
                   onChange={(e) => handleProvinceChange(e.target.value)}
-                  className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                  className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="all">ทุกจังหวัด ({availableProvinces.length} จังหวัด)</option>
                   {availableProvinces.map((prov) => (
@@ -962,13 +962,13 @@ export function TicketsView() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               </div>
             </div>
 
             {/* อำเภอ */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">อำเภอ</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">อำเภอ</label>
               <div className="relative">
                 <select
                   value={districtFilter}
@@ -976,8 +976,8 @@ export function TicketsView() {
                   onChange={(e) => handleDistrictChange(e.target.value)}
                   className={`h-9 w-full appearance-none rounded-lg border px-3 pr-8 text-xs focus:border-blue-500 focus:outline-none transition-colors ${
                     provinceFilter === "all"
-                      ? "border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed"
-                      : "border-slate-200 bg-white text-slate-700"
+                      ? "border-slate-200/80 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+                      : "border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] text-slate-700 dark:text-slate-200"
                   }`}
                 >
                   {provinceFilter === "all" ? (
@@ -993,13 +993,13 @@ export function TicketsView() {
                     </>
                   )}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               </div>
             </div>
 
             {/* ตำบล */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">ตำบล</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">ตำบล</label>
               <div className="relative">
                 <select
                   value={subdistrictFilter}
@@ -1007,8 +1007,8 @@ export function TicketsView() {
                   onChange={(e) => handleSubdistrictChange(e.target.value)}
                   className={`h-9 w-full appearance-none rounded-lg border px-3 pr-8 text-xs focus:border-blue-500 focus:outline-none transition-colors ${
                     districtFilter === "all"
-                      ? "border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed"
-                      : "border-slate-200 bg-white text-slate-700"
+                      ? "border-slate-200/80 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+                      : "border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] text-slate-700 dark:text-slate-200"
                   }`}
                 >
                   {districtFilter === "all" ? (
@@ -1024,18 +1024,18 @@ export function TicketsView() {
                     </>
                   )}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               </div>
             </div>
 
             {/* สถานี */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">สถานี</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">สถานี</label>
               <div className="relative">
                 <select
                   value={stationFilter}
                   onChange={(e) => handleStationChange(e.target.value)}
-                  className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                  className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="all">
                     ทุกสถานี ({availableStations.length} สถานี)
@@ -1079,7 +1079,7 @@ export function TicketsView() {
                     </>
                   )}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               </div>
             </div>
 
@@ -1090,8 +1090,8 @@ export function TicketsView() {
                 onClick={() => setOnlyOverdue((v) => !v)}
                 className={`flex h-9 items-center justify-center rounded-lg border text-xs font-normal transition-all cursor-pointer ${
                   onlyOverdue
-                    ? "border-red-400 bg-red-50 text-red-700 shadow-2xs"
-                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    ? "border-red-400 dark:border-rose-500/40 bg-red-50 dark:bg-rose-950/40 text-red-700 dark:text-rose-300 shadow-2xs"
+                    : "border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
                 <span>เฉพาะที่เกินกำหนด</span>
@@ -1100,17 +1100,17 @@ export function TicketsView() {
           </div>
 
           {/* Row 3: Action Buttons & Filter Summary */}
-          <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 dark:border-white/10 pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
               <span>
-                ผลการค้นหา: <strong>{filteredTickets.length}</strong> รายการ
+                ผลการค้นหา: <strong className="text-slate-800 dark:text-slate-200">{filteredTickets.length}</strong> รายการ
               </span>
               {(appliedFilters.province !== "all" ||
                 appliedFilters.district !== "all" ||
                 appliedFilters.subdistrict !== "all" ||
                 appliedFilters.station !== "all") && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-100">
-                  <MapPin className="size-3 text-blue-600" />
+                <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 text-[11px] font-medium text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800/40">
+                  <MapPin className="size-3 text-blue-600 dark:text-blue-400" />
                   <span>
                     {[
                       appliedFilters.province !== "all" && `จ.${appliedFilters.province}`,
@@ -1129,15 +1129,15 @@ export function TicketsView() {
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 cursor-pointer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3.5 text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer shadow-2xs"
               >
-                <RotateCcw className="size-3.5 text-slate-500" />
+                <RotateCcw className="size-3.5 text-slate-500 dark:text-slate-400" />
                 <span>ล้างตัวกรอง</span>
               </button>
               <button
                 type="button"
                 onClick={handleSearch}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0c1a30] px-4.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-[#1e293b] cursor-pointer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#0c1a30] dark:bg-blue-600 px-4.5 text-xs font-medium text-white shadow-xs transition-colors hover:bg-[#1e293b] dark:hover:bg-blue-500 cursor-pointer"
               >
                 <Search className="size-3.5" />
                 <span>ค้นหา</span>
@@ -1229,14 +1229,14 @@ export function TicketsView() {
           {/* =========================================================================
               4. PAGINATION & FOOTER CONTROLS
              ========================================================================= */}
-          <div className="flex flex-col gap-3 border-t border-slate-200/80 bg-white px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-600">
+          <div className="flex flex-col gap-3 border-t border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-600 dark:text-slate-400">
             {/* Left: Rows Per Page & Summary */}
             <div className="flex items-center gap-3">
               <div className="relative">
                 <select
                   value={pageSize}
                   onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                  className="flex h-8 items-center rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="flex h-8 items-center rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-2.5 text-xs text-slate-700 dark:text-slate-200 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
                   aria-label="จำนวนรายการต่อหน้า"
                 >
                   <option value={10}>10 รายการ/หน้า</option>
@@ -1244,7 +1244,7 @@ export function TicketsView() {
                   <option value={50}>50 รายการ/หน้า</option>
                 </select>
               </div>
-              <span className="text-slate-500">
+              <span className="text-slate-500 dark:text-slate-400">
                 แสดง {totalFiltered > 0 ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, totalFiltered)} จาก {totalFiltered} เคส
               </span>
             </div>
@@ -1255,10 +1255,10 @@ export function TicketsView() {
                 type="button"
                 disabled={currentPage <= 1}
                 onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                className={`inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs transition-colors ${
+                className={`inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs transition-colors ${
                   currentPage <= 1
-                    ? "bg-slate-50/50 text-slate-400 cursor-not-allowed"
-                    : "bg-white text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs"
+                    ? "border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                    : "border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer shadow-2xs"
                 }`}
                 aria-label="ไปหน้าก่อนหน้า"
               >
@@ -1266,7 +1266,7 @@ export function TicketsView() {
                 <span>ก่อนหน้า</span>
               </button>
 
-              <span className="px-2 text-xs font-normal text-slate-700">
+              <span className="px-2 text-xs font-normal text-slate-700 dark:text-slate-300">
                 หน้า {currentPage}/{totalPages}
               </span>
 
@@ -1274,10 +1274,10 @@ export function TicketsView() {
                 type="button"
                 disabled={currentPage >= totalPages}
                 onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                className={`inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs transition-colors ${
+                className={`inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-xs transition-colors ${
                   currentPage >= totalPages
-                    ? "bg-slate-50/50 text-slate-400 cursor-not-allowed"
-                    : "bg-white text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs"
+                    ? "border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                    : "border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer shadow-2xs"
                 }`}
                 aria-label="ไปหน้าถัดไป"
               >
@@ -1299,13 +1299,13 @@ export function TicketsView() {
             aria-modal="true"
           >
             <div
-              className="relative w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+              className="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1e293b] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between border-b border-slate-200/80 px-5 py-4 bg-slate-50/50">
+              <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 px-5 py-4 bg-slate-50/50 dark:bg-[#0f172a]">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex size-8 items-center justify-center rounded-lg bg-blue-50 text-[#1e61f0]">
+                  <span className="flex size-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#1e61f0] dark:text-sky-300">
                     {modalMode === "edit" ? (
                       <Pencil className="size-4" />
                     ) : (
@@ -1313,12 +1313,12 @@ export function TicketsView() {
                     )}
                   </span>
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-900">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       {modalMode === "edit"
                         ? "แก้ไขข้อมูลงานเคลม"
                         : "รายละเอียดงานเคลม"}
                     </h3>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
                       เคส ID: {selectedTicket.id} · {selectedTicket.title}
                     </p>
                   </div>
@@ -1327,7 +1327,7 @@ export function TicketsView() {
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                   aria-label="ปิดหน้าต่าง"
                 >
                   <X className="size-4" />
@@ -1598,23 +1598,23 @@ export function TicketsView() {
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
             onClick={() => !isDeleting && setTicketToDelete(null)}
           />
-          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl transition-all z-10 animate-in fade-in zoom-in-95">
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#1e293b] p-6 shadow-2xl transition-all z-10 animate-in fade-in zoom-in-95">
             <div className="flex items-start gap-3.5">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
-                <Trash2 className="size-5 text-red-600" />
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-rose-950/60 text-red-600 dark:text-rose-400">
+                <Trash2 className="size-5 text-red-600 dark:text-rose-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                   ยืนยันการลบเคสแจ้งเคลมถาวร
                 </h3>
-                <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+                <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   คุณต้องการลบเคส{" "}
-                  <strong className="text-slate-800 font-semibold">
+                  <strong className="text-slate-800 dark:text-slate-200 font-semibold">
                     &quot;{ticketToDelete.title}&quot;
                   </strong>{" "}
                   (S/N: {ticketToDelete.serialNo}) ใช่หรือไม่?
                 </p>
-                <div className="mt-3 rounded-lg border border-red-150 bg-red-50/70 p-2.5 text-[11px] text-red-700 leading-relaxed">
+                <div className="mt-3 rounded-lg border border-red-150 dark:border-rose-500/20 bg-red-50/70 dark:bg-rose-950/30 p-2.5 text-[11px] text-red-700 dark:text-rose-300 leading-relaxed">
                   <span className="font-semibold">ข้อควรระวัง:</span> คำขอนี้จะลบรายการออกจากฐานข้อมูลอย่างถาวร ข้อมูลจะไม่ถูกกู้คืนแม้จะรีเฟรชหน้าเว็บ
                 </div>
               </div>
@@ -1625,7 +1625,7 @@ export function TicketsView() {
                 type="button"
                 disabled={isDeleting}
                 onClick={() => setTicketToDelete(null)}
-                className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-800 px-4 text-xs font-medium text-slate-700 dark:text-slate-200 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 cursor-pointer"
               >
                 ยกเลิก
               </button>

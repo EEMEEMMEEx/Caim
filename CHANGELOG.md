@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.1] - 2026-09-29
+
+### Fixed
+- **Root Theme Synchronization & ThemeProvider Context**:
+  - **Global ThemeProvider Context (`src/components/theme-provider.tsx`)**:
+    - Created React context (`ThemeProvider`, `useTheme`) managing root-level theme state synchronization.
+    - Synchronized `.dark` class directly on `document.documentElement.classList` to eliminate sub-container isolation.
+    - Added reactive synchronization with `localStorage` (`theme`) and OS system preference (`prefers-color-scheme`).
+    - Integrated with anti-FOUC script in `src/app/layout.tsx` to prevent theme flash/flicker on load.
+  - **Tailwind CSS v4 Dark Variant & Mesh Isolation**:
+    - Corrected `@custom-variant dark (&:where(.dark, .dark *));` in `src/app/globals.css` ensuring 100% selector matching and clean specificity.
+    - Scoped `.dark-ambient-mesh` strictly under `:is(.dark)` and `.dark`, preventing dark canvas background from overriding light mode canvas.
+  - **Audit Layout Containers & Eliminating Hardcoded Light Backgrounds**:
+    - Connected `AppShell.tsx` theme toggle button with `useTheme()` hook: displays `Sun` icon when in dark mode and `Moon` icon when in light mode.
+    - Converted static `bg-white` classes in filters, table rows, pagination bars, and modal dialogs across `TicketsView.tsx` and `OverseasView.tsx` into responsive theme tokens (`dark:bg-[#0f172a]`, `dark:bg-[#1e293b]`, `dark:border-white/10`, `dark:text-slate-100`, `dark:text-slate-300`).
+
 ## [0.25.0] - 2026-09-29
 
 ### Added

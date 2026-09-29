@@ -21,6 +21,7 @@ import {
   Moon
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useTheme } from "@/components/theme-provider"
 import packageInfo from "../../../../../package.json"
 
 interface AppShellProps {
@@ -92,47 +93,7 @@ export function AppShell({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = React.useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false)
-  const [theme, setTheme] = React.useState<"light" | "dark">("light")
-
-  // Sync theme with document class and localStorage
-  React.useEffect(() => {
-    try {
-      const isDark =
-        document.documentElement.classList.contains("dark") ||
-        localStorage.getItem("theme") === "dark" ||
-        (!localStorage.getItem("theme") &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches)
-      if (isDark) {
-        document.documentElement.classList.add("dark")
-        setTheme("dark")
-      } else {
-        document.documentElement.classList.remove("dark")
-        setTheme("light")
-      }
-    } catch {
-      // Ignore localStorage errors
-    }
-  }, [])
-
-  const toggleTheme = React.useCallback(() => {
-    const nextTheme = theme === "dark" ? "light" : "dark"
-    setTheme(nextTheme)
-    if (nextTheme === "dark") {
-      document.documentElement.classList.add("dark")
-      try {
-        localStorage.setItem("theme", "dark")
-      } catch {
-        // Ignore localStorage errors
-      }
-    } else {
-      document.documentElement.classList.remove("dark")
-      try {
-        localStorage.setItem("theme", "light")
-      } catch {
-        // Ignore localStorage errors
-      }
-    }
-  }, [theme])
+  const { theme, toggleTheme, mounted } = useTheme()
 
   // Auto close mobile drawer on navigation
   React.useEffect(() => {
@@ -371,10 +332,14 @@ export function AppShell({ children }: AppShellProps) {
               aria-label={theme === "dark" ? "เปลี่ยนเป็นโหมดสว่าง (Light Mode)" : "เปลี่ยนเป็นโหมดมืด (Dark Mode)"}
               title={theme === "dark" ? "โหมดมืด (คลิกเพื่อเปลี่ยนเป็นโหมดสว่าง)" : "โหมดสว่าง (คลิกเพื่อเปลี่ยนเป็นโหมดมืด)"}
             >
-              {theme === "dark" ? (
-                <Sun className="size-4.5 text-amber-300 transition-transform duration-300 hover:rotate-45" />
+              {mounted ? (
+                theme === "dark" ? (
+                  <Sun className="size-4.5 text-amber-300 transition-transform duration-300 hover:rotate-45" />
+                ) : (
+                  <Moon className="size-4.5 text-slate-600 transition-transform duration-300 hover:-rotate-12" />
+                )
               ) : (
-                <Moon className="size-4.5 text-slate-600 transition-transform duration-300 hover:-rotate-12" />
+                <span className="size-4.5" />
               )}
             </button>
 
