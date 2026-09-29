@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.0] - 2026-09-29
+
+### Added
+- **UX/UI Pro Max Design System & Heuristics Skill Package (`.agents/skills/ux-ui-pro-max/SKILL.md`)**:
+  - Installed and initialized the canonical `ux-ui-pro-max` skill package for the workspace.
+  - Enforced enterprise visual hierarchy, multi-layer surface elevation, and translucent border architectures.
+  - Activated dark/light theme token parity and accessible pastel status ring badges.
+  - Integrated micro-interactions (hover lift, active tactile scale compression, live pulse nodes, focus rings).
+  - Codified data table ergonomics and WCAG 2.1 accessibility checklists across all frontend modules.
+
 ## [0.25.1] - 2026-09-29
 
 ### Fixed
