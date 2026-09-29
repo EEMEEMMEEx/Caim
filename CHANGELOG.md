@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0] - 2026-09-29
+
+### Added
+- **One-Click Direct Entry Workflow & Session Management**:
+  - **Deconstructed Authentication Form (`LoginForm.tsx`)**: Removed traditional email and password inputs, credentials demo helper badge, visibility toggles, and "forgot password" links.
+  - **Single-Action Hero Entry Panel**: Implemented a floating hero action panel featuring the updated "Process Claim" branding mark (`ProcessClaimLogoMark`), animated text shimmer, and live online network badge.
+  - **Default Session Profile Initialization (`src/lib/session.ts`)**: Created session management utilities initializing the default user profile (`indykantanat` / `indykantanat@gmail.com` - เจ้าหน้าที่บริหารงานเคลม) on one-click entry.
+  - **Single Primary Action Button**: Integrated "เข้าสู่ระบบทันที" button with modern gradient interactive styling (`hover:shadow-lg transition-all active:scale-[0.98]`) and immediate pass-through transition to `/dashboard`.
+  - **AppShell Dynamic Session Synchronization**: Connected the sidebar user profile badge and dropdown to the active session state, with `clearSession()` executed upon logout.
+
 ## [0.26.1] - 2026-09-29
 
 ### Fixed

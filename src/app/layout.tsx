@@ -26,7 +26,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: "เข้าสู่ระบบ · ระบบบริหารงานเคลมอุปกรณ์",
+  title: "Process Claim · ระบบบริหารงานเคลมอุปกรณ์",
   description:
     "ติดตามงานเคลมอุปกรณ์โครงข่ายวิทยุสื่อสาร พร้อมแดชบอร์ดสรุปและรายงานรายสัปดาห์",
   icons: {

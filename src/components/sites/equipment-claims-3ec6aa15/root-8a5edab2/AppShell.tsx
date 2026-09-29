@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/components/theme-provider"
+import { getCurrentSession, clearSession, type UserSession, DEFAULT_USER_SESSION } from "@/lib/session"
 import packageInfo from "../../../../../package.json"
 
 interface AppShellProps {
@@ -93,7 +94,13 @@ export function AppShell({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = React.useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false)
+  const [session, setSession] = React.useState<UserSession>(DEFAULT_USER_SESSION)
   const { theme, toggleTheme, mounted } = useTheme()
+
+  // Load active user session on client mount
+  React.useEffect(() => {
+    setSession(getCurrentSession())
+  }, [])
 
   // Auto close mobile drawer on navigation
   React.useEffect(() => {
@@ -118,6 +125,7 @@ export function AppShell({ children }: AppShellProps) {
   )
 
   const handleLogout = React.useCallback(() => {
+    clearSession()
     router.push("/login")
   }, [router])
 
@@ -234,10 +242,10 @@ export function AppShell({ children }: AppShellProps) {
                 {sidebarOpen && (
                   <div className="flex min-w-0 flex-col leading-tight">
                     <span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
-                      indykantanat
+                      {session.username}
                     </span>
                     <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      <span>เจ้าหน้าที่</span>
+                      <span>{session.role}</span>
                       <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">v{packageInfo.version}</span>
                     </div>
                   </div>
@@ -249,7 +257,7 @@ export function AppShell({ children }: AppShellProps) {
             {userDropdownOpen && (
               <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] p-1.5 shadow-xl animate-in fade-in zoom-in-95">
                 <div className="px-3 py-2 text-xs border-b border-slate-100 dark:border-white/10">
-                  <p className="font-semibold text-slate-800 dark:text-slate-200">indykantanat@gmail.com</p>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">{session.email}</p>
                   <p className="text-slate-500 dark:text-slate-400 mt-0.5">สถานะ: เข้าสู่ระบบแล้ว</p>
                 </div>
                 <button
