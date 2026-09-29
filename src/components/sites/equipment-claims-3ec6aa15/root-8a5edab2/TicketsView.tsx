@@ -1344,18 +1344,18 @@ export function TicketsView() {
 
               {/* Modal Body */}
               {modalMode === "view" ? (
-                <div className="space-y-4 p-5 text-xs text-slate-700">
+                <div className="space-y-4 p-5 text-xs text-slate-700 dark:text-slate-300">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-slate-500 font-medium">หัวข้อเคลม</p>
-                      <p className="mt-1 font-semibold text-slate-900">
+                      <p className="text-slate-500 dark:text-slate-400 font-medium">หัวข้อเคลม</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
                         {selectedTicket.title}
                       </p>
                     </div>
                     <div>
-                      <p className="text-slate-500 font-medium">สถานะปัจจุบัน</p>
+                      <p className="text-slate-500 dark:text-slate-400 font-medium">สถานะปัจจุบัน</p>
                       <p className="mt-1">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-800">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 font-medium text-slate-800 dark:text-slate-200">
                           {selectedTicket.status}
                         </span>
                       </p>
@@ -1363,54 +1363,54 @@ export function TicketsView() {
                   </div>
 
                   <div>
-                    <p className="text-slate-500 font-medium">อาการเสีย / ปัญหาที่พบ</p>
-                    <p className="mt-1 rounded-lg bg-slate-50 p-2.5 text-slate-800 leading-relaxed">
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">อาการเสีย / ปัญหาที่พบ</p>
+                    <p className="mt-1 rounded-lg bg-slate-50 dark:bg-[#0f172a] border border-slate-100 dark:border-white/5 p-2.5 text-slate-800 dark:text-slate-200 leading-relaxed">
                       {selectedTicket.problemDesc}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+                  <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-white/10 pt-3">
                     <div>
-                      <p className="text-slate-500 font-medium">อุปกรณ์ / รุ่น</p>
-                      <p className="mt-1 font-medium text-slate-900">
+                      <p className="text-slate-500 dark:text-slate-400 font-medium">อุปกรณ์ / รุ่น</p>
+                      <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">
                         {selectedTicket.vendor} / {selectedTicket.model}
                       </p>
                     </div>
                     <div>
-                      <p className="text-slate-500 font-medium">หมายเลขเครื่อง (S/N)</p>
-                      <p className="mt-1 font-mono text-slate-900">
+                      <p className="text-slate-500 dark:text-slate-400 font-medium">หมายเลขเครื่อง (S/N)</p>
+                      <p className="mt-1 font-mono text-slate-900 dark:text-slate-100">
                         {selectedTicket.serialNo}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+                  <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-white/10 pt-3">
                     <div>
-                      <p className="text-slate-500 font-medium">วันที่รับแจ้ง</p>
-                      <p className="mt-1 text-slate-900">{formatDisplayThaiDate(selectedTicket.date)}</p>
+                      <p className="text-slate-500 dark:text-slate-400 font-medium">วันที่รับแจ้ง</p>
+                      <p className="mt-1 text-slate-900 dark:text-slate-100">{formatDisplayThaiDate(selectedTicket.date)}</p>
                     </div>
                     <div>
-                      <p className="text-slate-500 font-medium">อายุงาน</p>
-                      <p className="mt-1 text-slate-900 font-semibold">{calculateCaseDuration(selectedTicket).text}</p>
+                      <p className="text-slate-500 dark:text-slate-400 font-medium">อายุงาน</p>
+                      <p className="mt-1 text-slate-900 dark:text-slate-100 font-semibold">{calculateCaseDuration(selectedTicket).text}</p>
                     </div>
                   </div>
 
                   {(selectedTicket.station || selectedTicket.province) && (
-                    <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-3">
-                      <div className="flex items-center gap-1.5 text-slate-700 font-medium">
-                        <MapPin className="size-3.5 text-blue-600" />
+                    <div className="rounded-lg border border-slate-100 dark:border-white/10 bg-slate-50/80 dark:bg-[#0f172a] p-3">
+                      <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
+                        <MapPin className="size-3.5 text-blue-600 dark:text-sky-400" />
                         <span>ข้อมูลสถานี / จุดติดตั้ง</span>
                       </div>
                       <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <span className="text-slate-500">ชื่อสถานี: </span>
-                          <span className="font-semibold text-slate-800">
+                          <span className="text-slate-500 dark:text-slate-400">ชื่อสถานี: </span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
                             {selectedTicket.station || "-"}
                           </span>
                         </div>
                         <div>
-                          <span className="text-slate-500">พื้นที่: </span>
-                          <span className="text-slate-800">
+                          <span className="text-slate-500 dark:text-slate-400">พื้นที่: </span>
+                          <span className="text-slate-800 dark:text-slate-200">
                             {[
                               selectedTicket.subdistrict && `ต.${selectedTicket.subdistrict}`,
                               selectedTicket.district && `อ.${selectedTicket.district}`,
@@ -1424,7 +1424,7 @@ export function TicketsView() {
                     </div>
                   )}
 
-                  <div className="mt-4 flex justify-end gap-2 border-t border-slate-100 pt-4">
+                  <div className="mt-4 flex justify-end gap-2 border-t border-slate-100 dark:border-white/10 pt-4">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1435,7 +1435,7 @@ export function TicketsView() {
                       <span>แก้ไข</span>
                     </Button>
                     <Link href={`/tickets/${selectedTicket.id}`}>
-                      <Button size="sm" className="gap-1.5 bg-[#0c1a30] text-white hover:bg-[#1e293b] text-xs">
+                      <Button size="sm" className="gap-1.5 bg-[#0c1a30] dark:bg-blue-600 text-white hover:bg-[#1e293b] dark:hover:bg-blue-500 text-xs">
                         <span>เปิดดูหน้ารายละเอียดเต็ม</span>
                       </Button>
                     </Link>
@@ -1443,11 +1443,11 @@ export function TicketsView() {
                 </div>
               ) : (
                 /* Edit Mode */
-                <form onSubmit={handleSaveTicket} className="p-5 text-xs text-slate-700">
+                <form onSubmit={handleSaveTicket} className="p-5 text-xs text-slate-700 dark:text-slate-300">
                   {editForm && (
                     <div className="space-y-4">
                       <div>
-                        <label className="font-medium text-slate-700">
+                        <label className="font-medium text-slate-700 dark:text-slate-300">
                           หัวข้อเคลม <span className="text-red-500">*</span>
                         </label>
                         <Input
@@ -1463,7 +1463,7 @@ export function TicketsView() {
                       </div>
 
                       <div>
-                        <label className="font-medium text-slate-700">
+                        <label className="font-medium text-slate-700 dark:text-slate-300">
                           อาการเสีย / ปัญหาที่พบ <span className="text-red-500">*</span>
                         </label>
                         <textarea
@@ -1475,13 +1475,13 @@ export function TicketsView() {
                               prev ? { ...prev, problemDesc: e.target.value } : null
                             )
                           }
-                          className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-xs text-slate-900 focus:border-blue-500 focus:outline-none"
+                          className="mt-1 w-full rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] p-2.5 text-xs text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none"
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="font-medium text-slate-700">ผู้ผลิต (Vendor)</label>
+                          <label className="font-medium text-slate-700 dark:text-slate-300">ผู้ผลิต (Vendor)</label>
                           <Input
                             value={editForm.vendor}
                             onChange={(e) =>
@@ -1493,7 +1493,7 @@ export function TicketsView() {
                           />
                         </div>
                         <div>
-                          <label className="font-medium text-slate-700">รุ่น (Model)</label>
+                          <label className="font-medium text-slate-700 dark:text-slate-300">รุ่น (Model)</label>
                           <Input
                             value={editForm.model}
                             onChange={(e) =>
@@ -1507,7 +1507,7 @@ export function TicketsView() {
                       </div>
 
                       <div>
-                        <label className="font-medium text-slate-700">
+                        <label className="font-medium text-slate-700 dark:text-slate-300">
                           หมายเลขเครื่อง (S/N)
                         </label>
                         <Input
@@ -1522,7 +1522,7 @@ export function TicketsView() {
                       </div>
 
                       <div>
-                        <label className="font-medium text-slate-700">เปลี่ยนสถานะ</label>
+                        <label className="font-medium text-slate-700 dark:text-slate-300">เปลี่ยนสถานะ</label>
                         <div className="mt-1.5 flex flex-wrap gap-2">
                           {[
                             { code: 1, label: "รับแจ้ง" },
@@ -1541,8 +1541,8 @@ export function TicketsView() {
                                 aria-pressed={isSelected}
                                 className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-all cursor-pointer ${
                                   isSelected
-                                    ? "border-blue-600 bg-blue-50 text-blue-700 ring-2 ring-blue-500/20 font-semibold shadow-xs"
-                                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+                                    ? "border-blue-600 bg-blue-50 text-blue-700 ring-2 ring-blue-500/20 font-semibold shadow-xs dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-500"
+                                    : "border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300"
                                 }`}
                               >
                                 {st.label}
@@ -1552,7 +1552,7 @@ export function TicketsView() {
                         </div>
                       </div>
 
-                      <div className="mt-6 flex justify-end gap-2 border-t border-slate-100 pt-4">
+                      <div className="mt-6 flex justify-end gap-2 border-t border-slate-100 dark:border-white/10 pt-4">
                         <Button
                           type="button"
                           variant="outline"

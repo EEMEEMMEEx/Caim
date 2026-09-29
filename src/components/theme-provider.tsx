@@ -109,9 +109,22 @@ export function ThemeProvider({
   )
 
   const toggleTheme = React.useCallback(() => {
-    const next: Theme = resolvedTheme === "dark" ? "light" : "dark"
-    setTheme(next)
-  }, [resolvedTheme, setTheme])
+    setResolvedTheme((prev) => {
+      const next: "light" | "dark" = prev === "dark" ? "light" : "dark"
+      try {
+        localStorage.setItem(storageKey, next)
+      } catch {
+        // Ignore localStorage error
+      }
+      setRawThemeState(next)
+      if (next === "dark") {
+        document.documentElement.classList.add("dark")
+      } else {
+        document.documentElement.classList.remove("dark")
+      }
+      return next
+    })
+  }, [storageKey])
 
   const value = React.useMemo<ThemeContextType>(
     () => ({

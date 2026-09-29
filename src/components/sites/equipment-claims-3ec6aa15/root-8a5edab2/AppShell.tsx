@@ -273,7 +273,7 @@ export function AppShell({ children }: AppShellProps) {
         }`}
       >
         {/* Sticky Top Header (Surface: #0f172a/85 with translucent border) */}
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-slate-200/70 dark:border-white/10 bg-white/80 dark:bg-[#0f172a]/85 backdrop-blur-md px-4 shadow-2xs">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-slate-200/70 dark:border-white/10 bg-white/80 dark:bg-[#0f172a]/85 backdrop-blur-md px-4 shadow-2xs transition-colors duration-200">
           <Button
             variant="ghost"
             size="icon"

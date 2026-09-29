@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.1] - 2026-09-29
+
+### Fixed
+- **Theme Toggle State Logic & Transition Smoothing**:
+  - **Eliminate Race Conditions & Desynchronization**: Updated `toggleTheme` in `src/components/theme-provider.tsx` to use functional state updates (`setResolvedTheme((prev) => ...)`), preventing race conditions and desynchronization when the toggle button is clicked rapidly.
+  - **Dynamic Theme Icon & Mount Guard**: Verified that the toggle button in `AppShell.tsx` dynamically renders the `Sun` icon in dark mode and the `Moon` icon in light mode, with `mounted` guard protecting against SSR hydration mismatch warnings.
+  - **Smooth Transitions & Container Tokens**: Added `transition-colors duration-200` to the sticky top `<header>` in `AppShell.tsx` to prevent abrupt color jumping when switching themes.
+  - **Eliminate Background Sticking in Modals**: Replaced hardcoded `bg-white` and border classes in modals and inputs across `TicketsView.tsx` and `OverseasView.tsx` with responsive dark tokens (`dark:bg-[#0f172a]`, `dark:border-white/10`, `dark:text-slate-200`).
+
 ## [0.26.0] - 2026-09-29
 
 ### Added

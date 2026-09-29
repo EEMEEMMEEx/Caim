@@ -1659,31 +1659,31 @@ export function OverseasView() {
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t border-slate-200/80 bg-white p-5">
+              <div className="border-t border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] p-5">
                 {isRetroactiveEditing ? (
                   /* =========================================================================
                      RETROACTIVE EDIT CONTROLS & LIVE SUMMARY COUNTER
                      ========================================================================= */
                   <>
-                    <div className="mb-3.5 flex flex-wrap items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/90 px-3.5 py-2.5">
+                    <div className="mb-3.5 flex flex-wrap items-center justify-between rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/90 dark:bg-slate-800/80 px-3.5 py-2.5">
                       <div className="flex items-center gap-2">
-                        <Clock className="size-4 text-slate-500" />
-                        <span className="text-xs font-semibold text-slate-800">
+                        <Clock className="size-4 text-slate-500 dark:text-slate-400" />
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                           ใช้ไปแล้วรวม:{" "}
                           <span
                             className={`text-sm font-bold ${
-                              totalRecomputedDays > 60 ? "text-[#ea580c]" : "text-blue-600"
+                              totalRecomputedDays > 60 ? "text-[#ea580c] dark:text-orange-400" : "text-blue-600 dark:text-sky-400"
                             }`}
                           >
                             {totalRecomputedDays} วัน
                           </span>
                         </span>
-                        <span className="text-[11px] text-slate-500">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
                           · แผนมาตรฐานรวม 60 วัน (ไม่ใช่วันครบกำหนด)
                         </span>
                       </div>
                       {totalRecomputedDays > 60 && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-orange-600">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-orange-600 dark:text-orange-400">
                           <AlertTriangle className="size-3" />
                           <span>เกินแผนมาตรฐาน (+{totalRecomputedDays - 60} วัน)</span>
                         </span>
@@ -1695,9 +1695,9 @@ export function OverseasView() {
                         type="button"
                         disabled={isSubmittingStage}
                         onClick={handleCancelRetroactive}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-60"
+                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-800 px-4 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-60"
                       >
-                        <Undo2 className="size-3.5 text-slate-500" />
+                        <Undo2 className="size-3.5 text-slate-500 dark:text-slate-400" />
                         <span>ยกเลิก</span>
                       </button>
 
@@ -1727,15 +1727,15 @@ export function OverseasView() {
                      STANDARD TIMELINE CONTROLS
                      ========================================================================= */
                   <>
-                    <p className="text-xs text-slate-600 font-medium leading-relaxed mb-3">
-                      ใช้ไปแล้ว <span className="font-bold text-slate-900">{totalRecomputedDays} วัน</span> · แผนมาตรฐานรวม 60 วัน (ไม่ใช่วันครบกำหนด — กระบวนการจริงราว 2-3 เดือน)
+                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed mb-3">
+                      ใช้ไปแล้ว <span className="font-bold text-slate-900 dark:text-slate-100">{totalRecomputedDays} วัน</span> · แผนมาตรฐานรวม 60 วัน (ไม่ใช่วันครบกำหนด — กระบวนการจริงราว 2-3 เดือน)
                     </p>
 
-                    <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3">
+                    <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/80 dark:bg-slate-800/80 p-3">
                       <div className="flex items-center justify-between mb-1.5">
-                        <p className="text-[11px] text-slate-600 font-medium">วันและเวลาที่เกิดขึ้นจริง</p>
+                        <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">วันและเวลาที่เกิดขึ้นจริง</p>
                         {actualDateTime && (
-                          <span className="text-[10px] text-slate-500 font-mono">
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                             {formatDisplayDateTime(actualDateTime)}
                           </span>
                         )}
@@ -1750,7 +1750,7 @@ export function OverseasView() {
                             type="datetime-local"
                             value={actualDateTime}
                             onChange={(e) => setActualDateTime(e.target.value)}
-                            className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 pr-9 text-xs font-mono text-slate-700 shadow-none hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                            className="h-9 w-full rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3 pr-9 text-xs font-mono text-slate-700 dark:text-slate-200 shadow-none hover:border-slate-300 dark:hover:border-white/20 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
                             aria-label="วันและเวลาที่เกิดขึ้นจริง"
                           />
                           <button
@@ -1759,7 +1759,7 @@ export function OverseasView() {
                               e.stopPropagation()
                               handleOpenDatePicker()
                             }}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                             title="เลือกวันและเวลาจากปฏิทิน"
                             aria-label="เปิดปฏิทินเลือกวันและเวลา"
                           >
@@ -1770,7 +1770,7 @@ export function OverseasView() {
                           type="button"
                           disabled={isSubmittingStage}
                           onClick={handleAdvanceStage}
-                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#0c1a30] px-4 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#1e293b] active:scale-[0.99] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#0c1a30] dark:bg-blue-600 px-4 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#1e293b] dark:hover:bg-blue-500 active:scale-[0.99] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
                         >
                           {isSubmittingStage ? (
                             <>
@@ -1787,7 +1787,7 @@ export function OverseasView() {
                     <button
                       type="button"
                       onClick={handleEnterRetroactiveEdit}
-                      className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                      className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-800 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     >
                       <Pencil className="size-3.5" />
                       <span>แก้ไขที่รายขั้น (กรอกย้อนหลัง)</span>
@@ -1844,22 +1844,22 @@ export function OverseasView() {
                 {/* Row 1: เลขที่ใบ RMA & สถานะใบ * */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">เลขที่ใบ RMA</label>
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">เลขที่ใบ RMA</label>
                     <Input
                       placeholder="เช่น RMA-2026-014"
                       value={newRmaForm.rmaNo}
                       onChange={(e) =>
                         setNewRmaForm((prev) => ({ ...prev, rmaNo: e.target.value }))
                       }
-                      className="h-9 text-xs rounded-lg border-slate-200 focus-visible:ring-1 focus-visible:ring-blue-500"
+                      className="h-9 text-xs rounded-lg border-slate-200/80 dark:border-white/10 dark:bg-[#0f172a] dark:text-slate-100 focus-visible:ring-1 focus-visible:ring-blue-500"
                     />
-                    <p className="mt-1 text-[11px] text-slate-500">
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                       ยังไม่ออกเลขก็บันทึกได้ ค่อยมาเติมทีหลัง
                     </p>
                   </div>
 
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                       สถานะใบ <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -1868,7 +1868,7 @@ export function OverseasView() {
                         onChange={(e) =>
                           setNewRmaForm((prev) => ({ ...prev, status: e.target.value }))
                         }
-                        className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                        className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                         required
                       >
                         <option value="in_progress">กำลังดำเนินการ</option>
@@ -1877,19 +1877,19 @@ export function OverseasView() {
                         <option value="returned">ของกลับถึงแล้ว</option>
                         <option value="completed">เสร็จสิ้น</option>
                       </select>
-                      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     </div>
                   </div>
                 </div>
 
                 {/* Row 2: อุปกรณ์ที่ส่งไปซ่อม */}
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">อุปกรณ์ที่ส่งไปซ่อม</label>
+                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">อุปกรณ์ที่ส่งไปซ่อม</label>
                   <div className="relative">
                     <select
                       value={newRmaForm.selectedAssetSerial}
                       onChange={(e) => handleEquipmentChange(e.target.value)}
-                      className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                      className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                     >
                       <option value="">เลือกอุปกรณ์จากทะเบียน</option>
                       {equipmentOptions.map((asset) => (
@@ -1898,21 +1898,21 @@ export function OverseasView() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                   </div>
-                  <p className="mt-1 text-[11px] text-slate-500">
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                     ถ้าผูกกับเคสอยู่แล้ว เว้นว่างได้ ระบบจะดึงอุปกรณ์จากเคสมาให้เอง
                   </p>
                 </div>
 
                 {/* Row 3: ผูกกับเคสแจ้งเคลม */}
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">ผูกกับเคสแจ้งเคลม</label>
+                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">ผูกกับเคสแจ้งเคลม</label>
                   <div className="relative">
                     <select
                       value={newRmaForm.linkedCaseId}
                       onChange={(e) => handleCaseChange(e.target.value)}
-                      className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                      className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                     >
                       <option value="">ไม่ผูกกับเคส</option>
                       {availableCases.map((c) => (
@@ -1921,9 +1921,9 @@ export function OverseasView() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                   </div>
-                  <p className="mt-1 text-[11px] text-slate-500">
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                     ไม่บังคับ — เลือกได้เฉพาะเคสที่ยังไม่จบงานและยังไม่มีใบส่งซ่อม
                   </p>
                 </div>
@@ -1931,14 +1931,14 @@ export function OverseasView() {
                 {/* Row 4: ศูนย์บริการ / ผู้รับเคลม & ปลายทาง */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">ศูนย์บริการ / ผู้รับเคลม</label>
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">ศูนย์บริการ / ผู้รับเคลม</label>
                     <div className="relative">
                       <select
                         value={newRmaForm.serviceCenter}
                         onChange={(e) =>
                           setNewRmaForm((prev) => ({ ...prev, serviceCenter: e.target.value }))
                         }
-                        className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                        className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none"
                       >
                         <option value="">เลือกศูนย์บริการ</option>
                         <option value="Hytera">Hytera</option>
@@ -1946,21 +1946,21 @@ export function OverseasView() {
                         <option value="Forth">Forth</option>
                         <option value="อื่นๆ">อื่นๆ</option>
                       </select>
-                      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+                      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block font-medium text-slate-700 mb-1">ปลายทาง</label>
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">ปลายทาง</label>
                     <Input
                       placeholder="เช่น Hytera Hongkong"
                       value={newRmaForm.destination}
                       onChange={(e) =>
                         setNewRmaForm((prev) => ({ ...prev, destination: e.target.value }))
                       }
-                      className="h-9 text-xs rounded-lg border-slate-200 focus-visible:ring-1 focus-visible:ring-blue-500"
+                      className="h-9 text-xs rounded-lg border-slate-200/80 dark:border-white/10 dark:bg-[#0f172a] dark:text-slate-100 focus-visible:ring-1 focus-visible:ring-blue-500"
                     />
-                    <p className="mt-1 text-[11px] text-slate-500">
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                       เช่น Hytera Hongkong
                     </p>
                   </div>
@@ -1968,7 +1968,7 @@ export function OverseasView() {
 
                 {/* Row 5: วันที่เปิดใบ * */}
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">
+                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                     วันที่เปิดใบ <span className="text-red-500">*</span>
                   </label>
                   <div className="relative w-full sm:max-w-xs">
@@ -1979,15 +1979,15 @@ export function OverseasView() {
                       onChange={(e) =>
                         setNewRmaForm((prev) => ({ ...prev, openDate: e.target.value }))
                       }
-                      className="h-9 pr-9 text-xs font-mono rounded-lg border-slate-200 focus-visible:ring-1 focus-visible:ring-blue-500"
+                      className="h-9 pr-9 text-xs font-mono rounded-lg border-slate-200/80 dark:border-white/10 dark:bg-[#0f172a] dark:text-slate-100 focus-visible:ring-1 focus-visible:ring-blue-500"
                     />
-                    <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                    <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 dark:text-slate-500" />
                   </div>
                 </div>
 
                 {/* Row 6: หมายเหตุ */}
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">หมายเหตุ</label>
+                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">หมายเหตุ</label>
                   <textarea
                     rows={3}
                     placeholder="เช่น รอเอกสารอนุมัติจาก กสทช. ก่อนส่งออก"
@@ -1995,7 +1995,7 @@ export function OverseasView() {
                     onChange={(e) =>
                       setNewRmaForm((prev) => ({ ...prev, remarks: e.target.value }))
                     }
-                    className="w-full rounded-lg border border-slate-200 bg-white p-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none resize-none"
+                    className="w-full rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] p-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none resize-none"
                   />
                 </div>
 
@@ -2006,14 +2006,14 @@ export function OverseasView() {
                     variant="outline"
                     size="sm"
                     onClick={() => setNewRmaModalOpen(false)}
-                    className="h-9 px-4 text-xs font-medium text-slate-700 border-slate-200 bg-white hover:bg-slate-50 rounded-lg cursor-pointer"
+                    className="h-9 px-4 text-xs font-medium text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg cursor-pointer"
                   >
                     ยกเลิก
                   </Button>
                   <Button
                     type="submit"
                     size="sm"
-                    className="h-9 px-4 bg-[#0c1a30] text-white hover:bg-[#1e293b] text-xs font-medium rounded-lg shadow-xs cursor-pointer"
+                    className="h-9 px-4 bg-[#0c1a30] dark:bg-blue-600 text-white hover:bg-[#1e293b] dark:hover:bg-blue-500 text-xs font-medium rounded-lg shadow-xs cursor-pointer"
                   >
                     เปิดใบส่งซ่อม
                   </Button>
