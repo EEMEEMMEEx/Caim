@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.2] - 2026-09-29
+
+### Performance & Optimization
+- **UI Responsiveness & Tab Switching Latency Optimization**:
+  - **Client-Side Query Cache & Extended StaleTime**:
+    - Created `useStationsQuery` singleton cache hook with a 3-minute (`180,000ms`) `staleTime`, eliminating redundant HTTP requests when navigating between Dashboard, Tickets, Stations, and New Ticket forms.
+    - Extended in-memory cache TTL across `useTicketsQuery`, `useEquipmentsQuery`, and `useRmaQuery` from 4–5 seconds to 3 minutes (`180,000ms`), preventing full unmount re-fetching, layout shifts, and spinner flickering during rapid tab switching.
+    - Tuned SWR dashboard deduping interval to 3 minutes (`180,000ms`) with `revalidateIfStale: false` and `focusThrottleInterval: 60,000ms` for seamless 0ms tab return.
+  - **Eliminated Unnecessary Table Re-renders with Memoized Row Components**:
+    - Extracted and wrapped `StationTableRow`, `TicketTableRow`, and `AssetTableRow` with `React.memo` to shield unaffected row trees from re-rendering during parent state changes (such as single-row selection, checkbox toggle, or modal opening).
+    - Stabilized event handlers and mutation callbacks using `React.useCallback`.
+  - **Non-blocking State Transitions & Deferred Filtering**:
+    - Wrapped heavy cascading filters (province, district, subdistrict, station), category/vendor selectors, filter reset actions, and pagination navigation inside React 18's `useTransition` (`startTransition`) across `StationsView`, `TicketsView`, and `AssetsView`.
+    - Integrated `useDeferredValue` for search queries to prevent keystroke latency and blocking main-thread operations during client-side search filtering.
+
 ## [0.23.1] - 2026-09-29
 
 ### Changed & Enhanced

@@ -30,6 +30,101 @@ import { type Asset } from "./assetsData"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useEquipmentsQuery } from "@/hooks/useEquipmentsQuery"
 
+interface AssetTableRowProps {
+  item: Asset
+  index: number
+  isCopied: boolean
+  onCopy: (serial: string) => void
+  onDetail: (asset: Asset) => void
+  onEdit: (asset: Asset) => void
+  onDelete: (asset: Asset) => void
+}
+
+const AssetTableRow = React.memo(function AssetTableRow({
+  item,
+  index,
+  isCopied,
+  onCopy,
+  onDetail,
+  onEdit,
+  onDelete,
+}: AssetTableRowProps) {
+  return (
+    <tr className="hover:bg-muted/30 transition-colors group">
+      <td className="py-3.5 px-4 text-center font-mono text-muted-foreground">
+        {index}
+      </td>
+      <td className="py-3.5 px-4">
+        <div className="flex items-center gap-1.5">
+          <span className="font-mono font-bold text-foreground">{item.serial}</span>
+          <button
+            type="button"
+            onClick={() => onCopy(item.serial)}
+            className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+            title="คัดลอก S/N"
+          >
+            {isCopied ? (
+              <Check className="size-3 text-emerald-600" />
+            ) : (
+              <Copy className="size-3" />
+            )}
+          </button>
+        </div>
+      </td>
+      <td className="py-3.5 px-4 font-medium text-foreground">
+        {item.name || "-"}
+      </td>
+      <td className="py-3.5 px-4">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-brand-navy/10 text-brand-navy dark:bg-brand-navy/30 dark:text-blue-300">
+          {item.vendor}
+        </span>
+      </td>
+      <td className="py-3.5 px-4 font-medium text-foreground">{item.model}</td>
+      <td className="py-3.5 px-4 text-muted-foreground max-w-xs">
+        <span className="line-clamp-2">{item.category}</span>
+      </td>
+      <td className="py-3.5 px-4 text-right">
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDetail(item)}
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+            title="ดูรายละเอียด"
+          >
+            <Eye className="size-3.5" />
+          </Button>
+          <Link
+            href={`/tickets/new?serial=${encodeURIComponent(item.serial)}`}
+            className="inline-flex items-center justify-center text-brand hover:text-brand-dark hover:bg-brand/10 h-7 w-7 rounded-md transition-colors"
+            title="เปิดเคสเคลม"
+          >
+            <Wrench className="size-3.5" />
+          </Link>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(item)}
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-blue-600"
+            title="แก้ไขข้อมูล"
+          >
+            <Edit2 className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(item)}
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+            title="ลบอุปกรณ์"
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  )
+})
+
 export function AssetsView() {
   const {
     equipments: assetsList,
@@ -39,6 +134,7 @@ export function AssetsView() {
     deleteEquipment,
   } = useEquipmentsQuery()
 
+  const [, startTransition] = React.useTransition()
   const [searchQuery, setSearchQuery] = React.useState("")
   const [selectedVendor, setSelectedVendor] = React.useState<string>("all")
   const [selectedCategory, setSelectedCategory] = React.useState<string>("all")
@@ -117,11 +213,17 @@ export function AssetsView() {
     return filtered.slice(start, start + pageSize)
   }, [filtered, currentPage, pageSize])
 
-  const handleCopySerial = (serial: string) => {
+  const handleCopySerial = React.useCallback((serial: string) => {
     navigator.clipboard.writeText(serial)
     setCopiedSerial(serial)
     setTimeout(() => setCopiedSerial(null), 1500)
-  }
+  }, [])
+
+  const handlePageChange = React.useCallback((page: number | ((p: number) => number)) => {
+    startTransition(() => {
+      setCurrentPage(page)
+    })
+  }, [])
 
   const handleExportCSV = () => {
     const headers = ["Serial Number", "อุปกรณ์ (Name)", "ยี่ห้อ (Vendor)", "รุ่น (Model)", "หมวดหมู่ (Category)", "รายละเอียด (Description)"]
@@ -247,6 +349,18 @@ export function AssetsView() {
     setIsAddModalOpen(true)
   }
 
+  const handleDetail = React.useCallback((asset: Asset) => {
+    setDetailAsset(asset)
+  }, [])
+
+  const handleEdit = React.useCallback((asset: Asset) => {
+    openEditModal(asset)
+  }, [])
+
+  const handleDeletePrompt = React.useCallback((asset: Asset) => {
+    setDeletingAsset(asset)
+  }, [])
+
   return (
     <main id="main" className="flex-1 bg-background">
       <div className="mx-auto flex max-w-350 flex-col gap-6 px-4 py-5 sm:px-6 sm:py-6">
@@ -337,7 +451,12 @@ export function AssetsView() {
 
             <select
               value={selectedVendor}
-              onChange={(e) => setSelectedVendor(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value
+                startTransition(() => {
+                  setSelectedVendor(val)
+                })
+              }}
               className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs focus-visible:border-ring focus-visible:outline-none"
             >
               <option value="all">ทุกยี่ห้อ ({vendors.length})</option>
@@ -350,7 +469,12 @@ export function AssetsView() {
 
             <select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value
+                startTransition(() => {
+                  setSelectedCategory(val)
+                })
+              }}
               className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs focus-visible:border-ring focus-visible:outline-none"
             >
               <option value="all">ทุกหมวดหมู่ ({categories.length})</option>
@@ -369,9 +493,11 @@ export function AssetsView() {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setSearchQuery("")
-                  setSelectedVendor("all")
-                  setSelectedCategory("all")
+                  startTransition(() => {
+                    setSearchQuery("")
+                    setSelectedVendor("all")
+                    setSelectedCategory("all")
+                  })
                 }}
                 className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1"
               >
@@ -418,78 +544,16 @@ export function AssetsView() {
                   </tr>
                 ) : (
                   paginatedAssets.map((item, idx) => (
-                    <tr key={item.serial} className="hover:bg-muted/30 transition-colors group">
-                      <td className="py-3.5 px-4 text-center font-mono text-muted-foreground">
-                        {(currentPage - 1) * pageSize + idx + 1}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold text-foreground">{item.serial}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopySerial(item.serial)}
-                            className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="คัดลอก S/N"
-                          >
-                            {copiedSerial === item.serial ? (
-                              <Check className="size-3 text-emerald-600" />
-                            ) : (
-                              <Copy className="size-3" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-foreground">
-                        {item.name || "-"}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-brand-navy/10 text-brand-navy dark:bg-brand-navy/30 dark:text-blue-300">
-                          {item.vendor}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-foreground">{item.model}</td>
-                      <td className="py-3.5 px-4 text-muted-foreground max-w-xs">
-                        <span className="line-clamp-2">{item.category}</span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDetailAsset(item)}
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                            title="ดูรายละเอียด"
-                          >
-                            <Eye className="size-3.5" />
-                          </Button>
-                          <Link
-                            href={`/tickets/new?serial=${encodeURIComponent(item.serial)}`}
-                            className="inline-flex items-center justify-center text-brand hover:text-brand-dark hover:bg-brand/10 h-7 w-7 rounded-md transition-colors"
-                            title="เปิดเคสเคลม"
-                          >
-                            <Wrench className="size-3.5" />
-                          </Link>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditModal(item)}
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-blue-600"
-                            title="แก้ไขข้อมูล"
-                          >
-                            <Edit2 className="size-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeletingAsset(item)}
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                            title="ลบอุปกรณ์"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
+                    <AssetTableRow
+                      key={item.serial}
+                      item={item}
+                      index={(currentPage - 1) * pageSize + idx + 1}
+                      isCopied={copiedSerial === item.serial}
+                      onCopy={handleCopySerial}
+                      onDetail={handleDetail}
+                      onEdit={handleEdit}
+                      onDelete={handleDeletePrompt}
+                    />
                   ))
                 )}
               </tbody>
@@ -518,7 +582,7 @@ export function AssetsView() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(1)}
+                onClick={() => handlePageChange(1)}
                 disabled={currentPage <= 1}
                 className="h-7 w-7 p-0"
               >
@@ -527,7 +591,7 @@ export function AssetsView() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                onClick={() => handlePageChange((p) => Math.max(1, p - 1))}
                 disabled={currentPage <= 1}
                 className="h-7 w-7 p-0"
               >
@@ -539,7 +603,7 @@ export function AssetsView() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => handlePageChange((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage >= totalPages}
                 className="h-7 w-7 p-0"
               >
@@ -548,7 +612,7 @@ export function AssetsView() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(totalPages)}
+                onClick={() => handlePageChange(totalPages)}
                 disabled={currentPage >= totalPages}
                 className="h-7 w-7 p-0"
               >

@@ -42,8 +42,8 @@ function broadcastCacheUpdate() {
 export async function fetchEquipmentsFromApi(force = false): Promise<Asset[]> {
   const now = Date.now()
 
-  // Use cached data if not forced and fetched recently (< 5 seconds)
-  if (!force && globalLastUpdated > 0 && now - globalLastUpdated < 5000 && hasEverFetched) {
+  // Use cached data if not forced and fetched recently (< 3 minutes)
+  if (!force && globalLastUpdated > 0 && now - globalLastUpdated < 180_000 && hasEverFetched) {
     return globalEquipmentsCache
   }
 

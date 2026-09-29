@@ -23,10 +23,192 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { type Station } from "./stationsData"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useTicketsQuery, invalidateTicketsCache, type Ticket } from "@/hooks/useTicketsQuery"
+import { useStationsQuery } from "@/hooks/useStationsQuery"
 import { calculateCaseDuration, formatDisplayThaiDate } from "@/lib/utils/caseDuration"
+
+interface TicketTableRowProps {
+  item: Ticket
+  isSelected: boolean
+  onToggleSelect: (id: string) => void
+  onView: (item: Ticket) => void
+  onEdit: (item: Ticket) => void
+  onConfirmDelete: (item: Ticket) => void
+}
+
+const TicketTableRow = React.memo(function TicketTableRow({
+  item,
+  isSelected,
+  onToggleSelect,
+  onView,
+  onEdit,
+  onConfirmDelete,
+}: TicketTableRowProps) {
+  const duration = React.useMemo(() => calculateCaseDuration(item), [item])
+  const isOverdue = duration.isOverdue
+
+  return (
+    <tr
+      className={`transition-colors ${
+        isOverdue
+          ? "bg-[#fff5f5] hover:bg-[#ffebeb]"
+          : "hover:bg-slate-50/70"
+      } ${isSelected ? "bg-blue-50/40" : ""}`}
+    >
+      {/* Checkbox */}
+      <td className="px-4 py-3.5 text-center">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggleSelect(item.id)}
+          className="size-4 rounded-full border-slate-300 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
+          aria-label={`เลือกเคส ${item.title}`}
+        />
+      </td>
+
+      {/* เคส (Title & Description) */}
+      <td className="px-4 py-3.5">
+        <p className="font-bold text-slate-800 text-xs">
+          {item.title}
+        </p>
+        <p className="text-[11px] text-slate-500 mt-0.5 max-w-xs truncate">
+          {item.problemDesc}
+        </p>
+        {item.station && (
+          <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-600">
+            <MapPin className="size-3 text-slate-400 shrink-0" />
+            <span className="font-medium text-slate-700">{item.station}</span>
+            {(item.district || item.province) && (
+              <span className="text-slate-400">
+                ({[item.district && `อ.${item.district}`, item.province && `จ.${item.province}`].filter(Boolean).join(", ")})
+              </span>
+            )}
+          </div>
+        )}
+      </td>
+
+      {/* อุปกรณ์ (Chip Icon & S/N) */}
+      <td className="px-4 py-3.5">
+        <div className="flex items-start gap-2.5">
+          <span className="flex size-6.5 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+            <Cpu className="size-3.5" />
+          </span>
+          <div className="leading-tight">
+            <p className="text-xs text-slate-700">
+              {item.vendor} / {item.model}
+            </p>
+            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+              S/N {item.serialNo}
+            </p>
+          </div>
+        </div>
+      </td>
+
+      {/* สถานะ (Status Pill Badges) */}
+      <td className="px-4 py-3.5">
+        {item.statusCode === 1 && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-[#ecfdf5] px-2.5 py-0.5 text-[11px] font-medium text-[#059669]">
+            <span className="size-1.5 rounded-full bg-[#059669]" />
+            <span>รับแจ้ง</span>
+          </span>
+        )}
+        {item.statusCode === 2 && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-200/60 bg-[#f5f3ff] px-2.5 py-0.5 text-[11px] font-medium text-[#7c3aed]">
+            <span className="size-1.5 rounded-full bg-[#7c3aed]" />
+            <span>ส่งศูนย์</span>
+          </span>
+        )}
+        {item.statusCode === 3 && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/60 bg-[#fffbeb] px-2.5 py-0.5 text-[11px] font-medium text-[#d97706]">
+            <span className="size-1.5 rounded-full bg-[#d97706]" />
+            <span>รออะไหล่</span>
+          </span>
+        )}
+        {item.statusCode === 4 && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/60 bg-[#eff6ff] px-2.5 py-0.5 text-[11px] font-medium text-[#2563eb]">
+            <span className="size-1.5 rounded-full bg-[#2563eb]" />
+            <span>ซ่อมเสร็จ</span>
+          </span>
+        )}
+        {item.statusCode === 5 && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-[#ecfdf5] px-2.5 py-0.5 text-[11px] font-medium text-[#059669]">
+            <span className="size-1.5 rounded-full bg-[#059669]" />
+            <span>ปิดเคส</span>
+          </span>
+        )}
+        {item.statusCode === 6 && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-pink-200/60 bg-[#fdf2f8] px-2.5 py-0.5 text-[11px] font-medium text-[#db2777]">
+            <span className="size-1.5 rounded-full bg-[#db2777]" />
+            <span>ปฏิเสธเคลม</span>
+          </span>
+        )}
+        {(!item.statusCode || item.statusCode < 1 || item.statusCode > 6) && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-700">
+            <span className="size-1.5 rounded-full bg-slate-500" />
+            <span>{item.status || "รับแจ้ง"}</span>
+          </span>
+        )}
+      </td>
+
+      {/* รับแจ้ง (Date) */}
+      <td className="px-4 py-3.5 text-slate-600 whitespace-nowrap">
+        {formatDisplayThaiDate(item.date)}
+      </td>
+
+      {/* อายุงาน (Duration & Overdue Alert) */}
+      <td className="px-4 py-3.5 whitespace-nowrap">
+        {isOverdue ? (
+          <div className="leading-tight">
+            <p className="font-bold text-[#dc2626]">
+              {duration.text}
+            </p>
+            <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-red-200/80 bg-[#fee2e2]/70 px-1.5 py-0.5 text-[10px] font-medium text-[#dc2626]">
+              <AlertTriangle className="size-2.5" />
+              <span>{duration.overdueText}</span>
+            </span>
+          </div>
+        ) : (
+          <span className="text-slate-600">{duration.text}</span>
+        )}
+      </td>
+
+      {/* Action Links (ดู / แก้ไข / ลบ) */}
+      <td className="px-4 py-3.5 whitespace-nowrap">
+        <div className="inline-flex items-center gap-1.5 text-xs">
+          <button
+            type="button"
+            onClick={() => onView(item)}
+            className="text-[#1e61f0] hover:underline cursor-pointer"
+            aria-label={`ดูรายละเอียดเคส ${item.title}`}
+          >
+            ดู
+          </button>
+          <span className="text-slate-300">/</span>
+          <button
+            type="button"
+            onClick={() => onEdit(item)}
+            className="text-[#1e61f0] hover:underline cursor-pointer"
+            aria-label={`แก้ไขข้อมูลเคส ${item.title}`}
+          >
+            แก้ไข
+          </button>
+          <span className="text-slate-300">/</span>
+          <button
+            type="button"
+            onClick={() => onConfirmDelete(item)}
+            className="inline-flex items-center gap-0.5 text-red-600 hover:text-red-700 hover:underline cursor-pointer"
+            aria-label={`ลบเคส ${item.title}`}
+            title="ลบเคสนี้ถาวร"
+          >
+            <Trash2 className="size-3 text-red-500" />
+            <span>ลบ</span>
+          </button>
+        </div>
+      </td>
+    </tr>
+  )
+})
 
 /**
  * Helper to construct URLSearchParams for claim list API queries
@@ -62,7 +244,8 @@ export function buildClaimFiltersQuery(filters: ClaimFilterParams): URLSearchPar
 export function TicketsView() {
   const searchParams = useSearchParams()
   const { tickets, deleteTicket, updateTicket } = useTicketsQuery()
-  const [stationsList, setStationsList] = React.useState<Station[]>([])
+  const { stations: stationsList } = useStationsQuery()
+  const [, startTransition] = React.useTransition()
 
   // Pagination States
   const [currentPage, setCurrentPage] = React.useState(1)
@@ -81,32 +264,8 @@ export function TicketsView() {
     setTimeout(() => setToastMessage(null), 3500)
   }, [])
 
-  // Real-time synchronization subscription for Stations
-  const { isConnected } = useRealtimeSync({
-    onStationChange: (raw) => {
-      const payload = raw as { action?: string; data?: Station } | undefined
-      if (!payload || !payload.data) return
-      const { action, data } = payload
-      setStationsList((prev) => {
-        if (action === "create") return [data, ...prev]
-        if (action === "update") return prev.map((s) => (s.id === data.id ? { ...s, ...data } : s))
-        if (action === "delete") return prev.filter((s) => s.id !== data.id)
-        return prev
-      })
-    },
-  })
-
-  // Sync stations from backend API on mount
-  React.useEffect(() => {
-    fetch("/api/stations")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.success && Array.isArray(data.stations)) {
-          setStationsList(data.stations)
-        }
-      })
-      .catch((err) => console.warn("Could not sync stations:", err))
-  }, [])
+  // Real-time synchronization subscription for Tickets
+  const { isConnected } = useRealtimeSync({})
 
   // Filter Form States
   const [statusFilter, setStatusFilter] = React.useState("all")
@@ -202,25 +361,33 @@ export function TicketsView() {
 
   // Cascading Handlers
   const handleProvinceChange = React.useCallback((newProvince: string) => {
-    setProvinceFilter(newProvince)
-    setDistrictFilter("all")
-    setSubdistrictFilter("all")
-    setStationFilter("all")
+    startTransition(() => {
+      setProvinceFilter(newProvince)
+      setDistrictFilter("all")
+      setSubdistrictFilter("all")
+      setStationFilter("all")
+    })
   }, [])
 
   const handleDistrictChange = React.useCallback((newDistrict: string) => {
-    setDistrictFilter(newDistrict)
-    setSubdistrictFilter("all")
-    setStationFilter("all")
+    startTransition(() => {
+      setDistrictFilter(newDistrict)
+      setSubdistrictFilter("all")
+      setStationFilter("all")
+    })
   }, [])
 
   const handleSubdistrictChange = React.useCallback((newSubdistrict: string) => {
-    setSubdistrictFilter(newSubdistrict)
-    setStationFilter("all")
+    startTransition(() => {
+      setSubdistrictFilter(newSubdistrict)
+      setStationFilter("all")
+    })
   }, [])
 
   const handleStationChange = React.useCallback((newStation: string) => {
-    setStationFilter(newStation)
+    startTransition(() => {
+      setStationFilter(newStation)
+    })
   }, [])
 
   // Reactive synchronization with URL Query Search Parameters (e.g. from Dashboard click-throughs)
@@ -301,22 +468,24 @@ export function TicketsView() {
   }, [searchParams])
 
   const handleSearch = React.useCallback(() => {
-    // Re-enable table rendering upon manual search trigger
-    setIsTableCleared(false)
-    setCurrentPage(1)
+    startTransition(() => {
+      // Re-enable table rendering upon manual search trigger
+      setIsTableCleared(false)
+      setCurrentPage(1)
 
-    setAppliedFilters({
-      status: statusFilter,
-      caseNo: caseNoFilter.trim(),
-      sn: snFilter.trim(),
-      vendor: vendorFilter,
-      category: categoryFilter,
-      province: provinceFilter,
-      district: districtFilter,
-      subdistrict: subdistrictFilter,
-      station: stationFilter,
-      onlyOverdue,
-      onTime: false,
+      setAppliedFilters({
+        status: statusFilter,
+        caseNo: caseNoFilter.trim(),
+        sn: snFilter.trim(),
+        vendor: vendorFilter,
+        category: categoryFilter,
+        province: provinceFilter,
+        district: districtFilter,
+        subdistrict: subdistrictFilter,
+        station: stationFilter,
+        onlyOverdue,
+        onTime: false,
+      })
     })
   }, [
     statusFilter,
@@ -332,36 +501,50 @@ export function TicketsView() {
   ])
 
   const handleResetFilters = React.useCallback(() => {
-    // 1. Reset all input fields and dropdowns back to their default empty/placeholder states
-    setStatusFilter("all")
-    setCaseNoFilter("")
-    setSnFilter("")
-    setCategoryFilter("all")
-    setVendorFilter("all")
-    setProvinceFilter("all")
-    setDistrictFilter("all")
-    setSubdistrictFilter("all")
-    setStationFilter("all")
-    setOnlyOverdue(false)
-    setSelectedIds([])
-    setCurrentPage(1)
+    startTransition(() => {
+      // 1. Reset all input fields and dropdowns back to their default empty/placeholder states
+      setStatusFilter("all")
+      setCaseNoFilter("")
+      setSnFilter("")
+      setCategoryFilter("all")
+      setVendorFilter("all")
+      setProvinceFilter("all")
+      setDistrictFilter("all")
+      setSubdistrictFilter("all")
+      setStationFilter("all")
+      setOnlyOverdue(false)
+      setSelectedIds([])
+      setCurrentPage(1)
 
-    // 2. Empty Table State: Clear all rendered records from the table completely
-    // Do not automatically reload or display the default case list until user clicks 'ค้นหา'
-    setIsTableCleared(true)
+      // 2. Empty Table State: Clear all rendered records from the table completely
+      setIsTableCleared(true)
 
-    setAppliedFilters({
-      status: "all",
-      caseNo: "",
-      sn: "",
-      vendor: "all",
-      category: "all",
-      province: "all",
-      district: "all",
-      subdistrict: "all",
-      station: "all",
-      onlyOverdue: false,
-      onTime: false,
+      setAppliedFilters({
+        status: "all",
+        caseNo: "",
+        sn: "",
+        vendor: "all",
+        category: "all",
+        province: "all",
+        district: "all",
+        subdistrict: "all",
+        station: "all",
+        onlyOverdue: false,
+        onTime: false,
+      })
+    })
+  }, [])
+
+  const handlePageChange = React.useCallback((page: number) => {
+    startTransition(() => {
+      setCurrentPage(page)
+    })
+  }, [])
+
+  const handlePageSizeChange = React.useCallback((size: number) => {
+    startTransition(() => {
+      setPageSize(size)
+      setCurrentPage(1)
     })
   }, [])
 
@@ -1029,173 +1212,17 @@ export function TicketsView() {
                     </td>
                   </tr>
                 ) : (
-                  paginatedTickets.map((item) => {
-                    const isSelected = selectedIds.includes(item.id)
-                    const duration = calculateCaseDuration(item)
-                    const isOverdue = duration.isOverdue
-
-                    return (
-                      <tr
-                        key={item.id}
-                        className={`transition-colors ${
-                          isOverdue
-                            ? "bg-[#fff5f5] hover:bg-[#ffebeb]"
-                            : "hover:bg-slate-50/70"
-                        } ${isSelected ? "bg-blue-50/40" : ""}`}
-                      >
-                        {/* Checkbox */}
-                        <td className="px-4 py-3.5 text-center">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelectRow(item.id)}
-                            className="size-4 rounded-full border-slate-300 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
-                            aria-label={`เลือกเคส ${item.title}`}
-                          />
-                        </td>
-
-                        {/* เคส (Title & Description) */}
-                        <td className="px-4 py-3.5">
-                          <p className="font-bold text-slate-800 text-xs">
-                            {item.title}
-                          </p>
-                          <p className="text-[11px] text-slate-500 mt-0.5 max-w-xs truncate">
-                            {item.problemDesc}
-                          </p>
-                          {item.station && (
-                            <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-600">
-                              <MapPin className="size-3 text-slate-400 shrink-0" />
-                              <span className="font-medium text-slate-700">{item.station}</span>
-                              {(item.district || item.province) && (
-                                <span className="text-slate-400">
-                                  ({[item.district && `อ.${item.district}`, item.province && `จ.${item.province}`].filter(Boolean).join(", ")})
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </td>
-
-                        {/* อุปกรณ์ (Chip Icon & S/N) */}
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-start gap-2.5">
-                            <span className="flex size-6.5 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
-                              <Cpu className="size-3.5" />
-                            </span>
-                            <div className="leading-tight">
-                              <p className="text-xs text-slate-700">
-                                {item.vendor} / {item.model}
-                              </p>
-                              <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-                                S/N {item.serialNo}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* สถานะ (Status Pill Badges) */}
-                        <td className="px-4 py-3.5">
-                          {item.statusCode === 1 && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-[#ecfdf5] px-2.5 py-0.5 text-[11px] font-medium text-[#059669]">
-                              <span className="size-1.5 rounded-full bg-[#059669]" />
-                              <span>รับแจ้ง</span>
-                            </span>
-                          )}
-                          {item.statusCode === 2 && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-200/60 bg-[#f5f3ff] px-2.5 py-0.5 text-[11px] font-medium text-[#7c3aed]">
-                              <span className="size-1.5 rounded-full bg-[#7c3aed]" />
-                              <span>ส่งศูนย์</span>
-                            </span>
-                          )}
-                          {item.statusCode === 3 && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/60 bg-[#fffbeb] px-2.5 py-0.5 text-[11px] font-medium text-[#d97706]">
-                              <span className="size-1.5 rounded-full bg-[#d97706]" />
-                              <span>รออะไหล่</span>
-                            </span>
-                          )}
-                          {item.statusCode === 4 && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/60 bg-[#eff6ff] px-2.5 py-0.5 text-[11px] font-medium text-[#2563eb]">
-                              <span className="size-1.5 rounded-full bg-[#2563eb]" />
-                              <span>ซ่อมเสร็จ</span>
-                            </span>
-                          )}
-                          {item.statusCode === 5 && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-[#ecfdf5] px-2.5 py-0.5 text-[11px] font-medium text-[#059669]">
-                              <span className="size-1.5 rounded-full bg-[#059669]" />
-                              <span>ปิดเคส</span>
-                            </span>
-                          )}
-                          {item.statusCode === 6 && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-pink-200/60 bg-[#fdf2f8] px-2.5 py-0.5 text-[11px] font-medium text-[#db2777]">
-                              <span className="size-1.5 rounded-full bg-[#db2777]" />
-                              <span>ปฏิเสธเคลม</span>
-                            </span>
-                          )}
-                          {(!item.statusCode || item.statusCode < 1 || item.statusCode > 6) && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-700">
-                              <span className="size-1.5 rounded-full bg-slate-500" />
-                              <span>{item.status || "รับแจ้ง"}</span>
-                            </span>
-                          )}
-                        </td>
-
-                        {/* รับแจ้ง (Date) */}
-                        <td className="px-4 py-3.5 text-slate-600 whitespace-nowrap">
-                          {formatDisplayThaiDate(item.date)}
-                        </td>
-
-                        {/* อายุงาน (Duration & Overdue Alert) */}
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          {isOverdue ? (
-                            <div className="leading-tight">
-                              <p className="font-bold text-[#dc2626]">
-                                {duration.text}
-                              </p>
-                              <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-red-200/80 bg-[#fee2e2]/70 px-1.5 py-0.5 text-[10px] font-medium text-[#dc2626]">
-                                <AlertTriangle className="size-2.5" />
-                                <span>{duration.overdueText}</span>
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-600">{duration.text}</span>
-                          )}
-                        </td>
-
-                        {/* Action Links (ดู / แก้ไข / ลบ) */}
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1.5 text-xs">
-                            <button
-                              type="button"
-                              onClick={() => handleView(item)}
-                              className="text-[#1e61f0] hover:underline cursor-pointer"
-                              aria-label={`ดูรายละเอียดเคส ${item.title}`}
-                            >
-                              ดู
-                            </button>
-                            <span className="text-slate-300">/</span>
-                            <button
-                              type="button"
-                              onClick={() => handleEdit(item)}
-                              className="text-[#1e61f0] hover:underline cursor-pointer"
-                              aria-label={`แก้ไขข้อมูลเคส ${item.title}`}
-                            >
-                              แก้ไข
-                            </button>
-                            <span className="text-slate-300">/</span>
-                            <button
-                              type="button"
-                              onClick={() => confirmDeleteTicket(item)}
-                              className="inline-flex items-center gap-0.5 text-red-600 hover:text-red-700 hover:underline cursor-pointer"
-                              aria-label={`ลบเคส ${item.title}`}
-                              title="ลบเคสนี้ถาวร"
-                            >
-                              <Trash2 className="size-3 text-red-500" />
-                              <span>ลบ</span>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })
+                  paginatedTickets.map((item) => (
+                    <TicketTableRow
+                      key={item.id}
+                      item={item}
+                      isSelected={selectedIds.includes(item.id)}
+                      onToggleSelect={handleToggleSelectRow}
+                      onView={handleView}
+                      onEdit={handleEdit}
+                      onConfirmDelete={confirmDeleteTicket}
+                    />
+                  ))
                 )}
               </tbody>
             </table>
@@ -1210,10 +1237,7 @@ export function TicketsView() {
               <div className="relative">
                 <select
                   value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value))
-                    setCurrentPage(1)
-                  }}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
                   className="flex h-8 items-center rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
                   aria-label="จำนวนรายการต่อหน้า"
                 >
@@ -1232,7 +1256,7 @@ export function TicketsView() {
               <button
                 type="button"
                 disabled={currentPage <= 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                 className={`inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs transition-colors ${
                   currentPage <= 1
                     ? "bg-slate-50/50 text-slate-400 cursor-not-allowed"
@@ -1251,7 +1275,7 @@ export function TicketsView() {
               <button
                 type="button"
                 disabled={currentPage >= totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                 className={`inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs transition-colors ${
                   currentPage >= totalPages
                     ? "bg-slate-50/50 text-slate-400 cursor-not-allowed"

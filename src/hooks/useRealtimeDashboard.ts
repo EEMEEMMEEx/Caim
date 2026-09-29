@@ -48,10 +48,10 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
   } = useSWR<DashboardMetrics>(DASHBOARD_STATS_API_KEY, dashboardFetcher, {
     fallbackData: initialMetrics,
     revalidateOnFocus: true, // Silent revalidation on tab/window focus
-    revalidateIfStale: true,
+    revalidateIfStale: false, // Prevent redundant refetch if within stale window
     revalidateOnReconnect: true,
-    dedupingInterval: 5000, // 5s deduping window (staleTime equivalent)
-    focusThrottleInterval: 5000,
+    dedupingInterval: 180_000, // 3m staleTime window (prevents refetch on quick tab switching)
+    focusThrottleInterval: 60_000,
     keepPreviousData: true, // Display previous cached data instantly upon navigation
   })
 

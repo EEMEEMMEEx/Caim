@@ -33,10 +33,164 @@ import { Button } from "@/components/ui/button"
 import { type Station } from "./stationsData"
 import { saveStationApi, deleteStationApi } from "@/lib/storage/recordStorage"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
+import { useStationsQuery } from "@/hooks/useStationsQuery"
+
+interface StationTableRowProps {
+  item: Station
+  index: number
+  copiedCode: string | null
+  onCopyCode: (code: string) => void
+  onViewDetail: (station: Station) => void
+  onEdit: (station: Station) => void
+  onDelete: (station: Station) => void
+}
+
+const StationTableRow = React.memo(function StationTableRow({
+  item,
+  index,
+  copiedCode,
+  onCopyCode,
+  onViewDetail,
+  onEdit,
+  onDelete,
+}: StationTableRowProps) {
+  return (
+    <tr className="hover:bg-muted/30 transition-colors group">
+      <td className="py-3.5 px-4 text-center font-mono text-muted-foreground">
+        {index}
+      </td>
+
+      {/* Code */}
+      <td className="py-3.5 px-4">
+        <div className="flex items-center gap-1.5">
+          <span className="font-mono font-bold text-foreground">
+            {item.code}
+          </span>
+          <button
+            type="button"
+            onClick={() => onCopyCode(item.code)}
+            className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+            title="คัดลอกรหัสสถานี"
+          >
+            {copiedCode === item.code ? (
+              <Check className="size-3 text-emerald-600" />
+            ) : (
+              <Copy className="size-3" />
+            )}
+          </button>
+        </div>
+      </td>
+
+      {/* Name & Site Type */}
+      <td className="py-3.5 px-4">
+        <div className="flex flex-col">
+          <span className="font-semibold text-foreground text-xs leading-snug">
+            {item.name}
+          </span>
+          <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+            <Building2 className="size-3 shrink-0" />
+            {item.siteType} {item.towerType ? `· ${item.towerType}` : ""}
+          </span>
+        </div>
+      </td>
+
+      {/* Height */}
+      <td className="py-3.5 px-4 text-center">
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+            item.height === 60
+              ? "bg-blue-600 text-white"
+              : item.height === 30
+              ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200"
+              : item.height === 18
+              ? "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200"
+              : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+          }`}
+        >
+          {item.height} ม.
+        </span>
+      </td>
+
+      {/* Sub-district & District */}
+      <td className="py-3.5 px-4 text-muted-foreground">
+        <div className="flex flex-col">
+          <span className="text-foreground">ต.{item.subdistrict}</span>
+          <span className="text-[11px] text-muted-foreground">อ.{item.district}</span>
+        </div>
+      </td>
+
+      {/* Province & Area */}
+      <td className="py-3.5 px-4">
+        <div className="flex flex-col">
+          <span className="font-medium text-foreground">{item.province}</span>
+          <span className="text-[11px] text-muted-foreground">{item.zone || item.area}</span>
+        </div>
+      </td>
+
+      {/* Coordinates */}
+      <td className="py-3.5 px-4 text-muted-foreground">
+        <div className="flex flex-col gap-0.5">
+          <a
+            href={`https://www.google.com/maps?q=${item.lat},${item.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-mono text-[11px] text-blue-600 hover:text-blue-800 hover:underline"
+            title="เปิดแผนที่ Google Maps"
+          >
+            <span>{item.lat.toFixed(4)}, {item.lng.toFixed(4)}</span>
+            <ExternalLink className="size-3 shrink-0" />
+          </a>
+          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <Mountain className="size-3" />
+            {item.seaLevel > 0 ? `${item.seaLevel} ม. จากระดับทะเล` : "-"}
+          </span>
+        </div>
+      </td>
+
+      {/* Actions */}
+      <td className="py-3.5 px-4 text-right">
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onViewDetail(item)}
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+            title="ดูรายละเอียด"
+          >
+            <Eye className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(item)}
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-blue-600"
+            title="แก้ไขข้อมูล"
+          >
+            <Edit2 className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(item)}
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+            title="ลบสถานี"
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  )
+})
 
 export function StationsView() {
-  const [stationsList, setStationsList] = React.useState<Station[]>([])
-  const [isLoading, setIsLoading] = React.useState(true)
+  const {
+    stations: stationsList,
+    isLoading,
+    applyMutation: applyStationMutation,
+  } = useStationsQuery()
+
+  const [, startTransition] = React.useTransition()
   const [searchQuery, setSearchQuery] = React.useState("")
   const [selectedHeight, setSelectedHeight] = React.useState<string>("all")
   const [selectedArea, setSelectedArea] = React.useState<string>("all")
@@ -78,53 +232,18 @@ export function StationsView() {
     setTimeout(() => setToastMessage(null), 3500)
   }, [])
 
-  // Fetch stations from database
-  const fetchStations = React.useCallback(async () => {
-    try {
-      setIsLoading(true)
-      const res = await fetch("/api/stations", { cache: "no-store" })
-      if (!res.ok) throw new Error("Failed to load stations")
-      const data = await res.json()
-      if (data && data.success && Array.isArray(data.stations)) {
-        setStationsList(data.stations)
-      } else {
-        setStationsList([])
-      }
-    } catch (err) {
-      console.warn("Could not fetch stations from database:", err)
-      setStationsList([])
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
   // Real-time synchronization subscription
   const { isConnected } = useRealtimeSync({
     onStationChange: (raw) => {
-      const payload = raw as { action?: string; data?: Station } | undefined
+      const payload = raw as { action?: "create" | "update" | "delete"; data?: Station } | undefined
       if (!payload || !payload.data) return
       const { action, data } = payload
-      setStationsList((prev) => {
-        if (action === "create") {
-          const exists = prev.some((s) => s.id === data.id)
-          return exists ? prev.map((s) => (s.id === data.id ? data : s)) : [data, ...prev]
-        }
-        if (action === "update") {
-          return prev.map((s) => (s.id === data.id ? { ...s, ...data } : s))
-        }
-        if (action === "delete") {
-          return prev.filter((s) => s.id !== data.id)
-        }
-        return prev
-      })
+      if (action) {
+        applyStationMutation(action, data)
+      }
       showToast("ข้อมูลสถานีได้รับการอัปเดตแบบเรียลไทม์")
     },
   })
-
-  // Initial load
-  React.useEffect(() => {
-    fetchStations()
-  }, [fetchStations])
 
   const deferredQuery = React.useDeferredValue(searchQuery)
 
@@ -194,13 +313,95 @@ export function StationsView() {
     return filtered.slice(start, start + pageSize)
   }, [filtered, currentPage, pageSize])
 
-  const handleCopyCode = (code: string) => {
+  const handleCopyCode = React.useCallback((code: string) => {
     navigator.clipboard.writeText(code)
     setCopiedCode(code)
     setTimeout(() => setCopiedCode(null), 1500)
-  }
+  }, [])
 
-  const handleExportCSV = () => {
+  const handleViewDetail = React.useCallback((st: Station) => {
+    setDetailStation(st)
+  }, [])
+
+  const handleEdit = React.useCallback((station: Station) => {
+    setEditingStation(station)
+    setFormData({
+      name: station.name,
+      code: station.code,
+      subdistrict: station.subdistrict,
+      district: station.district,
+      province: station.province,
+      area: station.area,
+      zone: station.zone || "",
+      siteType: station.siteType,
+      contractor: station.contractor || "FORTH",
+      towerType: station.towerType || "Self-Support",
+      height: station.height,
+      seaLevel: station.seaLevel,
+      lat: station.lat,
+      lng: station.lng,
+      category: station.category,
+    })
+    setIsAddModalOpen(true)
+  }, [])
+
+  const handleDelete = React.useCallback((st: Station) => {
+    setDeletingStation(st)
+  }, [])
+
+  const handleProvinceChange = React.useCallback((val: string) => {
+    startTransition(() => {
+      setSelectedProvince(val)
+      setCurrentPage(1)
+    })
+  }, [])
+
+  const handleHeightChange = React.useCallback((val: string) => {
+    startTransition(() => {
+      setSelectedHeight(val)
+      setCurrentPage(1)
+    })
+  }, [])
+
+  const handleAreaChange = React.useCallback((val: string) => {
+    startTransition(() => {
+      setSelectedArea(val)
+      setCurrentPage(1)
+    })
+  }, [])
+
+  const handleSiteTypeChange = React.useCallback((val: string) => {
+    startTransition(() => {
+      setSelectedSiteType(val)
+      setCurrentPage(1)
+    })
+  }, [])
+
+  const handleResetFilters = React.useCallback(() => {
+    startTransition(() => {
+      setSearchQuery("")
+      setSelectedHeight("all")
+      setSelectedArea("all")
+      setSelectedProvince("all")
+      setSelectedSiteType("all")
+      setCurrentPage(1)
+    })
+  }, [])
+
+  const handlePageChange = React.useCallback((page: number) => {
+    startTransition(() => {
+      setCurrentPage(page)
+    })
+  }, [])
+
+  const handlePageSizeChange = React.useCallback((size: number) => {
+    startTransition(() => {
+      setPageSize(size)
+      setCurrentPage(1)
+    })
+  }, [])
+
+  const handleExportCSV = React.useCallback(() => {
     const headers = [
       "รหัสสถานี (Code)",
       "ชื่อสถานี (Station Name)",
@@ -244,7 +445,7 @@ export function StationsView() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  }
+  }, [filtered])
 
   // Handle Create or Update Station
   const handleSaveStation = async (e: React.FormEvent) => {
@@ -276,11 +477,8 @@ export function StationsView() {
     setIsSubmitting(false)
 
     if (res.success) {
-      if (isEdit) {
-        setStationsList((prev) => prev.map((s) => (s.id === payload.id ? (res.station as Station) || payload : s)))
-      } else {
-        setStationsList((prev) => [(res.station as Station) || payload, ...prev])
-      }
+      const savedStation = (res.station as Station) || (payload as Station)
+      applyStationMutation(isEdit ? "update" : "create", savedStation)
       setIsAddModalOpen(false)
       setEditingStation(null)
       showToast(res.message || "บันทึกข้อมูลสถานีสำเร็จแล้ว")
@@ -296,34 +494,12 @@ export function StationsView() {
     const res = await deleteStationApi(deletingStation.id)
     setIsSubmitting(false)
     if (res.success) {
-      setStationsList((prev) => prev.filter((s) => s.id !== deletingStation.id))
+      applyStationMutation("delete", { id: deletingStation.id })
       setDeletingStation(null)
       showToast(res.message || "ลบสถานีเรียบร้อยแล้ว")
     } else {
       showToast(res.message || "เกิดข้อผิดพลาดในการลบ")
     }
-  }
-
-  const openEditModal = (station: Station) => {
-    setEditingStation(station)
-    setFormData({
-      name: station.name,
-      code: station.code,
-      subdistrict: station.subdistrict,
-      district: station.district,
-      province: station.province,
-      area: station.area,
-      zone: station.zone || "",
-      siteType: station.siteType,
-      contractor: station.contractor || "FORTH",
-      towerType: station.towerType || "Self-Support",
-      height: station.height,
-      seaLevel: station.seaLevel,
-      lat: station.lat,
-      lng: station.lng,
-      category: station.category,
-    })
-    setIsAddModalOpen(true)
   }
 
   const openAddModal = () => {
@@ -511,7 +687,7 @@ export function StationsView() {
             {/* Province Filter */}
             <select
               value={selectedProvince}
-              onChange={(e) => setSelectedProvince(e.target.value)}
+              onChange={(e) => handleProvinceChange(e.target.value)}
               className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs focus-visible:border-ring focus-visible:outline-none"
             >
               <option value="all">ทุกจังหวัด ({provinces.length})</option>
@@ -525,7 +701,7 @@ export function StationsView() {
             {/* Height Filter */}
             <select
               value={selectedHeight}
-              onChange={(e) => setSelectedHeight(e.target.value)}
+              onChange={(e) => handleHeightChange(e.target.value)}
               className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs focus-visible:border-ring focus-visible:outline-none"
             >
               <option value="all">ทุกความสูงเสา ({heights.length})</option>
@@ -539,7 +715,7 @@ export function StationsView() {
             {/* Area Filter */}
             <select
               value={selectedArea}
-              onChange={(e) => setSelectedArea(e.target.value)}
+              onChange={(e) => handleAreaChange(e.target.value)}
               className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs focus-visible:border-ring focus-visible:outline-none"
             >
               <option value="all">ทุกภาค ({areas.length})</option>
@@ -553,7 +729,7 @@ export function StationsView() {
             {/* Site Type Filter */}
             <select
               value={selectedSiteType}
-              onChange={(e) => setSelectedSiteType(e.target.value)}
+              onChange={(e) => handleSiteTypeChange(e.target.value)}
               className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs focus-visible:border-ring focus-visible:outline-none"
             >
               <option value="all">ทุกสถานที่ ({siteTypes.length})</option>
@@ -572,13 +748,7 @@ export function StationsView() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  setSearchQuery("")
-                  setSelectedHeight("all")
-                  setSelectedArea("all")
-                  setSelectedProvince("all")
-                  setSelectedSiteType("all")
-                }}
+                onClick={handleResetFilters}
                 className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1"
               >
                 <RotateCcw className="size-3" />
@@ -626,134 +796,16 @@ export function StationsView() {
                   </tr>
                 ) : (
                   paginatedStations.map((item, idx) => (
-                    <tr
+                    <StationTableRow
                       key={item.id}
-                      className="hover:bg-muted/30 transition-colors group"
-                    >
-                      <td className="py-3.5 px-4 text-center font-mono text-muted-foreground">
-                        {(currentPage - 1) * pageSize + idx + 1}
-                      </td>
-
-                      {/* Code */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold text-foreground">
-                            {item.code}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyCode(item.code)}
-                            className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="คัดลอกรหัสสถานี"
-                          >
-                            {copiedCode === item.code ? (
-                              <Check className="size-3 text-emerald-600" />
-                            ) : (
-                              <Copy className="size-3" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-
-                      {/* Name & Site Type */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-foreground text-xs leading-snug">
-                            {item.name}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <Building2 className="size-3 shrink-0" />
-                            {item.siteType} {item.towerType ? `· ${item.towerType}` : ""}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Height */}
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                            item.height === 60
-                              ? "bg-blue-600 text-white"
-                              : item.height === 30
-                              ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200"
-                              : item.height === 18
-                              ? "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200"
-                              : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-                          }`}
-                        >
-                          {item.height} ม.
-                        </span>
-                      </td>
-
-                      {/* Sub-district & District */}
-                      <td className="py-3.5 px-4 text-muted-foreground">
-                        <div className="flex flex-col">
-                          <span className="text-foreground">ต.{item.subdistrict}</span>
-                          <span className="text-[11px] text-muted-foreground">อ.{item.district}</span>
-                        </div>
-                      </td>
-
-                      {/* Province & Area */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-foreground">{item.province}</span>
-                          <span className="text-[11px] text-muted-foreground">{item.zone || item.area}</span>
-                        </div>
-                      </td>
-
-                      {/* Coordinates */}
-                      <td className="py-3.5 px-4 text-muted-foreground">
-                        <div className="flex flex-col gap-0.5">
-                          <a
-                            href={`https://www.google.com/maps?q=${item.lat},${item.lng}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 font-mono text-[11px] text-blue-600 hover:text-blue-800 hover:underline"
-                            title="เปิดแผนที่ Google Maps"
-                          >
-                            <span>{item.lat.toFixed(4)}, {item.lng.toFixed(4)}</span>
-                            <ExternalLink className="size-3 shrink-0" />
-                          </a>
-                          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                            <Mountain className="size-3" />
-                            {item.seaLevel > 0 ? `${item.seaLevel} ม. จากระดับทะเล` : "-"}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDetailStation(item)}
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                            title="ดูรายละเอียด"
-                          >
-                            <Eye className="size-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditModal(item)}
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-blue-600"
-                            title="แก้ไขข้อมูล"
-                          >
-                            <Edit2 className="size-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeletingStation(item)}
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                            title="ลบสถานี"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
+                      item={item}
+                      index={(currentPage - 1) * pageSize + idx + 1}
+                      copiedCode={copiedCode}
+                      onCopyCode={handleCopyCode}
+                      onViewDetail={handleViewDetail}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
                   ))
                 )}
               </tbody>
@@ -769,7 +821,7 @@ export function StationsView() {
               </span>
               <select
                 value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
                 className="h-7 rounded border border-input bg-background px-2 text-xs"
               >
                 <option value={15}>15 รายการ/หน้า</option>
@@ -783,7 +835,7 @@ export function StationsView() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(1)}
+                onClick={() => handlePageChange(1)}
                 disabled={currentPage <= 1}
                 className="h-7 w-7 p-0"
                 title="หน้าแรก"
@@ -793,7 +845,7 @@ export function StationsView() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                 disabled={currentPage <= 1}
                 className="h-7 w-7 p-0"
                 title="หน้าก่อนหน้า"
@@ -806,7 +858,7 @@ export function StationsView() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage >= totalPages}
                 className="h-7 w-7 p-0"
                 title="หน้าถัดไป"
@@ -816,7 +868,7 @@ export function StationsView() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(totalPages)}
+                onClick={() => handlePageChange(totalPages)}
                 disabled={currentPage >= totalPages}
                 className="h-7 w-7 p-0"
                 title="หน้าสุดท้าย"

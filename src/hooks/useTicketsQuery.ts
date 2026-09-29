@@ -71,8 +71,8 @@ function broadcastCacheUpdate() {
 export async function fetchTicketsFromApi(force = false): Promise<Ticket[]> {
   const now = Date.now()
 
-  // Use cached data if not forced and fetched recently (< 4 seconds)
-  if (!force && globalLastUpdated > 0 && now - globalLastUpdated < 4000 && hasEverFetched) {
+  // Use cached data if not forced and fetched recently (< 3 minutes)
+  if (!force && globalLastUpdated > 0 && now - globalLastUpdated < 180_000 && hasEverFetched) {
     return globalTicketsCache
   }
 
