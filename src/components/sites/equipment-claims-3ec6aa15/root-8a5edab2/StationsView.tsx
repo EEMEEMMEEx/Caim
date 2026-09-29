@@ -55,21 +55,24 @@ const StationTableRow = React.memo(function StationTableRow({
   onDelete,
 }: StationTableRowProps) {
   return (
-    <tr className="hover:bg-slate-50/80 transition-colors group">
-      <td className="py-3.5 px-4 text-center font-mono text-slate-400">
-        {index}
+    <tr className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 transition-colors group">
+      {/* Index */}
+      <td className="py-3.5 px-4 text-center">
+        <span className="inline-flex size-6.5 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-mono font-semibold text-slate-500">
+          {index}
+        </span>
       </td>
 
       {/* Code */}
       <td className="py-3.5 px-4">
         <div className="flex items-center gap-1.5">
-          <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+          <span className="inline-flex items-center rounded-lg bg-blue-50/80 dark:bg-blue-950/40 px-2.5 py-1 font-mono text-xs font-bold text-blue-700 dark:text-blue-300 ring-1 ring-blue-600/20">
             {item.code}
           </span>
           <button
             type="button"
             onClick={() => onCopyCode(item.code)}
-            className="text-slate-400 hover:text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded"
+            className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
             title="คัดลอกรหัสสถานี"
           >
             {copiedCode === item.code ? (
@@ -83,13 +86,20 @@ const StationTableRow = React.memo(function StationTableRow({
 
       {/* Name & Site Type */}
       <td className="py-3.5 px-4">
-        <div className="flex flex-col">
-          <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs leading-snug">
+        <div className="flex flex-col gap-0.5">
+          <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs leading-snug">
             {item.name}
           </span>
-          <span className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-            <Building2 className="size-3 shrink-0 text-slate-400" />
-            {item.siteType} {item.towerType ? `· ${item.towerType}` : ""}
+          <span className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+            <span className="inline-flex items-center gap-1 text-slate-500">
+              <Building2 className="size-3 shrink-0 text-slate-400" />
+              {item.siteType}
+            </span>
+            {item.towerType && (
+              <span className="inline-flex items-center rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 text-[10px] text-slate-600 dark:text-slate-300">
+                {item.towerType}
+              </span>
+            )}
           </span>
         </div>
       </td>
@@ -112,35 +122,37 @@ const StationTableRow = React.memo(function StationTableRow({
       </td>
 
       {/* Sub-district & District */}
-      <td className="py-3.5 px-4 text-muted-foreground">
+      <td className="py-3.5 px-4">
         <div className="flex flex-col">
-          <span className="text-foreground">ต.{item.subdistrict}</span>
-          <span className="text-[11px] text-muted-foreground">อ.{item.district}</span>
+          <span className="font-medium text-slate-800 dark:text-slate-200">ต.{item.subdistrict}</span>
+          <span className="text-[11px] text-slate-400">อ.{item.district}</span>
         </div>
       </td>
 
       {/* Province & Area */}
       <td className="py-3.5 px-4">
-        <div className="flex flex-col">
-          <span className="font-medium text-foreground">{item.province}</span>
-          <span className="text-[11px] text-muted-foreground">{item.zone || item.area}</span>
+        <div className="flex flex-col gap-0.5">
+          <span className="font-semibold text-slate-800 dark:text-slate-200">{item.province}</span>
+          <span className="text-[10px] font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 w-fit px-1.5 py-0.2 rounded">
+            {item.zone || item.area}
+          </span>
         </div>
       </td>
 
       {/* Coordinates */}
-      <td className="py-3.5 px-4 text-muted-foreground">
-        <div className="flex flex-col gap-0.5">
+      <td className="py-3.5 px-4">
+        <div className="flex flex-col gap-1">
           <a
             href={`https://www.google.com/maps?q=${item.lat},${item.lng}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 font-mono text-[11px] text-blue-600 hover:text-blue-800 hover:underline"
+            className="inline-flex items-center gap-1 rounded-md bg-blue-50/80 dark:bg-blue-950/40 px-2 py-0.5 font-mono text-[11px] font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition-colors w-fit ring-1 ring-blue-600/15"
             title="เปิดแผนที่ Google Maps"
           >
             <span>{item.lat.toFixed(4)}, {item.lng.toFixed(4)}</span>
-            <ExternalLink className="size-3 shrink-0" />
+            <ExternalLink className="size-2.5 shrink-0" />
           </a>
-          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+          <span className="text-[10px] text-slate-400 flex items-center gap-1">
             <Mountain className="size-3" />
             {item.seaLevel > 0 ? `${item.seaLevel} ม. จากระดับทะเล` : "-"}
           </span>
@@ -154,7 +166,7 @@ const StationTableRow = React.memo(function StationTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onViewDetail(item)}
-            className="size-7 p-0 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all"
+            className="size-7.5 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-all shadow-2xs border border-transparent hover:border-blue-200"
             title="ดูรายละเอียด"
           >
             <Eye className="size-3.5" />
@@ -163,7 +175,7 @@ const StationTableRow = React.memo(function StationTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onEdit(item)}
-            className="size-7 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-all"
+            className="size-7.5 p-0 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 active:scale-95 transition-all shadow-2xs border border-transparent hover:border-amber-200"
             title="แก้ไขข้อมูล"
           >
             <Edit2 className="size-3.5" />
@@ -172,7 +184,7 @@ const StationTableRow = React.memo(function StationTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onDelete(item)}
-            className="size-7 p-0 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all"
+            className="size-7.5 p-0 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all shadow-2xs border border-transparent hover:border-rose-200"
             title="ลบสถานี"
           >
             <Trash2 className="size-3.5" />
@@ -537,8 +549,8 @@ export function StationsView() {
     selectedSiteType !== "all"
 
   return (
-    <main id="main" className="flex-1 bg-background">
-      <div className="mx-auto flex max-w-350 flex-col gap-6 px-4 py-5 sm:px-6 sm:py-6">
+    <main id="main" className="flex-1 bg-slate-100/75 dark:bg-slate-950 py-7">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
         {/* Toast Notification */}
         {toastMessage && (
           <div className="fixed top-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-semibold text-white shadow-xl animate-in slide-in-from-top-2">

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.1] - 2026-09-29
+
+### UI & Styling
+- **In-Depth Enterprise Elevation Across Dashboard & Station Tables**:
+  - **Dashboard Summary Metric Cards (`DashboardView.tsx`)**:
+    - Completely replaced flat solid pastel blocks with modern enterprise-grade cards (`bg-white dark:bg-slate-900 border border-slate-200/80 shadow-xs hover:shadow-card-hover hover:-translate-y-1 hover:border-blue-400/60 transition-all rounded-2xl p-5`).
+    - Added vibrant gradient accent stripes (`bg-gradient-to-r from-blue-600 to-indigo-500`, `from-amber-500 to-orange-500`, `from-emerald-500 to-teal-500`, `from-rose-500 to-pink-500`).
+    - Integrated modern squircle icon badges with soft pastel glow and ring highlights.
+    - Added micro-animated progress bars with gradient fills and clear ratio indicators.
+  - **KPIs & Performance Indicator Cards (`DashboardView.tsx`)**:
+    - Transformed the plain divided grid into 4 separate modern cards with soft tinted backgrounds, status pill tags, and clear typography.
+    - Added vibrant alert styling to SLA overdue metrics (`bg-rose-50 text-rose-700 ring-1 ring-rose-500/20`).
+  - **Weekly Overview & 7-Day Activity Sparkline (`DashboardView.tsx`)**:
+    - Converted floating Thai calendar abbreviations into an active 7-day mini bar activity sparkline with hover states.
+    - Upgraded summary stat boxes into modern interactive cards.
+  - **Station Table Row Elevation (`StationsView.tsx`)**:
+    - Redesigned `StationTableRow`: added index squircle badge, copy-to-clipboard code pill, clear site type badges, Google Maps GPS pill button with external link icon, and tactile action button group (`active:scale-95`).
+  - **AppShell & Elevation Contrast**:
+    - Tuned `--background` to `#f1f5f9` (Slate-100 neutral) and updated main content wrappers to `bg-slate-100/75` to provide unmistakable depth and elevation for white cards.
+    - Enhanced sticky header with active module context breadcrumb and refined status badge.
+
 ## [0.24.0] - 2026-09-29
 
 ### UI & Styling

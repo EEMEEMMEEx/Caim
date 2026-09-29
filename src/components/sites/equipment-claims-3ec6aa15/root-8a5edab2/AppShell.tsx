@@ -269,12 +269,12 @@ export function AppShell({ children }: AppShellProps) {
         }`}
       >
         {/* Sticky Top Header */}
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-slate-200/70 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-3 sm:px-4 shadow-2xs">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-slate-200/70 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 shadow-2xs">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setMobileMenuOpen(true)}
-            className="size-8 lg:hidden rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="size-8.5 lg:hidden rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
             aria-label="เปิดเมนู"
           >
             <Menu className="size-5 text-slate-600" />
@@ -284,21 +284,46 @@ export function AppShell({ children }: AppShellProps) {
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen((v) => !v)}
-            className="size-8 hidden lg:inline-flex rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="size-8.5 hidden lg:inline-flex rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600"
             aria-label={sidebarOpen ? "ยุบเมนู" : "ขยายเมนู"}
           >
             {sidebarOpen ? (
-              <PanelLeftClose className="size-5 text-slate-600" />
+              <PanelLeftClose className="size-5" />
             ) : (
-              <PanelLeft className="size-5 text-slate-600" />
+              <PanelLeft className="size-5" />
             )}
           </Button>
 
+          <div className="h-5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+
+          {/* Quick Active Page / System Context */}
+          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <span className="font-semibold text-slate-800 dark:text-slate-200">
+              {pathname === "/dashboard" || pathname === "/"
+                ? "แดชบอร์ดภาพรวม"
+                : pathname === "/tickets"
+                ? "รายการงานเคลม"
+                : pathname === "/tickets/new"
+                ? "แจ้งเคลมอุปกรณ์"
+                : pathname === "/assets"
+                ? "ข้อมูลอุปกรณ์"
+                : pathname === "/stations"
+                ? "ข้อมูลสถานี"
+                : pathname === "/repairs/overseas"
+                ? "ส่งเคลมต่างประเทศ"
+                : "ระบบจัดการงานเคลม"}
+            </span>
+            <span>·</span>
+            <span className="text-slate-400">ระบบบริหารงานเคลมโครงข่าย SHF</span>
+          </div>
+
           <div className="flex-1" />
 
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-100/80 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-300">
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="hidden sm:inline font-medium">ระบบออนไลน์</span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 text-xs text-emerald-700 dark:text-emerald-300 font-medium shadow-2xs">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>ระบบออนไลน์</span>
+            </div>
           </div>
         </header>
 
