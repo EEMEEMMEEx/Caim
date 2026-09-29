@@ -594,7 +594,7 @@ export function StationsView() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-border bg-muted/40 text-muted-foreground font-medium">
-                  <th className="py-3 px-4 w-12 text-center">#</th>
+                  <th className="py-3 px-4 w-16 text-center">ลำดับ</th>
                   <th className="py-3 px-4 w-28">รหัสสถานี</th>
                   <th className="py-3 px-4 min-w-56">ชื่อสถานี / สถานที่ติดตั้ง</th>
                   <th className="py-3 px-4 text-center">ความสูงเสา</th>

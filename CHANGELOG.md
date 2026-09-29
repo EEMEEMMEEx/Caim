@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.1] - 2026-09-29
+
+### Changed & Enhanced
+- **Table Header Localization Across Equipment & Station Information Modules**:
+  - Replaced hash symbol `#` column header with localized Thai label `ลำดับ` across both **ข้อมูลอุปกรณ์** (`AssetsView.tsx`) and **ข้อมูลสถานี** (`StationsView.tsx`).
+  - Adjusted header cell width from `w-12` to `w-16` to comfortably accommodate Thai text while maintaining alignment (`text-center`), padding (`py-3 px-4`), typography (`text-xs font-medium`), and color tokens (`text-muted-foreground`).
+  - Verified and preserved pagination row indexing calculations across all pages (`(currentPage - 1) * pageSize + idx + 1`).
+
 ## [0.23.0] - 2026-09-28
 
 ### Added & Enhanced

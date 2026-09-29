@@ -388,7 +388,7 @@ export function AssetsView() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-border bg-muted/40 text-muted-foreground font-medium">
-                  <th className="py-3 px-4 w-12 text-center">#</th>
+                  <th className="py-3 px-4 w-16 text-center">ลำดับ</th>
                   <th className="py-3 px-4 min-w-40">Serial Number</th>
                   <th className="py-3 px-4 min-w-44">อุปกรณ์</th>
                   <th className="py-3 px-4 w-28">ยี่ห้อ</th>
