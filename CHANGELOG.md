@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.0] - 2026-09-29
+
+### Added
+- **High-Tech Dark Portal Landing Experience (`ProcessClaimPortalLanding.tsx`)**:
+  - **Visual Composition & Background Atmosphere**: Crafted an immersive deep-navy dark canvas (`#070d18`) with subtle radial glow / ambient lighting behind primary typography and dark-tinted telecommunication infrastructure backdrop positioned on the right.
+  - **Hero Typography & System Branding**:
+    - Cyan/sky overline badge: `EQUIPMENT CLAIM OPERATIONS & TRACKING` with live pulsing indicator.
+    - Prominent bold hero heading: "PROCESS" with purple/blue-to-cyan gradient text sheen + "CLAIM PORTAL" in bold white typography with subtle shadow.
+    - Professional Thai summary paragraph introducing the unified radio network claims management system.
+  - **Luminous Action Trigger & Highlight Pills**:
+    - Primary CTA button "เข้าสู่ระบบงาน →" with electric blue gradient (`from-blue-600 to-indigo-600`), soft drop shadow glow (`shadow-lg shadow-blue-500/30`), smooth hover lift, and direct transition to `/dashboard`.
+    - Translucent glassmorphic pills highlighting core capabilities: "รวมข้อมูลเป็นศูนย์กลาง", "ติดตามสถานะเรียลไทม์", "คำนวณ SLA และบทปรับอัตโนมัติ".
+  - **Live Telemetry System Card**: Added a high-tech telemetry widget card displaying system uptime (99.98%), asset inventory count (5,300+ items), active station count (450+ stations), and real-time SSE stream readiness.
+
 ## [0.27.0] - 2026-09-29
 
 ### Added
