@@ -825,7 +825,7 @@ export function TicketsView() {
   )
 
   return (
-    <main id="main" className="flex-1 bg-slate-100/75 dark:bg-slate-950 py-7">
+    <main id="main" className="flex-1 bg-transparent py-7">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
         {/* =========================================================================
             1. HEADER SECTION
@@ -837,17 +837,17 @@ export function TicketsView() {
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
                   รายการงานเคลม
                 </h1>
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                  isConnected ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
+                  isConnected ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                 }`}>
                   <Wifi className="size-3" />
                   {isConnected ? "ซิงก์เรียลไทม์" : "ออฟไลน์/แคช"}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 sm:text-sm">
+              <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
                 ทุกเคสเคลมที่บันทึกไว้ในฐานข้อมูลกลาง เลือกเงื่อนไขในการ์ดค้นหาแล้วกดค้นหา
               </p>
             </div>
@@ -857,12 +857,12 @@ export function TicketsView() {
         {/* =========================================================================
             2. FILTER CARD (2 Rows + Aligned Search Action)
            ========================================================================= */}
-        <div className="rounded-2xl border border-slate-200/70 bg-white/95 backdrop-blur-xs p-5 shadow-card sm:p-6 transition-all duration-300">
+        <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs p-5 shadow-card sm:p-6 transition-all duration-300">
           {/* Row 1: 5 Columns */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {/* สถานะ */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-normal text-slate-700">สถานะ</label>
+              <label className="text-xs font-normal text-slate-700 dark:text-slate-300">สถานะ</label>
               <div className="relative">
                 <select
                   value={statusFilter}
@@ -1149,17 +1149,17 @@ export function TicketsView() {
         {/* =========================================================================
             3. DATA TABLE & SELECTABLE ROWS
            ========================================================================= */}
-        <div className="rounded-2xl border border-slate-200/70 bg-white/95 backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
+        <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-200/70 bg-slate-50/90 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
+              <thead className="border-b border-slate-200/70 dark:border-white/10 bg-slate-50/90 dark:bg-[#0f172a] text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
                 <tr>
                   <th className="w-12 px-4 py-3.5 text-center">
                     <input
                       type="checkbox"
                       checked={isAllSelected}
                       onChange={handleToggleSelectAll}
-                      className="size-4 rounded border-slate-300 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
+                      className="size-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
                       aria-label="เลือกทั้งหมด"
                     />
                   </th>
@@ -1171,7 +1171,7 @@ export function TicketsView() {
                   <th className="px-4 py-3.5">จัดการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100/90">
+              <tbody className="divide-y divide-slate-100/90 dark:divide-white/10">
                 {filteredTickets.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-14 text-center">

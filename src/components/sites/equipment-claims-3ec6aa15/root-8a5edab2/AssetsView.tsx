@@ -362,7 +362,7 @@ export function AssetsView() {
   }, [])
 
   return (
-    <main id="main" className="flex-1 bg-slate-100/75 dark:bg-slate-950 py-7">
+    <main id="main" className="flex-1 bg-transparent py-7">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb and Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -393,7 +393,7 @@ export function AssetsView() {
                     ทะเบียนข้อมูลอุปกรณ์
                   </h1>
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    isConnected ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
+                    isConnected ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                   }`}>
                     <Wifi className="size-3" />
                     {isConnected ? "ซิงก์เรียลไทม์" : "ออฟไลน์/แคช"}
@@ -437,7 +437,7 @@ export function AssetsView() {
         </div>
 
         {/* Filter Toolbar */}
-        <div className="rounded-2xl border border-slate-200/70 bg-white/95 backdrop-blur-xs p-5 shadow-card flex flex-col gap-3 transition-all duration-300">
+        <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs p-5 shadow-card flex flex-col gap-3 transition-all duration-300">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="relative sm:col-span-2">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -509,11 +509,11 @@ export function AssetsView() {
         </div>
 
         {/* Table */}
-        <div className="rounded-2xl border border-slate-200/70 bg-white/95 backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
+        <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-slate-200/70 bg-slate-50/90 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
+                <tr className="border-b border-slate-200/70 dark:border-white/10 bg-slate-50/90 dark:bg-[#0f172a] text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
                   <th className="py-3.5 px-4 w-16 text-center">ลำดับ</th>
                   <th className="py-3.5 px-4 min-w-40">Serial Number</th>
                   <th className="py-3.5 px-4 min-w-44">อุปกรณ์</th>

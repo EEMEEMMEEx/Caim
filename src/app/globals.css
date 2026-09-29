@@ -103,14 +103,15 @@
 }
 
 .dark {
-  --background: #090d16;
+  color-scheme: dark;
+  --background: #0b0f19;
   --foreground: #f8fafc;
-  --card: #111827;
+  --card: #1e293b;
   --card-foreground: #f8fafc;
-  --popover: #111827;
+  --popover: #1e293b;
   --popover-foreground: #f8fafc;
   --primary: #f8fafc;
-  --primary-foreground: #090d16;
+  --primary-foreground: #0b0f19;
   --secondary: #1e293b;
   --secondary-foreground: #f8fafc;
   --muted: #1e293b;
@@ -118,16 +119,16 @@
   --accent: #1e293b;
   --accent-foreground: #60a5fa;
   --destructive: #f87171;
-  --border: rgba(51, 65, 85, 0.65);
-  --input: rgba(51, 65, 85, 0.75);
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.12);
   --ring: #38bdf8;
-  --sidebar: #090d16;
+  --sidebar: #0f172a;
   --sidebar-foreground: #f8fafc;
   --sidebar-primary: #38bdf8;
-  --sidebar-primary-foreground: #090d16;
-  --sidebar-accent: #111827;
+  --sidebar-primary-foreground: #0b0f19;
+  --sidebar-accent: #1e293b;
   --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: rgba(51, 65, 85, 0.65);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: #38bdf8;
 }
 
@@ -154,6 +155,26 @@
   box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
 }
 
+.dark .shadow-card {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .shadow-card-hover {
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.65), 0 0 16px -2px rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+/* Ambient Background Mesh & Glow Accents for Dark Mode */
+.dark-ambient-mesh {
+  background-color: #0b0f19;
+  background-image:
+    radial-gradient(circle at 10% 6%, rgba(30, 64, 175, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 90% 12%, rgba(2, 132, 199, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 55%, rgba(99, 102, 241, 0.04) 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
 .glass-panel {
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(14px);
@@ -162,10 +183,10 @@
 }
 
 .dark .glass-panel {
-  background: rgba(17, 24, 39, 0.82);
+  background: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(51, 65, 85, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .interactive-card {
@@ -174,6 +195,9 @@
 .interactive-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+}
+.dark .interactive-card:hover {
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.65), 0 0 16px -2px rgba(56, 189, 248, 0.15);
 }
 
 /* =========================================================================

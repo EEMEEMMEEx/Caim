@@ -44,6 +44,23 @@ export default function RootLayout({
       className={`${ibmPlexSans.variable} ${sarabun.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function() {
+              try {
+                var stored = localStorage.getItem('theme');
+                var isDark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (isDark) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (_) {}
+            })();`,
+          }}
+        />
+      </head>
       <body className="min-h-full font-sans antialiased">{children}</body>
     </html>
   )

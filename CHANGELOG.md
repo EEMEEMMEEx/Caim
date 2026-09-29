@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.0] - 2026-09-29
+
+### Added
+- **Eye-Friendly Dark Mode & Sophisticated Visual Depth**:
+  - **Refined Low-Fatigue Dark Palette**:
+    - Discarded pure pitch black (`#000000`) in favor of low-fatigue slate/zinc charcoal tones:
+      - Root Canvas: `#0b0f19`
+      - Sidebar & Top Navigation: `#0f172a`
+      - Content Cards & Tables: `#1e293b`
+    - Ultra-fine translucent borders (`border-white/10`) to delineate cards and surfaces crisply against dark backgrounds.
+  - **Ambient Mesh Glow Accents**:
+    - Introduced `.dark-ambient-mesh` with fixed subtle radial gradients (`#1e40af12` and `#0284c708`) creating visual depth without data distraction.
+    - Added dark elevation shadows (`.dark .shadow-card`, `.dark .shadow-card-hover`).
+  - **Interactive Theme Switcher & Anti-FOUC Engine**:
+    - Added instant Sun/Moon theme toggle in the sticky top header of `AppShell.tsx` with `localStorage` persistence.
+    - Added anti-FOUC inline script in `src/app/layout.tsx` to detect user preference before render.
+  - **Text Contrast & Component Harmony Across All Views**:
+    - Primary text styled in crisp off-white (`text-slate-100` / `#f8fafc`), secondary labels in muted slate (`text-slate-400` / `#94a3b8`).
+    - Standardized tables, filter toolbars, KPI stat cards, and modal dialogs across `DashboardView`, `StationsView`, `TicketsView`, and `AssetsView`.
+
 ## [0.24.1] - 2026-09-29
 
 ### UI & Styling

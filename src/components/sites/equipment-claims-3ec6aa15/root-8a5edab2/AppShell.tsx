@@ -16,7 +16,9 @@ import {
   PanelLeftClose,
   PanelLeft,
   LogOut,
-  X
+  X,
+  Sun,
+  Moon
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import packageInfo from "../../../../../package.json"
@@ -90,6 +92,47 @@ export function AppShell({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = React.useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false)
+  const [theme, setTheme] = React.useState<"light" | "dark">("light")
+
+  // Sync theme with document class and localStorage
+  React.useEffect(() => {
+    try {
+      const isDark =
+        document.documentElement.classList.contains("dark") ||
+        localStorage.getItem("theme") === "dark" ||
+        (!localStorage.getItem("theme") &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches)
+      if (isDark) {
+        document.documentElement.classList.add("dark")
+        setTheme("dark")
+      } else {
+        document.documentElement.classList.remove("dark")
+        setTheme("light")
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [])
+
+  const toggleTheme = React.useCallback(() => {
+    const nextTheme = theme === "dark" ? "light" : "dark"
+    setTheme(nextTheme)
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark")
+      try {
+        localStorage.setItem("theme", "dark")
+      } catch {
+        // Ignore localStorage errors
+      }
+    } else {
+      document.documentElement.classList.remove("dark")
+      try {
+        localStorage.setItem("theme", "light")
+      } catch {
+        // Ignore localStorage errors
+      }
+    }
+  }, [theme])
 
   // Auto close mobile drawer on navigation
   React.useEffect(() => {
@@ -118,7 +161,7 @@ export function AppShell({ children }: AppShellProps) {
   }, [router])
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen bg-slate-100/60 dark:bg-[#0b0f19] dark-ambient-mesh text-foreground transition-colors duration-200">
       {/* Mobile Drawer Backdrop */}
       {mobileMenuOpen && (
         <div
@@ -127,15 +170,15 @@ export function AppShell({ children }: AppShellProps) {
         />
       )}
 
-      {/* Sidebar - Desktop and Mobile Drawer */}
+      {/* Sidebar - Desktop and Mobile Drawer (Surface: #0f172a, Translucent Border) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 border-r border-slate-200/70 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl transition-all duration-200 ${
+        className={`fixed inset-y-0 left-0 z-50 border-r border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#0f172a] backdrop-blur-xl transition-all duration-200 ${
           mobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
         } ${sidebarOpen ? "lg:w-64" : "lg:w-16"}`}
       >
         <div className="flex h-full flex-col">
           {/* Logo Header */}
-          <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200/70 dark:border-slate-800/80 px-3.5">
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200/70 dark:border-white/10 px-3.5">
             <Link
               href="/dashboard"
               className={`flex items-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
@@ -200,13 +243,13 @@ export function AppShell({ children }: AppShellProps) {
           </nav>
 
           {/* Manual Link */}
-          <div className="shrink-0 border-t border-slate-200/70 dark:border-slate-800/80 py-2.5 px-3">
+          <div className="shrink-0 border-t border-slate-200/70 dark:border-white/10 py-2.5 px-3">
             <Link
               href="/manual"
               onClick={() => setMobileMenuOpen(false)}
               className={`group flex items-center rounded-xl text-sm font-medium transition-all duration-150 h-10 gap-2.5 px-3 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none ${
                 pathname === "/manual"
-                  ? "bg-blue-50/90 text-blue-700 font-semibold ring-1 ring-blue-600/15 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-500/25 shadow-2xs"
+                  ? "bg-blue-50/90 text-blue-700 font-semibold ring-1 ring-blue-600/15 dark:bg-blue-950/60 dark:text-sky-300 dark:ring-sky-500/30 shadow-2xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 hover:translate-x-0.5 active:scale-[0.98]"
               }`}
               title={!sidebarOpen ? "คู่มือการใช้งาน" : undefined}
@@ -217,14 +260,14 @@ export function AppShell({ children }: AppShellProps) {
           </div>
 
           {/* User Profile Footer */}
-          <div className="relative shrink-0 border-t border-slate-200/70 dark:border-slate-800/80 py-3 px-3">
+          <div className="relative shrink-0 border-t border-slate-200/70 dark:border-white/10 py-3 px-3">
             <div className="flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setUserDropdownOpen((v) => !v)}
-                className="flex items-center gap-2.5 rounded-xl p-1.5 text-left w-full hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800/70 bg-slate-50/60 dark:bg-slate-800/30 transition-all duration-150 active:scale-[0.98]"
+                className="flex items-center gap-2.5 rounded-xl p-1.5 text-left w-full hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border border-slate-200/60 dark:border-white/10 bg-slate-50/60 dark:bg-[#0f172a]/90 transition-all duration-150 active:scale-[0.98]"
               >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-xs font-semibold text-white shadow-xs">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-800 text-xs font-semibold text-white ring-1 ring-white/10 shadow-xs">
                   in
                 </span>
                 {sidebarOpen && (
@@ -232,9 +275,9 @@ export function AppShell({ children }: AppShellProps) {
                     <span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
                       indykantanat
                     </span>
-                    <div className="flex items-center justify-between text-xs text-slate-500 mt-0.5">
+                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       <span>เจ้าหน้าที่</span>
-                      <span className="font-mono text-[10px] text-slate-400">v{packageInfo.version}</span>
+                      <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">v{packageInfo.version}</span>
                     </div>
                   </div>
                 )}
@@ -243,15 +286,15 @@ export function AppShell({ children }: AppShellProps) {
 
             {/* Logout Dropdown */}
             {userDropdownOpen && (
-              <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-1.5 shadow-xl animate-in fade-in zoom-in-95">
-                <div className="px-3 py-2 text-xs border-b border-slate-100 dark:border-slate-800">
+              <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] p-1.5 shadow-xl animate-in fade-in zoom-in-95">
+                <div className="px-3 py-2 text-xs border-b border-slate-100 dark:border-white/10">
                   <p className="font-semibold text-slate-800 dark:text-slate-200">indykantanat@gmail.com</p>
-                  <p className="text-slate-500 mt-0.5">สถานะ: เข้าสู่ระบบแล้ว</p>
+                  <p className="text-slate-500 dark:text-slate-400 mt-0.5">สถานะ: เข้าสู่ระบบแล้ว</p>
                 </div>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors mt-1"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors mt-1 cursor-pointer"
                 >
                   <LogOut className="size-3.5" />
                   ออกจากระบบ
@@ -268,23 +311,23 @@ export function AppShell({ children }: AppShellProps) {
           sidebarOpen ? "lg:pl-64" : "lg:pl-16"
         }`}
       >
-        {/* Sticky Top Header */}
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-slate-200/70 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 shadow-2xs">
+        {/* Sticky Top Header (Surface: #0f172a/85 with translucent border) */}
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-slate-200/70 dark:border-white/10 bg-white/80 dark:bg-[#0f172a]/85 backdrop-blur-md px-4 shadow-2xs">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setMobileMenuOpen(true)}
-            className="size-8.5 lg:hidden rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="size-8.5 lg:hidden rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-300"
             aria-label="เปิดเมนู"
           >
-            <Menu className="size-5 text-slate-600" />
+            <Menu className="size-5 text-slate-600 dark:text-slate-300" />
           </Button>
 
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen((v) => !v)}
-            className="size-8.5 hidden lg:inline-flex rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600"
+            className="size-8.5 hidden lg:inline-flex rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
             aria-label={sidebarOpen ? "ยุบเมนู" : "ขยายเมนู"}
           >
             {sidebarOpen ? (
@@ -294,10 +337,10 @@ export function AppShell({ children }: AppShellProps) {
             )}
           </Button>
 
-          <div className="h-5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+          <div className="h-5 w-px bg-slate-200 dark:bg-white/10 hidden sm:block" />
 
           {/* Quick Active Page / System Context */}
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-medium">
+          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
             <span className="font-semibold text-slate-800 dark:text-slate-200">
               {pathname === "/dashboard" || pathname === "/"
                 ? "แดชบอร์ดภาพรวม"
@@ -314,14 +357,30 @@ export function AppShell({ children }: AppShellProps) {
                 : "ระบบจัดการงานเคลม"}
             </span>
             <span>·</span>
-            <span className="text-slate-400">ระบบบริหารงานเคลมโครงข่าย SHF</span>
+            <span className="text-slate-400 dark:text-slate-500">ระบบบริหารงานเคลมโครงข่าย SHF</span>
           </div>
 
           <div className="flex-1" />
 
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 text-xs text-emerald-700 dark:text-emerald-300 font-medium shadow-2xs">
-              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            {/* Theme Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="inline-flex size-8.5 items-center justify-center rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-800/80 text-slate-600 dark:text-amber-300 shadow-2xs hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-all duration-200 active:scale-95 cursor-pointer"
+              aria-label={theme === "dark" ? "เปลี่ยนเป็นโหมดสว่าง (Light Mode)" : "เปลี่ยนเป็นโหมดมืด (Dark Mode)"}
+              title={theme === "dark" ? "โหมดมืด (คลิกเพื่อเปลี่ยนเป็นโหมดสว่าง)" : "โหมดสว่าง (คลิกเพื่อเปลี่ยนเป็นโหมดมืด)"}
+            >
+              {theme === "dark" ? (
+                <Sun className="size-4.5 text-amber-300 transition-transform duration-300 hover:rotate-45" />
+              ) : (
+                <Moon className="size-4.5 text-slate-600 transition-transform duration-300 hover:-rotate-12" />
+              )}
+            </button>
+
+            {/* Online Status Badge */}
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-500/30 text-xs text-emerald-700 dark:text-emerald-300 font-medium shadow-2xs">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
               <span>ระบบออนไลน์</span>
             </div>
           </div>
