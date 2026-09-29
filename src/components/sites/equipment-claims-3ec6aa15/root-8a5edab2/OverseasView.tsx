@@ -861,7 +861,7 @@ export function OverseasView() {
   }
 
   return (
-    <main id="main" className="flex-1 bg-slate-50/50 py-6">
+    <main id="main" className="flex-1 bg-transparent py-7">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
         {/* Toast Alert */}
         {toastMessage && (
@@ -877,21 +877,21 @@ export function OverseasView() {
         <div className="flex flex-col gap-3">
           {/* Breadcrumb */}
           <nav aria-label="breadcrumb">
-            <ol className="flex items-center gap-1.5 text-xs text-slate-500">
+            <ol className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
               <li className="inline-flex items-center">
                 <Link
                   href="/dashboard"
                   aria-label="หน้าแรก"
-                  className="transition-colors hover:text-slate-900"
+                  className="transition-colors hover:text-slate-900 dark:hover:text-slate-100"
                 >
-                  <House className="size-3.5 text-slate-500" />
+                  <House className="size-3.5 text-slate-500 dark:text-slate-400" />
                 </Link>
               </li>
-              <li className="flex items-center text-slate-400">
+              <li className="flex items-center text-slate-400 dark:text-slate-500">
                 <ChevronRight className="size-3" />
               </li>
               <li className="inline-flex items-center">
-                <span className="font-normal text-slate-700">ส่งเคลมต่างประเทศ</span>
+                <span className="font-normal text-slate-700 dark:text-slate-200">ส่งเคลมต่างประเทศ</span>
               </li>
             </ol>
           </nav>
@@ -899,22 +899,22 @@ export function OverseasView() {
           {/* Title & Action Button */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#0c1a30] text-white shadow-xs">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#0c1a30] dark:bg-blue-600 text-white shadow-xs">
                 <PlaneTakeoff className="size-5.5 text-white" />
               </span>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                  <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
                     ส่งเคลมต่างประเทศ
                   </h1>
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    isConnected ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
+                    isConnected ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                   }`}>
                     <Wifi className="size-3" />
                     {isConnected ? "ซิงก์เรียลไทม์" : "ออฟไลน์/แคช"}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 sm:text-sm">
+                <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
                   ติดตามอุปกรณ์ที่ส่งเคลมไปต่างประเทศทีละขั้น พร้อมนาฬิกาบทปรับของผู้ขาย
                 </p>
               </div>
@@ -923,7 +923,7 @@ export function OverseasView() {
             <button
               type="button"
               onClick={() => setNewRmaModalOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#0c1a30] px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#1e293b] cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#0c1a30] dark:bg-blue-600 hover:bg-[#1e293b] dark:hover:bg-blue-500 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
             >
               <Plus className="size-4" />
               <span>เปิดใบส่งซ่อม</span>
@@ -1106,26 +1106,26 @@ export function OverseasView() {
                         key={item.id}
                         className={`transition-colors ${
                           isOverdue
-                            ? "bg-[#fff5f5] hover:bg-[#ffebeb]"
-                            : "hover:bg-slate-50/70"
+                            ? "bg-[#fff5f5] dark:bg-rose-950/20 hover:bg-[#ffebeb] dark:hover:bg-rose-950/30"
+                            : "hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
                         }`}
                       >
                         {/* ใบ RMA / เคส */}
                         <td className="px-5 py-3.5">
-                          <p className="font-bold text-slate-800 text-xs">
+                          <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">
                             {item.rmaNo}
                           </p>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                             {item.caseName}
                           </p>
                         </td>
 
                         {/* อุปกรณ์ */}
                         <td className="px-4 py-3.5">
-                          <p className="font-mono text-xs text-slate-800">
+                          <p className="font-mono text-xs text-slate-800 dark:text-slate-200">
                             {item.serialNo}
                           </p>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                             {item.vendor} / {item.model}
                           </p>
                         </td>
@@ -1135,7 +1135,7 @@ export function OverseasView() {
                           <div className="flex items-center gap-1">
                             {Array.from({ length: item.totalStages }).map((_, idx) => {
                               const step = idx + 1
-                              let color = "bg-slate-200"
+                              let color = "bg-slate-200 dark:bg-slate-700"
                               if (step < item.currentStageNumber) {
                                 color = "bg-emerald-500"
                               } else if (step === item.currentStageNumber) {
@@ -1151,36 +1151,36 @@ export function OverseasView() {
                                 />
                               )
                             })}
-                            <span className="ml-1.5 text-[11px] text-slate-400 font-medium">
+                            <span className="ml-1.5 text-[11px] text-slate-400 dark:text-slate-500 font-medium">
                               {item.currentStageNumber}/{item.totalStages}
                             </span>
                           </div>
                           <div className="mt-1.5">
-                            <p className="font-semibold text-slate-800 text-xs">
+                            <p className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
                               {item.currentStageName}
                             </p>
-                            <p className="text-[11px] text-slate-400 mt-0.5">
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
                               {item.stageWaitDays}
                             </p>
                           </div>
                         </td>
 
                         {/* เปิดใบ */}
-                        <td className="px-4 py-3.5 text-slate-600 whitespace-nowrap">
+                        <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                           {item.openDate}
                         </td>
 
                         {/* รวม (Elapsed Days & Status Badge) */}
                         <td className="px-4 py-3.5 whitespace-nowrap">
-                          <p className="text-slate-700 text-xs font-medium">
+                          <p className="text-slate-700 dark:text-slate-300 text-xs font-medium">
                             {metrics.total.text}
                           </p>
                           {metrics.total.statusBadge === "in_progress" ? (
-                            <span className="mt-1 inline-block rounded-full border border-blue-200/60 bg-[#eff6ff] px-2 py-0.5 text-[10px] font-medium text-[#2563eb]">
+                            <span className="mt-1 inline-block rounded-full border border-blue-200/60 dark:border-blue-500/30 bg-[#eff6ff] dark:bg-blue-950/50 px-2 py-0.5 text-[10px] font-medium text-[#2563eb] dark:text-blue-300">
                               {metrics.total.statusBadgeText}
                             </span>
                           ) : (
-                            <span className="mt-1 inline-block rounded-full border border-emerald-200/60 bg-[#ecfdf5] px-2 py-0.5 text-[10px] font-medium text-[#059669]">
+                            <span className="mt-1 inline-block rounded-full border border-emerald-200/60 dark:border-emerald-500/30 bg-[#ecfdf5] dark:bg-emerald-950/50 px-2 py-0.5 text-[10px] font-medium text-[#059669] dark:text-emerald-300">
                               {metrics.total.statusBadgeText}
                             </span>
                           )}
@@ -1191,24 +1191,24 @@ export function OverseasView() {
                           {isOverdue ? (
                             <div>
                               <div className="flex items-center gap-1.5">
-                                <p className="font-bold text-[#dc2626] text-xs">
+                                <p className="font-bold text-[#dc2626] dark:text-rose-400 text-xs">
                                   {metrics.penalty.penaltyDaysText}
                                 </p>
-                                <span className="inline-flex items-center gap-0.5 rounded-md border border-red-200/80 bg-[#fee2e2]/70 px-1.5 py-0.5 text-[10px] font-medium text-[#dc2626]">
+                                <span className="inline-flex items-center gap-0.5 rounded-md border border-red-200/80 dark:border-rose-500/30 bg-[#fee2e2]/70 dark:bg-rose-950/50 px-1.5 py-0.5 text-[10px] font-medium text-[#dc2626] dark:text-rose-400">
                                   <AlertTriangle className="size-2.5" />
                                   <span>เกินกำหนด</span>
                                 </span>
                               </div>
-                              <p className="text-[11px] text-slate-500 mt-0.5">
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                                 {metrics.penalty.penaltyStandardText}
                               </p>
                             </div>
                           ) : (
                             <div>
-                              <p className="text-slate-700 text-xs font-medium">
+                              <p className="text-slate-700 dark:text-slate-300 text-xs font-medium">
                                 {metrics.penalty.penaltyDaysText}
                               </p>
-                              <p className="text-[11px] text-slate-400 mt-0.5">
+                              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
                                 {metrics.penalty.penaltyStandardText}
                               </p>
                             </div>
@@ -1221,7 +1221,7 @@ export function OverseasView() {
                             <button
                               type="button"
                               onClick={() => setTimelineItem(item)}
-                              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer transition-colors"
+                              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-colors"
                               title="ดูไทม์ไลน์กระบวนการ"
                               aria-label="ดูไทม์ไลน์"
                             >
@@ -1230,7 +1230,7 @@ export function OverseasView() {
                             <button
                               type="button"
                               onClick={() => setEditingItem({ ...item })}
-                              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-blue-600 cursor-pointer transition-colors"
+                              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
                               title="แก้ไข"
                               aria-label="แก้ไข"
                             >
@@ -1239,7 +1239,7 @@ export function OverseasView() {
                             <button
                               type="button"
                               onClick={() => confirmDeleteItem(item)}
-                              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-red-600 cursor-pointer transition-colors"
+                              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-600 dark:hover:text-red-400 cursor-pointer transition-colors"
                               title="ลบใบส่งซ่อมนี้ถาวร"
                               aria-label="ลบ"
                             >
@@ -1289,7 +1289,7 @@ export function OverseasView() {
               <button
                 type="button"
                 disabled
-                className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-xs text-slate-400 cursor-not-allowed"
+                className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 px-2.5 text-xs text-slate-400 dark:text-slate-600 cursor-not-allowed"
               >
                 <span>ถัดไป</span>
                 <ChevronRight className="size-3.5" />
@@ -1438,7 +1438,7 @@ export function OverseasView() {
                                     e.target.value as "completed" | "active" | "pending"
                                   )
                                 }
-                                className="h-6 text-[10px] rounded-md border border-slate-200 bg-white px-1.5 py-0 text-slate-700 font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
+                                className="h-6 text-[10px] rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] px-1.5 py-0 text-slate-700 dark:text-slate-200 font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
                               >
                                 <option value="completed">เสร็จสิ้นแล้ว</option>
                                 <option value="active">กำลังดำเนินการ</option>
@@ -1458,7 +1458,7 @@ export function OverseasView() {
                               onChange={(e) =>
                                 handleUpdateRetroactiveField(stage.stageNumber, "notes", e.target.value)
                               }
-                              className="mt-1.5 h-6.5 w-full rounded border border-slate-200 bg-white px-2 text-[11px] text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
+                              className="mt-1.5 h-6.5 w-full rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] px-2 text-[11px] text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
                             />
                           )}
                         </div>
@@ -1485,8 +1485,8 @@ export function OverseasView() {
                                           }
                                         } catch {}
                                       }}
-                                      className={`h-7.5 rounded-md border bg-white px-2 pr-7 text-[11px] font-mono text-slate-700 shadow-2xs transition-all hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer ${
-                                        hasDateError ? "border-red-400 ring-1 ring-red-400 bg-red-50/20" : "border-slate-200"
+                                      className={`h-7.5 rounded-md border bg-white dark:bg-[#0f172a] px-2 pr-7 text-[11px] font-mono text-slate-700 dark:text-slate-200 shadow-2xs transition-all hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer ${
+                                        hasDateError ? "border-red-400 ring-1 ring-red-400 bg-red-50/20" : "border-slate-200 dark:border-white/10"
                                       }`}
                                       title="เลือกวันและเวลาเริ่มต้น"
                                     />
@@ -1532,8 +1532,8 @@ export function OverseasView() {
                                           }
                                         } catch {}
                                       }}
-                                      className={`h-7.5 rounded-md border bg-white px-2 pr-7 text-[11px] font-mono text-slate-700 shadow-2xs transition-all hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer ${
-                                        hasDateError ? "border-red-400 ring-1 ring-red-400 bg-red-50/20" : "border-slate-200"
+                                      className={`h-7.5 rounded-md border bg-white dark:bg-[#0f172a] px-2 pr-7 text-[11px] font-mono text-slate-700 dark:text-slate-200 shadow-2xs transition-all hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer ${
+                                        hasDateError ? "border-red-400 ring-1 ring-red-400 bg-red-50/20" : "border-slate-200 dark:border-white/10"
                                       }`}
                                       title="เลือกวันและเวลาสิ้นสุด"
                                     />
@@ -2143,17 +2143,17 @@ export function OverseasView() {
                   <Trash2 className="size-5 text-red-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-base font-bold text-slate-900">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
                     ยืนยันการลบใบส่งซ่อมต่างประเทศถาวร
                   </h3>
-                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+                  <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                     คุณต้องการลบใบ RMA{" "}
-                    <strong className="text-slate-800 font-semibold">
+                    <strong className="text-slate-800 dark:text-slate-200 font-semibold">
                       &quot;{itemToDelete.rmaNo}&quot;
                     </strong>{" "}
                     ({itemToDelete.vendor} {itemToDelete.model} S/N: {itemToDelete.serialNo}) ใช่หรือไม่?
                   </p>
-                  <div className="mt-3 rounded-lg border border-red-150 bg-red-50/70 p-2.5 text-[11px] text-red-700 leading-relaxed">
+                  <div className="mt-3 rounded-lg border border-red-200/80 dark:border-rose-500/30 bg-red-50/70 dark:bg-rose-950/40 p-2.5 text-[11px] text-red-700 dark:text-rose-300 leading-relaxed">
                     <span className="font-semibold">ข้อควรระวัง:</span> คำขอนี้จะลบรายการออกจากฐานข้อมูลอย่างถาวร ข้อมูลจะไม่สามารถเรียกคืนได้แม้จะรีเฟรชหน้าเว็บ
                   </div>
                 </div>
@@ -2164,7 +2164,7 @@ export function OverseasView() {
                   type="button"
                   disabled={isDeleting}
                   onClick={() => setItemToDelete(null)}
-                  className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                  className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-800 px-4 text-xs font-medium text-slate-700 dark:text-slate-200 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 cursor-pointer"
                 >
                   ยกเลิก
                 </button>

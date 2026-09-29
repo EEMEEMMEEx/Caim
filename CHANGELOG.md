@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.1] - 2026-09-29
+
+### Fixed
+- **Canvas Background Inconsistency & Layout Height Clipping (`OverseasView.tsx`)**:
+  - **Diagnosed Root Cause**: In `OverseasView.tsx`, the main content wrapper was styled with hardcoded `bg-slate-50/50` without a `dark:` variant, overlaying the dark `#0b0f19` canvas and producing a washed-out, lighter navy box that abruptly cut off horizontally when content ended.
+  - **Canvas Background Inheritance**: Replaced `bg-slate-50/50 py-6` with `bg-transparent py-7`, matching all other primary views (`TicketsView`, `DashboardView`, `StationsView`, `AssetsView`) to cleanly inherit the root dark-ambient canvas without horizontal color breaks.
+  - **Full Viewport Height Flex Expansion (`AppShell.tsx`)**: Updated the page content wrapper in `AppShell.tsx` to `flex-1 flex flex-col min-h-0`, ensuring child `<main className="flex-1">` containers stretch across 100% of the viewport height on all displays.
+  - **Surface & Elevation Token Alignment**: Standardized dark mode tokens across Overseas Claim headers, action triggers, segmented progress bars, table rows, badges, pagination controls, and modal dialogs (`dark:text-white`, `dark:text-slate-200`, `dark:border-white/10`, `dark:bg-[#1e293b]`, `dark:bg-[#0f172a]`).
+
 ## [0.29.0] - 2026-09-29
 
 ### Removed
