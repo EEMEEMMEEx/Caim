@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.4] - 2026-09-29
+
+### UI & Styling
+- **Animated Gradient Text Shimmer for 'Process Claim' Brand Title**:
+  - Implemented continuous horizontal light sweep keyframe animation (`@keyframes text-shimmer`) shifting `background-position` from `200% center` to `-200% center` in a seamless 4-second infinite cycle.
+  - Tuned luminous color gradient matching system palette: deep brand blue (`#1e40af` / `#1e61f0`) transitioning through vibrant sky cyan (`#38bdf8`) to soft highlight (`#93c5fd` / `#ffffff`) and back to deep blue with dark mode support.
+  - Styled sub-title `EQUIPMENT CLAIMS` with solid, non-shimmering typography (`text-[10px] font-semibold text-slate-400 tracking-wider uppercase`) to keep visual focus on the primary brand mark.
+
 ## [0.23.3] - 2026-09-29
 
 ### Changed & Enhanced

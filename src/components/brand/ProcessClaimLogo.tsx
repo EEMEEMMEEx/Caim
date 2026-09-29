@@ -106,11 +106,11 @@ export function ProcessClaimBrandHeader({
           collapsed ? "hidden" : "flex"
         }`}
       >
-        <span className="font-bold text-base tracking-tight text-slate-800 dark:text-slate-100 whitespace-nowrap">
-          Process<span className="text-[#1e61f0] dark:text-[#38bdf8] ml-1">Claim</span>
+        <span className="font-bold text-base tracking-tight whitespace-nowrap animate-text-shimmer">
+          Process Claim
         </span>
-        <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 tracking-wider uppercase whitespace-nowrap">
-          Equipment Claims
+        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-400 tracking-wider uppercase whitespace-nowrap">
+          EQUIPMENT CLAIMS
         </span>
       </div>
     </div>
