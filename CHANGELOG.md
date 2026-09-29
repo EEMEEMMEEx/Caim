@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.3] - 2026-09-29
+
+### Changed & Enhanced
+- **New 'Process Claim' Brand Identity & Navigation Header**:
+  - Removed legacy FORTH logo asset and its Next.js image wrapper from the top sidebar header.
+  - Designed and implemented custom SVG logo mark component `ProcessClaimLogoMark` featuring stylized interlocking geometric ribbons ('P' and 'C') representing the claim lifecycle, workflow progression loop, and active milestone verification node.
+  - Integrated modern typographic brand title 'Process Claim' (`font-bold text-base tracking-tight`) with high-contrast palette (`#1e61f0` deep brand blue and `#38bdf8` vibrant cyan).
+  - Supported responsive layout state collapsing to centered logo mark when sidebar is minimized, and expanded brand unit on full desktop sidebar and mobile drawer with accessible label `aria-label="Process Claim Home"`.
+
 ## [0.23.2] - 2026-09-29
 
 ### Performance & Optimization

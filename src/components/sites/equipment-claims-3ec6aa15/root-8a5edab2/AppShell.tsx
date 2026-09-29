@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { ProcessClaimBrandHeader } from "@/components/brand/ProcessClaimLogo"
 import {
   LayoutDashboard,
   Radar,
@@ -135,22 +135,15 @@ export function AppShell({ children }: AppShellProps) {
       >
         <div className="flex h-full flex-col">
           {/* Logo Header */}
-          <div className="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-4">
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-3.5">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none"
-              aria-label="ระบบเคลมอุปกรณ์ — ไปหน้าแดชบอร์ด"
+              className={`flex items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
+                !sidebarOpen ? "lg:justify-center lg:w-full" : ""
+              }`}
+              aria-label="Process Claim Home"
             >
-              <Image
-                src="/images/logo-forth-07_8-mobile.png"
-                alt="Forth Corporation"
-                width={282}
-                height={84}
-                priority
-                className={`h-7 w-auto shrink-0 transition-opacity ${
-                  sidebarOpen ? "opacity-100" : "lg:opacity-0"
-                }`}
-              />
+              <ProcessClaimBrandHeader collapsed={!sidebarOpen && !mobileMenuOpen} />
             </Link>
 
             {mobileMenuOpen && (
