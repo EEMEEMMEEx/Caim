@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.3] - 2026-09-29
+
+### Added
+- **Ambient Looping Telecommunications Video Background (`ProcessClaimPortalLanding.tsx`)**:
+  - **HTML5 Responsive `<video>` Setup**: Integrated `portal-ambient-bg.mp4` with `autoPlay`, `loop`, `muted`, and `playsInline` attributes for seamless, silent background playback across all modern desktop and mobile browsers.
+  - **Readability Protection & Dark Gradient Masking**: Placed multilayered dark gradient overlays (`bg-gradient-to-r from-[#070d18]/92 via-[#070d18]/78 to-[#0b1329]/88 backdrop-brightness-75`) plus top and bottom fade blends to maintain optimal typographic contrast for the centered hero text, gradient title, and CTA button.
+  - **Performance, Poster Fallback & Accessibility**:
+    - Configured static placeholder poster frame (`poster="/assets/portal-bg-poster.webp"`).
+    - Added accessibility `prefers-reduced-motion` detection (both via `window.matchMedia` hook and CSS `motion-reduce:hidden`), gracefully falling back to a clean ambient gradient canvas without motion.
+
 ## [0.29.2] - 2026-09-29
 
 ### Removed

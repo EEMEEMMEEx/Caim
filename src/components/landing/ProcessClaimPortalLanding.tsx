@@ -17,6 +17,32 @@ export function ProcessClaimPortalLanding() {
   const searchParams = useSearchParams()
   const next = searchParams.get("next") ?? "/dashboard"
   const [isPending, setIsPending] = React.useState(false)
+  const [prefersReducedMotion, setPrefersReducedMotion] = React.useState(false)
+  const videoRef = React.useRef<HTMLVideoElement>(null)
+
+  // Detect user's accessibility reduced motion preference
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia) {
+      const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+      setPrefersReducedMotion(mediaQuery.matches)
+
+      const handleChange = (e: MediaQueryListEvent) => {
+        setPrefersReducedMotion(e.matches)
+      }
+
+      mediaQuery.addEventListener?.("change", handleChange)
+      return () => mediaQuery.removeEventListener?.("change", handleChange)
+    }
+  }, [])
+
+  // Ensure autoplay starts silently and reliably
+  React.useEffect(() => {
+    if (videoRef.current && !prefersReducedMotion) {
+      videoRef.current.play().catch(() => {
+        // Autoplay policy prevented playback, video smoothly falls back to poster frame
+      })
+    }
+  }, [prefersReducedMotion])
 
   const handleEnterPortal = React.useCallback(async () => {
     setIsPending(true)
@@ -31,31 +57,44 @@ export function ProcessClaimPortalLanding() {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#070d18] text-slate-100 flex flex-col justify-between selection:bg-cyan-500 selection:text-white">
       {/* =========================================================================
-          1. BACKGROUND ATMOSPHERE & AMBIENT GLOW (CLEAN DARK CANVAS)
+          1. AMBIENT VIDEO BACKGROUND & HIGH-TECH GRADIENT OVERLAYS
           ========================================================================= */}
-      {/* Subtle Dot Grid Mesh */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:28px_28px] opacity-25"
-      />
+        className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none"
+      >
+        {/* HTML5 Seamless Ambient Looping Video */}
+        {!prefersReducedMotion && (
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster="/assets/portal-bg-poster.webp"
+            className="motion-reduce:hidden absolute inset-0 h-full w-full object-cover object-center scale-[1.02] filter contrast-[1.08] saturate-110 opacity-70 transition-opacity duration-1000"
+          >
+            <source src="/videos/portal-ambient-bg.mp4" type="video/mp4" />
+          </video>
+        )}
 
-      {/* Primary Radial Glow Behind Typography (Cyan / Indigo / Blue) */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-20 top-1/4 h-[550px] w-[550px] rounded-full bg-gradient-to-tr from-blue-700/20 via-indigo-600/15 to-cyan-500/10 blur-[140px]"
-      />
+        {/* Dark Gradient Overlay for Readability Protection & Text Contrast */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#070d18]/92 via-[#070d18]/78 to-[#0b1329]/88 backdrop-brightness-75" />
 
-      {/* Secondary Top Ambient Accent Glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/3 top-0 h-[400px] w-[650px] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-[130px]"
-      />
+        {/* Top Header Fade Blend */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#070d18] via-[#070d18]/65 to-transparent" />
 
-      {/* Subtle Bottom Ambient Accent Glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-1/4 bottom-10 h-[350px] w-[500px] rounded-full bg-indigo-500/10 blur-[130px]"
-      />
+        {/* Bottom Footer Fade Blend */}
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#070d18] via-[#070d18]/75 to-transparent" />
+
+        {/* Subtle High-Tech Dot Grid Mesh */}
+        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:28px_28px] opacity-20" />
+
+        {/* Ambient Radial Glow Accents (Cyan / Indigo / Blue) */}
+        <div className="absolute -left-20 top-1/4 h-[550px] w-[550px] rounded-full bg-gradient-to-tr from-blue-700/20 via-indigo-600/15 to-cyan-500/10 blur-[140px]" />
+        <div className="absolute left-1/3 top-0 h-[400px] w-[650px] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-[130px]" />
+        <div className="absolute right-1/4 bottom-10 h-[350px] w-[500px] rounded-full bg-indigo-500/10 blur-[130px]" />
+      </div>
 
       {/* =========================================================================
           2. TOP NAVIGATION / BRAND HEADER
