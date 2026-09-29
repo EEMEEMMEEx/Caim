@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2026-09-29
+
+### UI & Styling
+- **Enterprise UX/UI Elevation & Design System Modernization**:
+  - **Color & Elevation Tokens (`globals.css`)**:
+    - Transitioned neutral palette to refined high-end slate backgrounds (`#f8fafc` slate-50 base) with deep brand navy accents (`#0f172a` / `#1e40af`).
+    - Replaced harsh, opaque borders with subtle, low-opacity lines (`border-slate-200/70`) and added multi-layered soft shadows (`.shadow-card`, `.shadow-card-hover`).
+    - Added utility classes for glassmorphic surface styling (`.glass-panel`) and interactive card elevation (`.interactive-card`).
+  - **Glassmorphism & Surface Styling across AppShell**:
+    - Upgraded desktop sidebar and mobile navigation drawer with backdrop blur (`bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-r border-slate-200/70`).
+    - Styled active navigation links as pill-shaped surfaces (`bg-blue-50/90 text-blue-700 ring-1 ring-blue-600/15 font-semibold`).
+    - Converted sticky top header to glass panel (`bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/70 shadow-2xs`).
+  - **Component Harmony & Status Badges (`TicketsView`, `AssetsView`, `StationsView`)**:
+    - Replaced generic solid status badges with modern pill-shaped pastel containers featuring delicate rings and vibrant dot indicators (`bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20`, `bg-amber-50 text-amber-700 ring-1 ring-amber-600/20`, etc.).
+    - Revamped data tables and filter cards across all modules with `rounded-2xl border border-slate-200/70 bg-white/95 backdrop-blur-xs shadow-card`.
+    - Standardized table headers with uppercase tracking and subtle contrast (`bg-slate-50/90 text-slate-500 font-semibold text-[11px] uppercase tracking-wider`).
+  - **Tactile Micro-Interactions & Feedback**:
+    - Added subtle hover elevation (`hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200`) and tactile button ripple/press feedback (`active:scale-95`).
+    - Enhanced pagination footers and action icons with responsive click states.
+  - **Dashboard Elevation (`DashboardView`)**:
+    - Unified main metric cards, performance indicator grids, weekly trends, and process bottlenecks with the elevated `rounded-2xl border border-slate-200/70 bg-white/95 shadow-card` architecture.
+
 ## [0.23.4] - 2026-09-29
 
 ### UI & Styling

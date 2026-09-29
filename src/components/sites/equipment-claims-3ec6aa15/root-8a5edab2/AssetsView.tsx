@@ -50,17 +50,17 @@ const AssetTableRow = React.memo(function AssetTableRow({
   onDelete,
 }: AssetTableRowProps) {
   return (
-    <tr className="hover:bg-muted/30 transition-colors group">
-      <td className="py-3.5 px-4 text-center font-mono text-muted-foreground">
+    <tr className="hover:bg-slate-50/80 transition-colors group">
+      <td className="py-3.5 px-4 text-center font-mono text-slate-400">
         {index}
       </td>
       <td className="py-3.5 px-4">
         <div className="flex items-center gap-1.5">
-          <span className="font-mono font-bold text-foreground">{item.serial}</span>
+          <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{item.serial}</span>
           <button
             type="button"
             onClick={() => onCopy(item.serial)}
-            className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+            className="text-slate-400 hover:text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded"
             title="คัดลอก S/N"
           >
             {isCopied ? (
@@ -71,16 +71,16 @@ const AssetTableRow = React.memo(function AssetTableRow({
           </button>
         </div>
       </td>
-      <td className="py-3.5 px-4 font-medium text-foreground">
+      <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">
         {item.name || "-"}
       </td>
       <td className="py-3.5 px-4">
-        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-brand-navy/10 text-brand-navy dark:bg-brand-navy/30 dark:text-blue-300">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 ring-1 ring-blue-600/20 dark:bg-blue-950/50 dark:text-blue-300 shadow-2xs">
           {item.vendor}
         </span>
       </td>
-      <td className="py-3.5 px-4 font-medium text-foreground">{item.model}</td>
-      <td className="py-3.5 px-4 text-muted-foreground max-w-xs">
+      <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-300">{item.model}</td>
+      <td className="py-3.5 px-4 text-slate-500 max-w-xs">
         <span className="line-clamp-2">{item.category}</span>
       </td>
       <td className="py-3.5 px-4 text-right">
@@ -89,14 +89,14 @@ const AssetTableRow = React.memo(function AssetTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onDetail(item)}
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+            className="size-7 p-0 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all"
             title="ดูรายละเอียด"
           >
             <Eye className="size-3.5" />
           </Button>
           <Link
             href={`/tickets/new?serial=${encodeURIComponent(item.serial)}`}
-            className="inline-flex items-center justify-center text-brand hover:text-brand-dark hover:bg-brand/10 h-7 w-7 rounded-md transition-colors"
+            className="inline-flex items-center justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 size-7 rounded-lg active:scale-95 transition-all"
             title="เปิดเคสเคลม"
           >
             <Wrench className="size-3.5" />
@@ -105,7 +105,7 @@ const AssetTableRow = React.memo(function AssetTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onEdit(item)}
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-blue-600"
+            className="size-7 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-all"
             title="แก้ไขข้อมูล"
           >
             <Edit2 className="size-3.5" />
@@ -114,7 +114,7 @@ const AssetTableRow = React.memo(function AssetTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onDelete(item)}
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+            className="size-7 p-0 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all"
             title="ลบอุปกรณ์"
           >
             <Trash2 className="size-3.5" />
@@ -437,7 +437,7 @@ export function AssetsView() {
         </div>
 
         {/* Filter Toolbar */}
-        <div className="rounded-xl border border-border bg-card p-4 shadow-xs flex flex-col gap-3">
+        <div className="rounded-2xl border border-slate-200/70 bg-white/95 backdrop-blur-xs p-5 shadow-card flex flex-col gap-3 transition-all duration-300">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="relative sm:col-span-2">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -509,18 +509,18 @@ export function AssetsView() {
         </div>
 
         {/* Table */}
-        <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+        <div className="rounded-2xl border border-slate-200/70 bg-white/95 backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-border bg-muted/40 text-muted-foreground font-medium">
-                  <th className="py-3 px-4 w-16 text-center">ลำดับ</th>
-                  <th className="py-3 px-4 min-w-40">Serial Number</th>
-                  <th className="py-3 px-4 min-w-44">อุปกรณ์</th>
-                  <th className="py-3 px-4 w-28">ยี่ห้อ</th>
-                  <th className="py-3 px-4 min-w-32">รุ่น</th>
-                  <th className="py-3 px-4 min-w-56">หมวดหมู่</th>
-                  <th className="py-3 px-4 text-right w-36">จัดการ</th>
+                <tr className="border-b border-slate-200/70 bg-slate-50/90 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
+                  <th className="py-3.5 px-4 w-16 text-center">ลำดับ</th>
+                  <th className="py-3.5 px-4 min-w-40">Serial Number</th>
+                  <th className="py-3.5 px-4 min-w-44">อุปกรณ์</th>
+                  <th className="py-3.5 px-4 w-28">ยี่ห้อ</th>
+                  <th className="py-3.5 px-4 min-w-32">รุ่น</th>
+                  <th className="py-3.5 px-4 min-w-56">หมวดหมู่</th>
+                  <th className="py-3.5 px-4 text-right w-36">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

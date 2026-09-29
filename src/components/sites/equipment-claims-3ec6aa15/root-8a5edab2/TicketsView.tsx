@@ -50,11 +50,11 @@ const TicketTableRow = React.memo(function TicketTableRow({
 
   return (
     <tr
-      className={`transition-colors ${
+      className={`transition-colors duration-150 ${
         isOverdue
-          ? "bg-[#fff5f5] hover:bg-[#ffebeb]"
-          : "hover:bg-slate-50/70"
-      } ${isSelected ? "bg-blue-50/40" : ""}`}
+          ? "bg-rose-50/40 hover:bg-rose-50/70"
+          : "hover:bg-slate-50/80"
+      } ${isSelected ? "bg-blue-50/50" : ""}`}
     >
       {/* Checkbox */}
       <td className="px-4 py-3.5 text-center">
@@ -62,7 +62,7 @@ const TicketTableRow = React.memo(function TicketTableRow({
           type="checkbox"
           checked={isSelected}
           onChange={() => onToggleSelect(item.id)}
-          className="size-4 rounded-full border-slate-300 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
+          className="size-4 rounded border-slate-300 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
           aria-label={`เลือกเคส ${item.title}`}
         />
       </td>
@@ -91,11 +91,11 @@ const TicketTableRow = React.memo(function TicketTableRow({
       {/* อุปกรณ์ (Chip Icon & S/N) */}
       <td className="px-4 py-3.5">
         <div className="flex items-start gap-2.5">
-          <span className="flex size-6.5 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-slate-100/80 text-slate-600 border border-slate-200/50 shadow-2xs">
             <Cpu className="size-3.5" />
           </span>
           <div className="leading-tight">
-            <p className="text-xs text-slate-700">
+            <p className="text-xs font-medium text-slate-800">
               {item.vendor} / {item.model}
             </p>
             <p className="text-[11px] font-mono text-slate-400 mt-0.5">
@@ -105,46 +105,46 @@ const TicketTableRow = React.memo(function TicketTableRow({
         </div>
       </td>
 
-      {/* สถานะ (Status Pill Badges) */}
-      <td className="px-4 py-3.5">
+      {/* สถานะ (Status Pill Badges with Pastel Background & Ring) */}
+      <td className="px-4 py-3.5 whitespace-nowrap">
         {item.statusCode === 1 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-[#ecfdf5] px-2.5 py-0.5 text-[11px] font-medium text-[#059669]">
-            <span className="size-1.5 rounded-full bg-[#059669]" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-600/20 shadow-2xs">
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span>รับแจ้ง</span>
           </span>
         )}
         {item.statusCode === 2 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-200/60 bg-[#f5f3ff] px-2.5 py-0.5 text-[11px] font-medium text-[#7c3aed]">
-            <span className="size-1.5 rounded-full bg-[#7c3aed]" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-medium text-purple-700 ring-1 ring-purple-600/20 shadow-2xs">
+            <span className="size-1.5 rounded-full bg-purple-500" />
             <span>ส่งศูนย์</span>
           </span>
         )}
         {item.statusCode === 3 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/60 bg-[#fffbeb] px-2.5 py-0.5 text-[11px] font-medium text-[#d97706]">
-            <span className="size-1.5 rounded-full bg-[#d97706]" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-700 ring-1 ring-amber-600/20 shadow-2xs">
+            <span className="size-1.5 rounded-full bg-amber-500" />
             <span>รออะไหล่</span>
           </span>
         )}
         {item.statusCode === 4 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/60 bg-[#eff6ff] px-2.5 py-0.5 text-[11px] font-medium text-[#2563eb]">
-            <span className="size-1.5 rounded-full bg-[#2563eb]" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 ring-1 ring-blue-600/20 shadow-2xs">
+            <span className="size-1.5 rounded-full bg-blue-500" />
             <span>ซ่อมเสร็จ</span>
           </span>
         )}
         {item.statusCode === 5 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-[#ecfdf5] px-2.5 py-0.5 text-[11px] font-medium text-[#059669]">
-            <span className="size-1.5 rounded-full bg-[#059669]" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-600/15 shadow-2xs">
+            <span className="size-1.5 rounded-full bg-slate-500" />
             <span>ปิดเคส</span>
           </span>
         )}
         {item.statusCode === 6 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-pink-200/60 bg-[#fdf2f8] px-2.5 py-0.5 text-[11px] font-medium text-[#db2777]">
-            <span className="size-1.5 rounded-full bg-[#db2777]" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700 ring-1 ring-rose-600/20 shadow-2xs">
+            <span className="size-1.5 rounded-full bg-rose-500" />
             <span>ปฏิเสธเคลม</span>
           </span>
         )}
         {(!item.statusCode || item.statusCode < 1 || item.statusCode > 6) && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-slate-600/15 shadow-2xs">
             <span className="size-1.5 rounded-full bg-slate-500" />
             <span>{item.status || "รับแจ้ง"}</span>
           </span>
@@ -160,10 +160,10 @@ const TicketTableRow = React.memo(function TicketTableRow({
       <td className="px-4 py-3.5 whitespace-nowrap">
         {isOverdue ? (
           <div className="leading-tight">
-            <p className="font-bold text-[#dc2626]">
+            <p className="font-bold text-rose-600">
               {duration.text}
             </p>
-            <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-red-200/80 bg-[#fee2e2]/70 px-1.5 py-0.5 text-[10px] font-medium text-[#dc2626]">
+            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700 ring-1 ring-rose-600/20 shadow-2xs">
               <AlertTriangle className="size-2.5" />
               <span>{duration.overdueText}</span>
             </span>
@@ -173,35 +173,33 @@ const TicketTableRow = React.memo(function TicketTableRow({
         )}
       </td>
 
-      {/* Action Links (ดู / แก้ไข / ลบ) */}
+      {/* Action Links (ดู / แก้ไข / ลบ) with tactile micro-interactions */}
       <td className="px-4 py-3.5 whitespace-nowrap">
-        <div className="inline-flex items-center gap-1.5 text-xs">
+        <div className="inline-flex items-center gap-1">
           <button
             type="button"
             onClick={() => onView(item)}
-            className="text-[#1e61f0] hover:underline cursor-pointer"
+            className="px-2 py-1 rounded-md text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 active:scale-95 transition-all"
             aria-label={`ดูรายละเอียดเคส ${item.title}`}
           >
             ดู
           </button>
-          <span className="text-slate-300">/</span>
           <button
             type="button"
             onClick={() => onEdit(item)}
-            className="text-[#1e61f0] hover:underline cursor-pointer"
+            className="px-2 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all"
             aria-label={`แก้ไขข้อมูลเคส ${item.title}`}
           >
             แก้ไข
           </button>
-          <span className="text-slate-300">/</span>
           <button
             type="button"
             onClick={() => onConfirmDelete(item)}
-            className="inline-flex items-center gap-0.5 text-red-600 hover:text-red-700 hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 active:scale-95 transition-all"
             aria-label={`ลบเคส ${item.title}`}
             title="ลบเคสนี้ถาวร"
           >
-            <Trash2 className="size-3 text-red-500" />
+            <Trash2 className="size-3 text-rose-500" />
             <span>ลบ</span>
           </button>
         </div>
@@ -859,7 +857,7 @@ export function TicketsView() {
         {/* =========================================================================
             2. FILTER CARD (2 Rows + Aligned Search Action)
            ========================================================================= */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6">
+        <div className="rounded-2xl border border-slate-200/70 bg-white/95 backdrop-blur-xs p-5 shadow-card sm:p-6 transition-all duration-300">
           {/* Row 1: 5 Columns */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {/* สถานะ */}
@@ -1151,29 +1149,29 @@ export function TicketsView() {
         {/* =========================================================================
             3. DATA TABLE & SELECTABLE ROWS
            ========================================================================= */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
+        <div className="rounded-2xl border border-slate-200/70 bg-white/95 backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-200/80 bg-white text-slate-600">
+              <thead className="border-b border-slate-200/70 bg-slate-50/90 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
                 <tr>
                   <th className="w-12 px-4 py-3.5 text-center">
                     <input
                       type="checkbox"
                       checked={isAllSelected}
                       onChange={handleToggleSelectAll}
-                      className="size-4 rounded-full border-slate-300 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
+                      className="size-4 rounded border-slate-300 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
                       aria-label="เลือกทั้งหมด"
                     />
                   </th>
-                  <th className="px-4 py-3.5 font-medium">เคส</th>
-                  <th className="px-4 py-3.5 font-medium">อุปกรณ์</th>
-                  <th className="px-4 py-3.5 font-medium">สถานะ</th>
-                  <th className="px-4 py-3.5 font-medium">รับแจ้ง</th>
-                  <th className="px-4 py-3.5 font-medium">อายุงาน</th>
-                  <th className="px-4 py-3.5 font-medium">Action</th>
+                  <th className="px-4 py-3.5">เคส</th>
+                  <th className="px-4 py-3.5">อุปกรณ์</th>
+                  <th className="px-4 py-3.5">สถานะ</th>
+                  <th className="px-4 py-3.5">รับแจ้ง</th>
+                  <th className="px-4 py-3.5">อายุงาน</th>
+                  <th className="px-4 py-3.5">จัดการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100/90">
                 {filteredTickets.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-14 text-center">

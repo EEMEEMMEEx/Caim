@@ -55,21 +55,21 @@ const StationTableRow = React.memo(function StationTableRow({
   onDelete,
 }: StationTableRowProps) {
   return (
-    <tr className="hover:bg-muted/30 transition-colors group">
-      <td className="py-3.5 px-4 text-center font-mono text-muted-foreground">
+    <tr className="hover:bg-slate-50/80 transition-colors group">
+      <td className="py-3.5 px-4 text-center font-mono text-slate-400">
         {index}
       </td>
 
       {/* Code */}
       <td className="py-3.5 px-4">
         <div className="flex items-center gap-1.5">
-          <span className="font-mono font-bold text-foreground">
+          <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
             {item.code}
           </span>
           <button
             type="button"
             onClick={() => onCopyCode(item.code)}
-            className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+            className="text-slate-400 hover:text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded"
             title="คัดลอกรหัสสถานี"
           >
             {copiedCode === item.code ? (
@@ -84,11 +84,11 @@ const StationTableRow = React.memo(function StationTableRow({
       {/* Name & Site Type */}
       <td className="py-3.5 px-4">
         <div className="flex flex-col">
-          <span className="font-semibold text-foreground text-xs leading-snug">
+          <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs leading-snug">
             {item.name}
           </span>
-          <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-            <Building2 className="size-3 shrink-0" />
+          <span className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+            <Building2 className="size-3 shrink-0 text-slate-400" />
             {item.siteType} {item.towerType ? `· ${item.towerType}` : ""}
           </span>
         </div>
@@ -97,14 +97,14 @@ const StationTableRow = React.memo(function StationTableRow({
       {/* Height */}
       <td className="py-3.5 px-4 text-center">
         <span
-          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs ${
             item.height === 60
-              ? "bg-blue-600 text-white"
+              ? "bg-blue-50 text-blue-700 ring-1 ring-blue-600/20 dark:bg-blue-950/50 dark:text-blue-300"
               : item.height === 30
-              ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200"
+              ? "bg-purple-50 text-purple-700 ring-1 ring-purple-600/20 dark:bg-purple-950/50 dark:text-purple-300"
               : item.height === 18
-              ? "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200"
-              : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+              ? "bg-sky-50 text-sky-700 ring-1 ring-sky-600/20 dark:bg-sky-950/50 dark:text-sky-300"
+              : "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 dark:bg-emerald-950/50 dark:text-emerald-300"
           }`}
         >
           {item.height} ม.
@@ -154,7 +154,7 @@ const StationTableRow = React.memo(function StationTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onViewDetail(item)}
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+            className="size-7 p-0 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all"
             title="ดูรายละเอียด"
           >
             <Eye className="size-3.5" />
@@ -163,7 +163,7 @@ const StationTableRow = React.memo(function StationTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onEdit(item)}
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-blue-600"
+            className="size-7 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-all"
             title="แก้ไขข้อมูล"
           >
             <Edit2 className="size-3.5" />
@@ -172,7 +172,7 @@ const StationTableRow = React.memo(function StationTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onDelete(item)}
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+            className="size-7 p-0 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all"
             title="ลบสถานี"
           >
             <Trash2 className="size-3.5" />
@@ -621,66 +621,66 @@ export function StationsView() {
 
         {/* 4 Stat Overview Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="rounded-xl border border-border bg-card p-4 shadow-xs flex items-center justify-between">
+          <div className="rounded-2xl border border-slate-200/70 bg-white/95 dark:bg-slate-900/90 backdrop-blur-xs p-4.5 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center justify-between">
             <div>
-              <span className="text-xs font-medium text-muted-foreground">จุดติดตั้งทั้งหมด</span>
-              <p className="text-2xl font-bold tracking-tight text-foreground mt-1">
-                {statsTotal} <span className="text-xs font-normal text-muted-foreground">สถานี</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">จุดติดตั้งทั้งหมด</span>
+              <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
+                {statsTotal} <span className="text-xs font-normal text-slate-500">สถานี</span>
               </p>
             </div>
-            <span className="flex size-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 ring-1 ring-blue-500/20">
               <MapPin className="size-5" />
             </span>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4 shadow-xs flex items-center justify-between">
+          <div className="rounded-2xl border border-slate-200/70 bg-white/95 dark:bg-slate-900/90 backdrop-blur-xs p-4.5 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center justify-between">
             <div>
-              <span className="text-xs font-medium text-muted-foreground">เสาหลัก 60 เมตร</span>
-              <p className="text-2xl font-bold tracking-tight text-foreground mt-1">
-                {stats60m} <span className="text-xs font-normal text-muted-foreground">ต้น</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">เสาหลัก 60 เมตร</span>
+              <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
+                {stats60m} <span className="text-xs font-normal text-slate-500">ต้น</span>
               </p>
             </div>
-            <span className="flex size-10 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 ring-1 ring-indigo-500/20">
               <TowerControl className="size-5" />
             </span>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4 shadow-xs flex items-center justify-between">
+          <div className="rounded-2xl border border-slate-200/70 bg-white/95 dark:bg-slate-900/90 backdrop-blur-xs p-4.5 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center justify-between">
             <div>
-              <span className="text-xs font-medium text-muted-foreground">สถานีทวนสัญญาณ (ต่ำกว่า 60 ม.)</span>
-              <p className="text-2xl font-bold tracking-tight text-foreground mt-1">
-                {statsRepeaters} <span className="text-xs font-normal text-muted-foreground">ต้น</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">สถานีทวนสัญญาณ (ต่ำกว่า 60 ม.)</span>
+              <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
+                {statsRepeaters} <span className="text-xs font-normal text-slate-500">ต้น</span>
               </p>
             </div>
-            <span className="flex size-10 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 ring-1 ring-purple-500/20">
               <Radio className="size-5" />
             </span>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4 shadow-xs flex items-center justify-between">
+          <div className="rounded-2xl border border-slate-200/70 bg-white/95 dark:bg-slate-900/90 backdrop-blur-xs p-4.5 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center justify-between">
             <div>
-              <span className="text-xs font-medium text-muted-foreground">พื้นที่ครอบคลุม</span>
-              <p className="text-2xl font-bold tracking-tight text-foreground mt-1">
-                {statsProvinces} <span className="text-xs font-normal text-muted-foreground">จังหวัด</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">พื้นที่ครอบคลุม</span>
+              <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
+                {statsProvinces} <span className="text-xs font-normal text-slate-500">จังหวัด</span>
               </p>
             </div>
-            <span className="flex size-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">
               <Building2 className="size-5" />
             </span>
           </div>
         </div>
 
         {/* Filter Toolbar */}
-        <div className="rounded-xl border border-border bg-card p-4 shadow-xs flex flex-col gap-3">
+        <div className="rounded-2xl border border-slate-200/70 bg-white/95 dark:bg-slate-900/90 backdrop-blur-xs p-5 shadow-card flex flex-col gap-3.5 transition-all duration-300">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             {/* Search Input */}
             <div className="relative sm:col-span-2">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
               <Input
                 placeholder="ค้นหาชื่อสถานี, รหัส, จังหวัด, อำเภอ, ตำบล..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-xs"
+                className="pl-9 h-9.5 rounded-xl border border-slate-200/80 bg-slate-50/50 dark:bg-slate-800 text-xs shadow-2xs focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:bg-white"
               />
             </div>
 
@@ -688,7 +688,7 @@ export function StationsView() {
             <select
               value={selectedProvince}
               onChange={(e) => handleProvinceChange(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs focus-visible:border-ring focus-visible:outline-none"
+              className="h-9.5 rounded-xl border border-slate-200/80 bg-slate-50/50 dark:bg-slate-800 px-3 py-1 text-xs text-slate-700 dark:text-slate-200 shadow-2xs focus-visible:border-blue-500 focus-visible:outline-none focus-visible:bg-white"
             >
               <option value="all">ทุกจังหวัด ({provinces.length})</option>
               {provinces.map((prov) => (
@@ -702,7 +702,7 @@ export function StationsView() {
             <select
               value={selectedHeight}
               onChange={(e) => handleHeightChange(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs focus-visible:border-ring focus-visible:outline-none"
+              className="h-9.5 rounded-xl border border-slate-200/80 bg-slate-50/50 dark:bg-slate-800 px-3 py-1 text-xs text-slate-700 dark:text-slate-200 shadow-2xs focus-visible:border-blue-500 focus-visible:outline-none focus-visible:bg-white"
             >
               <option value="all">ทุกความสูงเสา ({heights.length})</option>
               {heights.map((h) => (
@@ -716,7 +716,7 @@ export function StationsView() {
             <select
               value={selectedArea}
               onChange={(e) => handleAreaChange(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs focus-visible:border-ring focus-visible:outline-none"
+              className="h-9.5 rounded-xl border border-slate-200/80 bg-slate-50/50 dark:bg-slate-800 px-3 py-1 text-xs text-slate-700 dark:text-slate-200 shadow-2xs focus-visible:border-blue-500 focus-visible:outline-none focus-visible:bg-white"
             >
               <option value="all">ทุกภาค ({areas.length})</option>
               {areas.map((a) => (
@@ -730,7 +730,7 @@ export function StationsView() {
             <select
               value={selectedSiteType}
               onChange={(e) => handleSiteTypeChange(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs focus-visible:border-ring focus-visible:outline-none"
+              className="h-9.5 rounded-xl border border-slate-200/80 bg-slate-50/50 dark:bg-slate-800 px-3 py-1 text-xs text-slate-700 dark:text-slate-200 shadow-2xs focus-visible:border-blue-500 focus-visible:outline-none focus-visible:bg-white"
             >
               <option value="all">ทุกสถานที่ ({siteTypes.length})</option>
               {siteTypes.map((st) => (
@@ -743,13 +743,13 @@ export function StationsView() {
 
           {/* Active Filter Row & Reset */}
           {hasActiveFilters && (
-            <div className="flex items-center justify-between border-t border-border pt-2.5 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between border-t border-slate-200/60 pt-2.5 text-xs text-slate-500">
               <span>พบทั้งหมด {filtered.length} สถานีจากตัวกรอง</span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleResetFilters}
-                className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1"
+                className="h-7 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 gap-1 active:scale-95 transition-all"
               >
                 <RotateCcw className="size-3" />
                 ล้างตัวกรองทั้งหมด
@@ -759,11 +759,11 @@ export function StationsView() {
         </div>
 
         {/* Stations Table */}
-        <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+        <div className="rounded-2xl border border-slate-200/70 bg-white/95 dark:bg-slate-900/90 backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-border bg-muted/40 text-muted-foreground font-medium">
+                <tr className="border-b border-slate-200/70 bg-slate-50/90 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
                   <th className="py-3 px-4 w-16 text-center">ลำดับ</th>
                   <th className="py-3 px-4 w-28">รหัสสถานี</th>
                   <th className="py-3 px-4 min-w-56">ชื่อสถานี / สถานที่ติดตั้ง</th>
@@ -813,7 +813,7 @@ export function StationsView() {
           </div>
 
           {/* Table Footer with Pagination */}
-          <div className="border-t border-border px-4 py-3 bg-muted/20 text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="border-t border-slate-200/70 px-4 py-3 bg-slate-50/70 dark:bg-slate-800/50 text-xs text-slate-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <span>
                 แสดง {filtered.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} -{" "}
@@ -822,7 +822,7 @@ export function StationsView() {
               <select
                 value={pageSize}
                 onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                className="h-7 rounded border border-input bg-background px-2 text-xs"
+                className="h-7.5 rounded-lg border border-slate-200/80 bg-white dark:bg-slate-800 px-2 text-xs text-slate-700 dark:text-slate-200 shadow-2xs focus-visible:outline-none"
               >
                 <option value={15}>15 รายการ/หน้า</option>
                 <option value={25}>25 รายการ/หน้า</option>
@@ -831,13 +831,13 @@ export function StationsView() {
               </select>
             </div>
 
-            <div className="flex items-center gap-1 self-center sm:self-auto">
+            <div className="flex items-center gap-1.5 self-center sm:self-auto">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handlePageChange(1)}
                 disabled={currentPage <= 1}
-                className="h-7 w-7 p-0"
+                className="h-7.5 w-7.5 p-0 rounded-lg border-slate-200/80 hover:bg-slate-100 active:scale-95 transition-all shadow-2xs"
                 title="หน้าแรก"
               >
                 <ChevronsLeft className="size-3.5" />
@@ -847,12 +847,12 @@ export function StationsView() {
                 size="sm"
                 onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                 disabled={currentPage <= 1}
-                className="h-7 w-7 p-0"
+                className="h-7.5 w-7.5 p-0 rounded-lg border-slate-200/80 hover:bg-slate-100 active:scale-95 transition-all shadow-2xs"
                 title="หน้าก่อนหน้า"
               >
                 <ChevronLeft className="size-3.5" />
               </Button>
-              <span className="px-2 font-medium text-foreground">
+              <span className="px-2.5 font-medium text-slate-700 dark:text-slate-200">
                 หน้า {currentPage} / {totalPages}
               </span>
               <Button
@@ -860,7 +860,7 @@ export function StationsView() {
                 size="sm"
                 onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage >= totalPages}
-                className="h-7 w-7 p-0"
+                className="h-7.5 w-7.5 p-0 rounded-lg border-slate-200/80 hover:bg-slate-100 active:scale-95 transition-all shadow-2xs"
                 title="หน้าถัดไป"
               >
                 <ChevronRight className="size-3.5" />
@@ -870,7 +870,7 @@ export function StationsView() {
                 size="sm"
                 onClick={() => handlePageChange(totalPages)}
                 disabled={currentPage >= totalPages}
-                className="h-7 w-7 p-0"
+                className="h-7.5 w-7.5 p-0 rounded-lg border-slate-200/80 hover:bg-slate-100 active:scale-95 transition-all shadow-2xs"
                 title="หน้าสุดท้าย"
               >
                 <ChevronsRight className="size-3.5" />
@@ -882,19 +882,19 @@ export function StationsView() {
 
       {/* Add / Edit Station Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-xl rounded-xl border border-border bg-card p-6 shadow-xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-border pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200/70 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-200/70 pb-3">
               <div className="flex items-center gap-2">
-                <Radio className="size-5 text-brand" />
-                <h3 className="text-base font-bold text-foreground">
+                <Radio className="size-5 text-blue-600" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
                   {editingStation ? "แก้ไขข้อมูลสถานี" : "เพิ่มสถานีใหม่เข้าสู่ระบบ"}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="rounded-lg p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
               >
                 <X className="size-5" />
               </button>

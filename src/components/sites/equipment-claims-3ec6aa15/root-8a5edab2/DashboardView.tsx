@@ -149,7 +149,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
         {/* =========================================================================
             2. TOP CONTAINER: SUMMARY CARDS & CORE PERFORMANCE WIDGETS
            ========================================================================= */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6 transition-all duration-300">
+        <div className="rounded-2xl border border-slate-200/70 bg-white/95 dark:bg-slate-900/90 backdrop-blur-xs p-5 shadow-card sm:p-6 transition-all duration-300">
           {/* 4 Summary Stat Cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* Card 1: เคสทั้งหมด (Total) */}
@@ -312,7 +312,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
             </p>
 
             {/* 4 Metric Columns */}
-            <div className="mt-4 grid grid-cols-1 divide-y rounded-xl border border-slate-200/80 bg-white sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4 divide-slate-200/80 overflow-hidden">
+            <div className="mt-4 grid grid-cols-1 divide-y rounded-xl border border-slate-200/70 bg-slate-50/40 dark:bg-slate-800/40 sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4 divide-slate-200/70 overflow-hidden shadow-2xs">
               {/* Metric 1: อายุงานค้างกลาง */}
               <Link
                 href="/tickets?status=in_progress"
@@ -435,8 +435,8 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
         {/* =========================================================================
             3. WORK STATUS & WEEKLY OVERVIEW
            ========================================================================= */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6 transition-all duration-300">
-          <div className="grid grid-cols-1 gap-6 divide-y divide-slate-200/80 lg:grid-cols-2 lg:gap-8 lg:divide-y-0 lg:divide-x">
+        <div className="rounded-2xl border border-slate-200/70 bg-white/95 dark:bg-slate-900/90 backdrop-blur-xs p-5 shadow-card sm:p-6 transition-all duration-300">
+          <div className="grid grid-cols-1 gap-6 divide-y divide-slate-200/70 lg:grid-cols-2 lg:gap-8 lg:divide-y-0 lg:divide-x">
             {/* Left Column: สถานะงาน (Work Status) */}
             <div className="lg:pr-4">
               <div>
@@ -578,8 +578,8 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
         {/* =========================================================================
             4. PROCESS BOTTLENECKS & SERVICE CENTER METRICS
            ========================================================================= */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:p-6 transition-all duration-300">
-          <div className="grid grid-cols-1 gap-6 divide-y divide-slate-200/80 lg:grid-cols-2 lg:gap-8 lg:divide-y-0 lg:divide-x">
+        <div className="rounded-2xl border border-slate-200/70 bg-white/95 dark:bg-slate-900/90 backdrop-blur-xs p-5 shadow-card sm:p-6 transition-all duration-300">
+          <div className="grid grid-cols-1 gap-6 divide-y divide-slate-200/70 lg:grid-cols-2 lg:gap-8 lg:divide-y-0 lg:divide-x">
             {/* Left Column: คอขวดของกระบวนการ (Process Bottlenecks) */}
             <div className="lg:pr-4">
               <div>
