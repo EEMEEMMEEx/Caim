@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.6] - 2026-10-01
+
+### Changed
+- **Dashboard Header Controls & Status Indicator Refactor (`DashboardView.tsx`)**:
+  - **Relocated Online Status Badge**: Moved the green connection status indicator dot/pill (`ระบบออนไลน์`) from the far right over to the dashboard title section, placing it inline immediately after `"ภาพรวมงานเคลมอุปกรณ์"` styled with a compact glowing green badge (`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20`).
+  - **Cleaned Redundant Timestamps**: Removed the redundant text/timestamp block (`ซิงก์สดอัตโนมัติ | 10:39:38`) previously nested between the indicator and the refresh button, preserving telemetry timestamps in native hover titles.
+  - **Restored Refresh Button Label**: Transformed the top-right refresh trigger from an icon-only button into a combined button with the Thai label `"รีเฟรชข้อมูล"` and modern enterprise dark-theme button aesthetics (`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-[#1e293b] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 transition-all active:scale-95`).
+  - **Animated Active Refresh**: Ensured smooth `animate-spin` rotation on the refresh icon while data fetching is active.
+
 ## [0.29.5] - 2026-10-01
 
 ### Added

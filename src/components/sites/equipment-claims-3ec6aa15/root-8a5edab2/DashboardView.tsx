@@ -84,64 +84,65 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                 <Activity className="size-6 text-blue-400" />
               </span>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-                  ภาพรวมงานเคลมอุปกรณ์
-                </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+                    ภาพรวมงานเคลมอุปกรณ์
+                  </h1>
+                  <span
+                    title={mounted && lastSyncTime ? `สถานะ: ออนไลน์ (อัปเดตล่าสุด ${formattedSyncTime})` : "สถานะ: ระบบออนไลน์"}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 cursor-default"
+                  >
+                    <span className="relative flex size-2">
+                      <span
+                        className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
+                          connectionStatus === "connected"
+                            ? "bg-emerald-400"
+                            : connectionStatus === "fallback-polling"
+                            ? "bg-amber-400"
+                            : "bg-blue-400"
+                        }`}
+                      />
+                      <span
+                        className={`relative inline-flex size-2 rounded-full ${
+                          connectionStatus === "connected"
+                            ? "bg-emerald-500"
+                            : connectionStatus === "fallback-polling"
+                            ? "bg-amber-500"
+                            : "bg-blue-500"
+                        }`}
+                      />
+                    </span>
+                    <span suppressHydrationWarning>
+                      {mounted
+                        ? connectionStatus === "connected"
+                          ? "ระบบออนไลน์"
+                          : connectionStatus === "fallback-polling"
+                          ? "ซิงก์แบบ Polling"
+                          : "กำลังเชื่อมต่อ..."
+                        : "ระบบออนไลน์"}
+                    </span>
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm mt-0.5">
                   สรุปสถานะการเคลมอุปกรณ์โครงข่ายวิทยุสื่อสารแบบเรียลไทม์
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Real-time Status Badge & Manual Refresh */}
+          {/* Action Trigger: Refresh Button */}
           <div className="flex items-center gap-2.5 self-start sm:self-auto">
-            <div className="inline-flex items-center gap-2.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-md px-3.5 py-2 text-xs shadow-xs">
-              <span className="relative flex size-2.5">
-                <span
-                  className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
-                    connectionStatus === "connected"
-                      ? "bg-emerald-400"
-                      : connectionStatus === "fallback-polling"
-                      ? "bg-amber-400"
-                      : "bg-blue-400"
-                  }`}
-                />
-                <span
-                  className={`relative inline-flex size-2.5 rounded-full ${
-                    connectionStatus === "connected"
-                      ? "bg-emerald-500"
-                      : connectionStatus === "fallback-polling"
-                      ? "bg-amber-500"
-                      : "bg-blue-500"
-                  }`}
-                />
-              </span>
-              <span suppressHydrationWarning className="font-semibold text-slate-800 dark:text-slate-200">
-                {mounted
-                  ? connectionStatus === "connected"
-                    ? "ซิงก์สดอัตโนมัติ"
-                    : connectionStatus === "fallback-polling"
-                    ? "ซิงก์แบบ Polling"
-                    : "กำลังเชื่อมต่อ..."
-                  : "ซิงก์สดอัตโนมัติ"}
-              </span>
-              <span className="text-slate-300 dark:text-slate-600">|</span>
-              <span suppressHydrationWarning className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                {mounted ? formattedSyncTime : "พร้อมใช้งาน"}
-              </span>
-            </div>
-
             <button
               type="button"
               onClick={() => refresh()}
               disabled={isRefreshing}
-              title="กดเพื่อดึงข้อมูลล่าสุดจากฐานข้อมูลทันที"
-              className="inline-flex size-9 items-center justify-center rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] text-slate-600 dark:text-slate-300 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+              title={mounted && lastSyncTime ? `อัปเดตล่าสุด: ${formattedSyncTime}` : "กดเพื่อดึงข้อมูลล่าสุดจากฐานข้อมูลทันที"}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-[#1e293b] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 shadow-xs transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               <RefreshCw
-                className={`size-4 ${isRefreshing ? "animate-spin text-blue-600 dark:text-blue-400" : ""}`}
+                className={`size-3.5 ${isRefreshing ? "animate-spin text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400"}`}
               />
+              <span>รีเฟรชข้อมูล</span>
             </button>
           </div>
         </div>
