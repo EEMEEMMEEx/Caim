@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.1] - 2026-10-01
+
+### Changed
+- **Process Claim Custom Brand Favicon Assets & Metadata (`layout.tsx`, `public/`, `src/app/`)**:
+  - Replaced the default Vercel template triangle favicon with the custom Process Claim blue rounded-square 'P' logo mark.
+  - Generated multi-format, multi-resolution brand icon assets:
+    - `favicon.ico` (multi-resolution 16x16, 32x32, 48x48)
+    - `icon.png` (192x192), `favicon-32x32.png`, `favicon-16x16.png`
+    - `apple-touch-icon.png` (180x180)
+    - `icon.svg` (scalable vector format)
+  - Placed assets in both `public/` and `src/app/` static directories to prevent host template fallbacks.
+  - Configured Next.js App Router root `metadata.icons` and explicit HTML `<head>` link tags with cache-busting query parameter (`?v=2`) to guarantee immediate browser rendering without cached icon retention.
+
 ## [0.30.0] - 2026-10-01
 
 ### Added

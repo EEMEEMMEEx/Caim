@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none" width="512" height="512">
+  <defs>
+    <!-- Brand Deep Blue Gradient -->
+    <linearGradient id="pc-bg-grad" x1="2" y1="2" x2="34" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1e61f0" />
+      <stop offset="100%" stop-color="#0f3aa8" />
+    </linearGradient>
+
+    <!-- Dynamic Workflow Accent Gradient -->
+    <linearGradient id="pc-accent-grad" x1="12" y1="12" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#60a5fa" />
+    </linearGradient>
+
+    <!-- Glow Stroke Gradient -->
+    <linearGradient id="pc-stroke-glow" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Badge Container -->
+  <rect
+    x="1.5"
+    y="1.5"
+    width="33"
+    height="33"
+    rx="9.5"
+    fill="url(#pc-bg-grad)"
+    stroke="url(#pc-stroke-glow)"
+    stroke-width="1.25"
+  />
+
+  <!-- Stylized 'P' Workflow Stem & Loop (Core Integrity) -->
+  <path
+    d="M11 25.5V10.5H17.5C20.5376 10.5 23 12.9624 23 16C23 19.0376 20.5376 21.5 17.5 21.5H11"
+    stroke="#ffffff"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Interlocking 'C' Workflow Progression Loop (Lifecycle Arc) -->
+  <path
+    d="M24.75 13C26.75 14.75 27.5 17.5 27.5 20.25C27.5 24.25 24.5 27.25 20.25 27.25C16.5 27.25 13.5 25 12.75 21.75"
+    stroke="url(#pc-accent-grad)"
+    stroke-width="2.5"
+    stroke-linecap="round"
+  />
+
+  <!-- Active Verification Pulse Node -->
+  <circle cx="20.25" cy="27.25" r="1.5" fill="#38bdf8" />
+  <circle cx="20.25" cy="27.25" r="2.75" stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.75" />
+</svg>
