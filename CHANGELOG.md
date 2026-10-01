@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.0] - 2026-10-01
+
+### Added
+- **New Import/Export Permit Action Button & Interactive Creation Modal (`OverseasView.tsx`)**:
+  - **Header Toolbar Action Button ('เปิดใบนำเข้า-ส่งออก')**:
+    - Inserted adjacent and immediately to the left of the existing '+ เปิดใบส่งซ่อม' button in the page toolbar.
+    - Designed with dark enterprise styling: slate-800 background, border border-slate-700/80, hover elevation, subtle active scale press (`active:scale-[0.98]`), and cyan accent `ArrowLeftRight` icon prefix.
+    - Wrapped both action buttons inside a responsive container (`flex flex-wrap sm:flex-nowrap items-center gap-2.5 self-start sm:self-auto`) guaranteeing graceful stacking on mobile viewports without breaking page title alignment.
+  - **Interactive Import/Export Permit Modal Dialog (`isImportExportModalOpen`)**:
+    - Built comprehensive dialog for telecommunications repair customs and regulatory approvals (กสทช. NBTC / กรมศุลกากร Customs).
+    - Features fields for Permit/Application number (with automatic number generator), permit classification type (Export for Repair, Import after Repair, NBTC Permit, Customs Clearance), regulatory authority selector, destination/origin country, RMA linking, equipment selection, issue/expiry dates, and notes.
+    - Integrated with animated toast notification and responsive modal dismiss handling.
+
 ## [0.31.0] - 2026-10-01
 
 ### Added

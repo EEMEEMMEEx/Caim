@@ -22,7 +22,8 @@ import {
   RotateCcw,
   Save,
   Undo2,
-  Loader2
+  Loader2,
+  ArrowLeftRight
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -624,6 +625,21 @@ export function OverseasView() {
   })
   const [formValidationError, setFormValidationError] = React.useState<string | null>(null)
 
+  // New Import/Export Permit Modal state
+  const [isImportExportModalOpen, setIsImportExportModalOpen] = React.useState(false)
+  const [importExportForm, setImportExportForm] = React.useState({
+    permitNo: "",
+    permitType: "export_for_repair",
+    authority: "กสทช. (NBTC)",
+    linkedRmaNo: "",
+    selectedAssetSerial: "",
+    destinationCountry: "ฮ่องกง (Hong Kong)",
+    issueDate: new Date().toISOString().slice(0, 10),
+    expiryDate: "",
+    remarks: "",
+  })
+  const [importExportValidationError, setImportExportValidationError] = React.useState<string | null>(null)
+
   const handleCaseChange = (caseId: string) => {
     setNewRmaForm((prev) => {
       const updated = { ...prev, linkedCaseId: caseId }
@@ -891,6 +907,29 @@ export function OverseasView() {
     showToast(`เปิดใบส่งซ่อม ${generatedRmaNo} และบันทึกเข้าฐานข้อมูลเรียบร้อยแล้ว`)
   }
 
+  const handleCreateImportExportPermit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const generatedPermitNo =
+      importExportForm.permitNo.trim() ||
+      `EXP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
+
+    setIsImportExportModalOpen(false)
+    setImportExportForm({
+      permitNo: "",
+      permitType: "export_for_repair",
+      authority: "กสทช. (NBTC)",
+      linkedRmaNo: "",
+      selectedAssetSerial: "",
+      destinationCountry: "ฮ่องกง (Hong Kong)",
+      issueDate: new Date().toISOString().slice(0, 10),
+      expiryDate: "",
+      remarks: "",
+    })
+    setImportExportValidationError(null)
+    showToast(`เปิดใบนำเข้า-ส่งออก ${generatedPermitNo} เรียบร้อยแล้ว`)
+  }
+
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingItem) return
@@ -951,14 +990,25 @@ export function OverseasView() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setNewRmaModalOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0c1a30] dark:bg-blue-600 hover:bg-[#1e293b] dark:hover:bg-blue-500 h-10 px-4 min-h-[44px] min-w-[44px] text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer touch-manipulation"
-            >
-              <Plus className="size-4" />
-              <span>เปิดใบส่งซ่อม</span>
-            </button>
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setIsImportExportModalOpen(true)}
+                className="inline-flex items-center justify-center gap-1.5 px-4 h-10 rounded-xl text-xs sm:text-sm font-medium bg-slate-800 hover:bg-slate-700/90 text-slate-100 border border-slate-700/80 hover:border-slate-600 shadow-sm transition-all active:scale-[0.98] min-h-[44px] min-w-[44px] cursor-pointer touch-manipulation"
+              >
+                <ArrowLeftRight className="size-4 text-cyan-400" />
+                <span>เปิดใบนำเข้า-ส่งออก</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setNewRmaModalOpen(true)}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0c1a30] dark:bg-blue-600 hover:bg-[#1e293b] dark:hover:bg-blue-500 h-10 px-4 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer touch-manipulation"
+              >
+                <Plus className="size-4" />
+                <span>เปิดใบส่งซ่อม</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1800,6 +1850,263 @@ export function OverseasView() {
 
         {/* =========================================================================
             5. CREATE NEW RMA MODAL
+           ========================================================================= */}
+        {/* =========================================================================
+            5.1 CREATE NEW IMPORT/EXPORT PERMIT MODAL
+           ========================================================================= */}
+        {isImportExportModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+            onClick={() => setIsImportExportModalOpen(false)}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="relative w-full max-w-xl rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#1e293b] shadow-2xl p-6 animate-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-9 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+                    <ArrowLeftRight className="size-4.5" />
+                  </span>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      เปิดใบอนุญาตนำเข้า-ส่งออก
+                    </h3>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                      บันทึกคำขอและใบอนุญาตขนส่งอุปกรณ์ไปซ่อมต่างประเทศ (กสทช. / ศุลกากร)
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsImportExportModalOpen(false)}
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-colors"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              {/* Validation Alert */}
+              {importExportValidationError && (
+                <div className="mt-3.5 flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-950/40 p-2.5 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/50">
+                  <AlertCircle className="size-4 shrink-0 text-red-600 dark:text-red-400" />
+                  <span>{importExportValidationError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleCreateImportExportPermit} className="mt-4 space-y-3.5 text-xs">
+                {/* Row 1: เลขที่ใบอนุญาต & ประเภทคำขอ */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      เลขที่ใบอนุญาต / เลขที่คำขอ
+                    </label>
+                    <Input
+                      placeholder="เช่น EXP-2026-0089 หรือ เว้นว่างเพื่อให้อัตโนมัติ"
+                      value={importExportForm.permitNo}
+                      onChange={(e) =>
+                        setImportExportForm((prev) => ({ ...prev, permitNo: e.target.value }))
+                      }
+                      className="h-9 text-xs rounded-lg border-slate-200/80 dark:border-white/10 dark:bg-[#0f172a] dark:text-slate-100 focus-visible:ring-1 focus-visible:ring-cyan-500"
+                    />
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                      เว้นว่างไว้เพื่อรันเลขเอกสารอัตโนมัติ
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      ประเภทใบอนุญาต <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={importExportForm.permitType}
+                        onChange={(e) =>
+                          setImportExportForm((prev) => ({ ...prev, permitType: e.target.value }))
+                        }
+                        className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-cyan-500 focus:outline-none"
+                        required
+                      >
+                        <option value="export_for_repair">ส่งออกเพื่อซ่อมแซม (Export for Repair)</option>
+                        <option value="import_after_repair">นำเข้าหลังการซ่อมแซม (Import after Repair)</option>
+                        <option value="nbtc_permit">ใบอนุญาต กสทช. (NBTC Type Approval Permit)</option>
+                        <option value="customs_clearance">ใบขนส่งสินค้าขาออก/เข้า ศุลกากร</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 2: หน่วยงานผู้อนุญาต & ปลายทาง */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      หน่วยงานผู้อนุญาต / ออกเอกสาร
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={importExportForm.authority}
+                        onChange={(e) =>
+                          setImportExportForm((prev) => ({ ...prev, authority: e.target.value }))
+                        }
+                        className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-cyan-500 focus:outline-none"
+                      >
+                        <option value="กสทช. (NBTC)">สำนักงาน กสทช. (NBTC)</option>
+                        <option value="กรมศุลกากร (Customs)">กรมศุลกากร (Thai Customs)</option>
+                        <option value="กระทรวงพาณิชย์">กรมการค้าต่างประเทศ</option>
+                        <option value="ผู้ให้บริการขนส่ง (DHL/FedEx)">ผู้ให้บริการโลจิสติกส์ (DHL / FedEx)</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      ประเทศปลายทาง / ต้นทาง
+                    </label>
+                    <Input
+                      placeholder="เช่น ฮ่องกง (Hong Kong), จีน, สิงคโปร์"
+                      value={importExportForm.destinationCountry}
+                      onChange={(e) =>
+                        setImportExportForm((prev) => ({ ...prev, destinationCountry: e.target.value }))
+                      }
+                      className="h-9 text-xs rounded-lg border-slate-200/80 dark:border-white/10 dark:bg-[#0f172a] dark:text-slate-100 focus-visible:ring-1 focus-visible:ring-cyan-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 3: ผูกกับใบส่งซ่อม RMA หรือเลือกอุปกรณ์ */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      ผูกกับใบส่งซ่อม (RMA)
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={importExportForm.linkedRmaNo}
+                        onChange={(e) => {
+                          const rmaNo = e.target.value
+                          const found = rmaList.find((r) => r.rmaNo === rmaNo)
+                          setImportExportForm((prev) => ({
+                            ...prev,
+                            linkedRmaNo: rmaNo,
+                            selectedAssetSerial: found?.serialNo || prev.selectedAssetSerial,
+                          }))
+                        }}
+                        className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-cyan-500 focus:outline-none"
+                      >
+                        <option value="">ไม่ระบุ / เอกสารกลาง</option>
+                        {rmaList.map((r) => (
+                          <option key={r.id} value={r.rmaNo}>
+                            {r.rmaNo} — {r.vendor} ({r.model})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      อุปกรณ์ที่เกี่ยวข้อง (S/N)
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={importExportForm.selectedAssetSerial}
+                        onChange={(e) =>
+                          setImportExportForm((prev) => ({ ...prev, selectedAssetSerial: e.target.value }))
+                        }
+                        className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-cyan-500 focus:outline-none"
+                      >
+                        <option value="">เลือกอุปกรณ์จากทะเบียน</option>
+                        {equipmentOptions.map((asset) => (
+                          <option key={asset.serial} value={asset.serial}>
+                            {asset.serial} — {asset.name || asset.model} ({asset.vendor})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 4: วันที่ออกเอกสาร & วันหมดอายุ */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      วันที่ออกใบอนุญาต
+                    </label>
+                    <Input
+                      type="date"
+                      value={importExportForm.issueDate}
+                      onChange={(e) =>
+                        setImportExportForm((prev) => ({ ...prev, issueDate: e.target.value }))
+                      }
+                      className="h-9 text-xs rounded-lg border-slate-200/80 dark:border-white/10 dark:bg-[#0f172a] dark:text-slate-100 focus-visible:ring-1 focus-visible:ring-cyan-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      วันหมดอายุ (ถ้ามี)
+                    </label>
+                    <Input
+                      type="date"
+                      value={importExportForm.expiryDate}
+                      onChange={(e) =>
+                        setImportExportForm((prev) => ({ ...prev, expiryDate: e.target.value }))
+                      }
+                      className="h-9 text-xs rounded-lg border-slate-200/80 dark:border-white/10 dark:bg-[#0f172a] dark:text-slate-100 focus-visible:ring-1 focus-visible:ring-cyan-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 5: หมายเหตุ */}
+                <div>
+                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    หมายเหตุ / รายละเอียดเพิ่มเติม
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={importExportForm.remarks}
+                    onChange={(e) =>
+                      setImportExportForm((prev) => ({ ...prev, remarks: e.target.value }))
+                    }
+                    placeholder="เช่น ระบุรหัส HS Code, ใบรับรองการนำกลับ, เลข AWB.."
+                    className="w-full rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] p-2.5 text-xs text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* Footer Actions */}
+                <div className="mt-6 flex justify-end gap-2.5 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsImportExportModalOpen(false)}
+                    className="h-9 px-4 text-xs font-medium text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg cursor-pointer"
+                  >
+                    ยกเลิก
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="h-9 px-4 bg-slate-900 dark:bg-cyan-600 hover:bg-slate-800 dark:hover:bg-cyan-500 text-white text-xs font-medium rounded-lg shadow-xs cursor-pointer gap-1.5"
+                  >
+                    <ArrowLeftRight className="size-3.5" />
+                    <span>บันทึกใบนำเข้า-ส่งออก</span>
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            5.2 CREATE NEW RMA MODAL
            ========================================================================= */}
         {newRmaModalOpen && (
           <div
