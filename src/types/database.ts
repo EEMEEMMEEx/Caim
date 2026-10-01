@@ -110,6 +110,14 @@ export interface PermitTrackingInfo {
   coveredStages?: number[] // alias for coveredSteps
   remarks?: string
   createdAt?: string
+  updatedAt?: string
+  totalDays?: number
+  elapsedDays?: number
+  remainingDays?: number
+  progressPercent?: number
+  status?: "active" | "warning" | "expired"
+  badgeText?: string
+  subtext?: string
 }
 
 export interface RmaDocument {

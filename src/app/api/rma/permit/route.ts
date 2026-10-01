@@ -4,7 +4,11 @@ import { realtimeEmitter, REALTIME_EVENTS } from "@/lib/events/realtimeEmitter"
 import { RmaDocument, PermitTrackingInfo } from "@/types/database"
 import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 import { getPersistentRma, savePersistentRma } from "@/lib/storage/serverRmaStorage"
-import { calculatePermitExpirationDate, getCoveredStepsByPermitType } from "@/lib/utils/permitSla"
+import {
+  calculatePermitExpirationDate,
+  calculatePermitSla,
+  getCoveredStepsByPermitType,
+} from "@/lib/utils/permitSla"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -47,10 +51,8 @@ export async function POST(request: NextRequest) {
         ? body.issueDate.slice(0, 10)
         : new Date().toISOString().slice(0, 10)
 
-    const expiryDate =
-      body.expiryDate && !isNaN(Date.parse(body.expiryDate))
-        ? body.expiryDate.slice(0, 10)
-        : calculatePermitExpirationDate(issueDate, 90)
+    const expiryDate = calculatePermitExpirationDate(issueDate, 90)
+    const sla = calculatePermitSla(issueDate, expiryDate)
 
     const permitNo =
       (body.permitNo && body.permitNo.trim()) ||
@@ -124,7 +126,15 @@ export async function POST(request: NextRequest) {
       coveredSteps,
       coveredStages: coveredSteps,
       remarks: body.remarks || "",
+      totalDays: sla.totalDays,
+      elapsedDays: sla.elapsedDays,
+      remainingDays: sla.remainingDays,
+      progressPercent: sla.progressPercent,
+      status: sla.status,
+      badgeText: sla.badgeText,
+      subtext: sla.subtext,
       createdAt: nowIso,
+      updatedAt: nowIso,
     }
 
     let savedToMongo = false

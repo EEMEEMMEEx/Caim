@@ -42,7 +42,14 @@
       "serialNo": "1000167600349",
       "remarks": "ใบอนุญาตนำเข้าหลังการซ่อมแซมอุปกรณ์สื่อสารกลับสู่ประเทศไทย",
       "createdAt": "2026-10-01T07:58:16.575Z",
-      "updatedAt": "2026-10-01T08:14:35.669Z"
+      "updatedAt": "2026-10-01T08:37:42.817Z",
+      "totalDays": 90,
+      "elapsedDays": 35,
+      "remainingDays": 55,
+      "progressPercent": 39,
+      "status": "active",
+      "badgeText": "เหลืออีก 55 วัน",
+      "subtext": "กรอบเวลา SLA 90 วัน (ผ่านไป 35 วัน)"
     },
     "permits": [
       {
@@ -69,7 +76,14 @@
         "serialNo": "1000167600349",
         "remarks": "ใบอนุญาตนำเข้าหลังการซ่อมแซมอุปกรณ์สื่อสารกลับสู่ประเทศไทย",
         "createdAt": "2026-10-01T07:58:16.575Z",
-        "updatedAt": "2026-10-01T08:14:35.669Z"
+        "updatedAt": "2026-10-01T08:37:42.817Z",
+        "totalDays": 90,
+        "elapsedDays": 35,
+        "remainingDays": 55,
+        "progressPercent": 39,
+        "status": "active",
+        "badgeText": "เหลืออีก 55 วัน",
+        "subtext": "กรอบเวลา SLA 90 วัน (ผ่านไป 35 วัน)"
       },
       {
         "permitNo": "E05046900335",
@@ -97,7 +111,14 @@
         "serialNo": "1000167600349",
         "remarks": "ใบอนุญาตส่งออกเพื่อซ่อมแซมอุปกรณ์สื่อสาร",
         "createdAt": "2026-10-01T07:55:26.901Z",
-        "updatedAt": "2026-10-01T08:14:35.668Z"
+        "updatedAt": "2026-10-01T08:37:42.817Z",
+        "totalDays": 90,
+        "elapsedDays": 72,
+        "remainingDays": 18,
+        "progressPercent": 80,
+        "status": "active",
+        "badgeText": "เหลืออีก 18 วัน",
+        "subtext": "กรอบเวลา SLA 90 วัน (ผ่านไป 72 วัน)"
       }
     ],
     "stageHistory": [

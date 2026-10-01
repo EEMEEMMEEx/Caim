@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.3] - 2026-10-01
+
+### Fixed & Enhanced
+- **Dynamic 90-Day Permit SLA Calculation Recalibration & Data Reconciliation (`permitSla.ts`, `OverseasView.tsx`, `/api/rma/permit/route.ts`, `database.ts`, `scripts/reconcile_permits.js`)**:
+  - **Dynamic Expiration & Calendar Days Math**: Implemented strict mathematical functions `expirationDate = addDays(new Date(issueDate), 90)`, `elapsedDays = differenceInCalendarDays(currentDate, issueDate)`, `remainingDays = Math.max(0, differenceInCalendarDays(expirationDate, currentDate))`, and `progressPct = Math.min(100, Math.max(0, (elapsedDays / 90) * 100))`.
+  - **Card Widgets Display Parity**: Standardized permit card widgets across the Permits Tab and Drawer view to enforce display parity:
+    - Primary pill: `เหลืออีก {remainingDays} วัน` (e.g. `เหลืออีก 56 วัน` or `เหลืออีก 19 วัน`)
+    - Subtext: `กรอบเวลา SLA 90 วัน (ผ่านไป {elapsedDays} วัน)`
+    - Progress bar: `Math.min(100, Math.max(0, (elapsedDays / 90) * 100))`
+  - **Real-Time DatePicker Reactivity in Modal**: Re-wired `issueDate` input in permit creation dialog to dynamically calculate and bind `expiryDate: calculatePermitExpirationDate(newDate, 90)` with an instant live SLA preview banner, eliminating date freezing.
+  - **Data Migration & Reconciliation**: Executed automated reconciliation audit (`scripts/reconcile_permits.js`) across MongoDB `rma`, `transaction_logs`, and disk `src/data/rma.json`, repairing legacy discrepancies (such as 180-day and 29-day records) into strict 90-day validity records.
+
 ## [0.34.2] - 2026-10-01
 
 ### Fixed & Enhanced

@@ -117,20 +117,6 @@ function formatDisplayDateTime(dtStr: string) {
   }
 }
 
-function formatDisplayDate(dateStr: string) {
-  if (!dateStr) return ""
-  try {
-    const d = new Date(dateStr)
-    if (isNaN(d.getTime())) return dateStr
-    const months = [
-      "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
-      "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
-    ]
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`
-  } catch {
-    return dateStr
-  }
-}
 
 function getInitialDateTime() {
   const now = new Date()
@@ -1634,15 +1620,18 @@ export function OverseasView() {
                                       <Clock className="size-3" />
                                       <span>{sla.badgeText}</span>
                                     </span>
+                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                                      {sla.subtext}
+                                    </p>
                                   </div>
                                 </div>
 
                                 {/* 90-Day SLA Progress Bar */}
                                 <div className="space-y-1.5">
                                   <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                                    <span>กรอบเวลาความคุ้มครอง 90 วัน</span>
+                                    <span>{sla.subtext}</span>
                                     <span className="font-mono font-medium text-slate-700 dark:text-slate-300">
-                                      ผ่านไปแล้ว {sla.elapsedDays} วัน · คงเหลือ {sla.remainingDays} วัน
+                                      {sla.badgeText}
                                     </span>
                                   </div>
                                   <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-white/5">
@@ -1650,7 +1639,7 @@ export function OverseasView() {
                                       className={`h-full transition-all duration-500 ${
                                         sla.isExpired ? "bg-red-500" : sla.isExpiringSoon ? "bg-amber-500" : "bg-cyan-500"
                                       }`}
-                                      style={{ width: `${Math.min(100, Math.max(5, (sla.elapsedDays / 90) * 100))}%` }}
+                                      style={{ width: `${sla.progressPercent}%` }}
                                     />
                                   </div>
                                 </div>
@@ -1783,7 +1772,7 @@ export function OverseasView() {
                                       <span>{sla.badgeText}</span>
                                     </span>
                                     <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                                      กรอบเวลา SLA 90 วัน (ผ่านไป {sla.elapsedDays} วัน)
+                                      {sla.subtext}
                                     </p>
                                   </div>
                                 </div>
@@ -1798,7 +1787,7 @@ export function OverseasView() {
                                         ? "bg-amber-500"
                                         : "bg-cyan-500"
                                     }`}
-                                    style={{ width: `${Math.min(100, Math.max(5, (sla.elapsedDays / 90) * 100))}%` }}
+                                    style={{ width: `${sla.progressPercent}%` }}
                                   />
                                 </div>
                               </div>
@@ -2509,6 +2498,56 @@ export function OverseasView() {
                       <ShieldCheck className="size-3 shrink-0" />
                       <span>คำนวณวันหมดอายุอัตโนมัติ (issueDate + 90 วัน)</span>
                     </p>
+                  </div>
+
+                  {/* Real-time Dynamic SLA Preview */}
+                  <div className="col-span-full rounded-xl border border-cyan-300/60 bg-cyan-50/70 dark:border-cyan-800/60 dark:bg-cyan-950/40 p-3 space-y-2">
+                    {(() => {
+                      const modalSla = calculatePermitSla(
+                        importExportForm.issueDate,
+                        importExportForm.expiryDate
+                      )
+                      return (
+                        <>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-cyan-900 dark:text-cyan-200 flex items-center gap-1.5">
+                              <ShieldCheck className="size-4 text-cyan-600 dark:text-cyan-400" />
+                              <span>การประเมินกรอบเวลา SLA 90 วัน (Real-Time)</span>
+                            </span>
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${
+                                modalSla.isExpired
+                                  ? "bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-200"
+                                  : modalSla.isExpiringSoon
+                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200"
+                                  : "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/60 dark:text-cyan-200"
+                              }`}
+                            >
+                              <Clock className="size-3" />
+                              <span>{modalSla.badgeText}</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                            <span>{modalSla.subtext}</span>
+                            <span className="font-medium text-slate-700 dark:text-slate-300">
+                              ความคืบหน้า {modalSla.progressPercent}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                            <div
+                              className={`h-full transition-all duration-300 ${
+                                modalSla.isExpired
+                                  ? "bg-red-500"
+                                  : modalSla.isExpiringSoon
+                                  ? "bg-amber-500"
+                                  : "bg-cyan-500"
+                              }`}
+                              style={{ width: `${modalSla.progressPercent}%` }}
+                            />
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
                 </div>
 
