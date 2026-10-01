@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.1] - 2026-10-01
+
+### Fixed & Enhanced
+- **Timeline Stepper Permitted Coverage Visibility & Empty CTA Banner (`OverseasView.tsx`, `rma.json`)**:
+  - Bound sample permit `EXP-2026-0089` (ส่งออกเพื่อซ่อมแซม, กสทช., ขั้นตอน 1–5) to live MongoDB case `TL20260708` and `TEST20` in `src/data/rma.json`.
+  - Added empty-state CTA banner `[เคสนี้ยังไม่มีใบอนุญาตนำเข้า-ส่งออกผูกอยู่] [+ ออกใบอนุญาตสำหรับเคสนี้]` at the top of the Timeline tab when an RMA has no permit bound yet.
+  - Enhanced inline stage badge text to explicitly show permit type and remaining days on every covered step node.
+  - Added immediate state synchronization `setTimelineItem(data.linkedRma)` in `handleCreateImportExportPermit` so active timeline modals refresh instantly upon permit submission.
+
 ## [0.34.0] - 2026-10-01
 
 ### Fixed & Enhanced

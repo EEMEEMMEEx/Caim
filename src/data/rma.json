@@ -18,6 +18,40 @@
     "penaltyDays": "4 วัน",
     "penaltyStandard": "จาก 14 วัน",
     "isOverduePenalty": false,
+    "permitInfo": {
+      "permitNo": "EXP-2026-0089",
+      "permitType": "export_for_repair",
+      "authority": "สำนักงาน กสทช. (NBTC)",
+      "destinationCountry": "ฮ่องกง (Hong Kong)",
+      "issueDate": "2026-07-15",
+      "expiryDate": "2026-10-13",
+      "coveredSteps": [1, 2, 3, 4, 5],
+      "coveredStages": [1, 2, 3, 4, 5],
+      "rmaId": "1",
+      "rmaNo": "TEST20",
+      "serialNo": "200426",
+      "remarks": "ใบอนุญาตส่งออกเพื่อซ่อมแซมอุปกรณ์สื่อสาร DIB-R5 ไปยังศูนย์บริการต่างประเทศ",
+      "createdAt": "2026-07-15T09:00:00.000Z",
+      "updatedAt": "2026-07-15T09:00:00.000Z"
+    },
+    "permits": [
+      {
+        "permitNo": "EXP-2026-0089",
+        "permitType": "export_for_repair",
+        "authority": "สำนักงาน กสทช. (NBTC)",
+        "destinationCountry": "ฮ่องกง (Hong Kong)",
+        "issueDate": "2026-07-15",
+        "expiryDate": "2026-10-13",
+        "coveredSteps": [1, 2, 3, 4, 5],
+        "coveredStages": [1, 2, 3, 4, 5],
+        "rmaId": "1",
+        "rmaNo": "TEST20",
+        "serialNo": "200426",
+        "remarks": "ใบอนุญาตส่งออกเพื่อซ่อมแซมอุปกรณ์สื่อสาร DIB-R5 ไปยังศูนย์บริการต่างประเทศ",
+        "createdAt": "2026-07-15T09:00:00.000Z",
+        "updatedAt": "2026-07-15T09:00:00.000Z"
+      }
+    ],
     "stageHistory": [
       {
         "stageNumber": 1,

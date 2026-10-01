@@ -981,6 +981,7 @@ export function OverseasView() {
       // Optimistically update in-memory cache and revalidate remote query
       if (data.linkedRma) {
         applyRmaMutation("update", data.linkedRma)
+        setTimelineItem(data.linkedRma)
       }
       await invalidateRmaCache()
 
@@ -1694,7 +1695,31 @@ export function OverseasView() {
                           ? [timelineItem.permitInfo]
                           : []
 
-                      if (activePermits.length === 0) return null
+                      if (activePermits.length === 0) {
+                        return (
+                          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-slate-300 dark:border-white/10 bg-slate-50/70 dark:bg-slate-800/40 p-3 text-xs animate-in fade-in">
+                            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                              <ShieldCheck className="size-4 text-slate-400" />
+                              <span>เคสนี้ยังไม่มีใบอนุญาตนำเข้า-ส่งออกผูกอยู่</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setImportExportForm((prev) => ({
+                                  ...prev,
+                                  linkedRmaNo: timelineItem.rmaNo,
+                                  selectedAssetSerial: timelineItem.serialNo,
+                                }))
+                                setIsImportExportModalOpen(true)
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 px-3 py-1.5 text-xs font-semibold text-white shadow-2xs cursor-pointer transition-colors"
+                            >
+                              <Plus className="size-3.5" />
+                              <span>+ ออกใบอนุญาตสำหรับเคสนี้</span>
+                            </button>
+                          </div>
+                        )
+                      }
 
                       return (
                         <div className="mb-4 space-y-2">
@@ -1892,7 +1917,10 @@ export function OverseasView() {
                                         title={`ใบอนุญาต: ${coveringPermit.permitNo} (${coveringPermit.authority}) ออกเมื่อ ${coveringPermit.issueDate} หมดอายุ ${coveringPermit.expiryDate}`}
                                       >
                                         <ShieldCheck className="size-3 shrink-0" />
-                                        <span>{badgeInfo.text}</span>
+                                        <span>
+                                          {coveringPermit.permitType === "import_after_repair" ? "ใบอนุญาตนำเข้า: " : "ใบอนุญาตส่งออก: "}
+                                          {coveringPermit.permitNo} · เหลืออีก {badgeInfo.remainingDays} วัน
+                                        </span>
                                       </span>
                                     )
                                   })()}
