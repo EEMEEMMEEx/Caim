@@ -27,6 +27,7 @@ import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useTicketsQuery, invalidateTicketsCache, type Ticket } from "@/hooks/useTicketsQuery"
 import { useStationsQuery } from "@/hooks/useStationsQuery"
 import { calculateCaseDuration, formatDisplayThaiDate } from "@/lib/utils/caseDuration"
+import { TableActionCell } from "./TableActionCell"
 
 interface TicketTableRowProps {
   item: Ticket
@@ -173,37 +174,15 @@ const TicketTableRow = React.memo(function TicketTableRow({
         )}
       </td>
 
-      {/* Action Links (ดู / แก้ไข / ลบ) with tactile micro-interactions */}
-      <td className="px-4 py-3.5 whitespace-nowrap">
-        <div className="inline-flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => onView(item)}
-            className="px-2 py-1 rounded-md text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/50 active:scale-95 transition-all"
-            aria-label={`ดูรายละเอียดเคส ${item.title}`}
-          >
-            ดู
-          </button>
-          <button
-            type="button"
-            onClick={() => onEdit(item)}
-            className="px-2 py-1 rounded-md text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-all"
-            aria-label={`แก้ไขข้อมูลเคส ${item.title}`}
-          >
-            แก้ไข
-          </button>
-          <button
-            type="button"
-            onClick={() => onConfirmDelete(item)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 transition-all"
-            aria-label={`ลบเคส ${item.title}`}
-            title="ลบเคสนี้ถาวร"
-          >
-            <Trash2 className="size-3 text-rose-500 dark:text-rose-400" />
-            <span>ลบ</span>
-          </button>
-        </div>
-      </td>
+      {/* Action Links (ดู / แก้ไข / ลบ) with clean icon-only triggers & tooltips */}
+      <TableActionCell
+        onView={() => onView(item)}
+        onEdit={() => onEdit(item)}
+        onDelete={() => onConfirmDelete(item)}
+        viewLabel="ดูรายละเอียด"
+        editLabel="แก้ไข"
+        deleteLabel="ลบ"
+      />
     </tr>
   )
 })

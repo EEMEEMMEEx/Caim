@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.5] - 2026-10-01
+
+### Added
+- **Icon-Only Table Row Action Buttons with Interactive Tooltips (`TableActionCell.tsx`)**:
+  - Replaced text labels ('ดู', 'แก้ไข', 'ลบ') in the claims table action column with standard, intuitive SVG Lucide React icon triggers:
+    - **ดู (View / Details)**: `Eye` icon styled in blue accents (`text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10`).
+    - **แก้ไข (Edit)**: `Pencil` icon styled in neutral slate tones (`text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/50`).
+    - **ลบ (Delete)**: `Trash2` icon with removed text label, styled in rose accents (`text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10`).
+  - Added uniform button sizing (`p-1.5 rounded-lg active:scale-95 transition-colors`) for a balanced layout.
+  - Implemented modern dark enterprise hover tooltips (`px-2 py-1 text-xs font-medium rounded-md shadow-lg bg-slate-900 text-slate-100 border border-slate-700/60 pointer-events-none`) displaying descriptive Thai labels ('ดูรายละเอียด', 'แก้ไข', 'ลบ') floating above each button.
+  - Added explicit screen reader accessibility attributes (`aria-label="ดูรายละเอียด"`, `aria-label="แก้ไข"`, `aria-label="ลบ"`, and `role="tooltip"`).
+
+### Changed
+- **Claims Management Table (`TicketsView.tsx`)**:
+  - Integrated `<TableActionCell />` component into `TicketTableRow`, eliminating text clutters and streamlining table action interactions.
+
 ## [0.29.4] - 2026-10-01
 
 ### Added
