@@ -25,8 +25,7 @@ import {
   Plus,
   Edit2,
   Trash2,
-  Loader2,
-  Wifi
+  Loader2
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -245,7 +244,7 @@ export function StationsView() {
   }, [])
 
   // Real-time synchronization subscription
-  const { isConnected } = useRealtimeSync({
+  useRealtimeSync({
     onStationChange: (raw) => {
       const payload = raw as { action?: "create" | "update" | "delete"; data?: Station } | undefined
       if (!payload || !payload.data) return
@@ -583,17 +582,9 @@ export function StationsView() {
                 <Radio className="size-6 text-brand-gold" />
               </span>
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-                    จัดการข้อมูลสถานีและจุดติดตั้งเสาสัญญาณ
-                  </h1>
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    isConnected ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                  }`}>
-                    <Wifi className="size-3" />
-                    {isConnected ? "ซิงก์เรียลไทม์" : "ออฟไลน์/แคช"}
-                  </span>
-                </div>
+                <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                  จัดการข้อมูลสถานีและจุดติดตั้งเสาสัญญาณ
+                </h1>
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   ทะเบียนข้อมูลสถานีฐานและจุดติดตั้งเสารับ-ส่งสัญญาณระบบวิทยุ SHF ในพื้นที่ 10 จังหวัด (รวม {statsTotal} จุดติดตั้ง)
                 </p>

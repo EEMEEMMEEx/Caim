@@ -20,7 +20,6 @@ import {
   AlertCircle,
   AlertTriangle,
   RotateCcw,
-  Wifi,
   Save,
   Undo2,
   Loader2
@@ -159,7 +158,7 @@ export function OverseasView() {
   }
 
   // Real-time synchronization for Overseas RMA records
-  const { isConnected } = useRealtimeSync()
+  useRealtimeSync()
 
   // State for available claim cases & equipments from DB
   const [availableCases, setAvailableCases] = React.useState<ClaimCaseOption[]>([])
@@ -943,17 +942,9 @@ export function OverseasView() {
                 <PlaneTakeoff className="size-5.5 text-white" />
               </span>
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-                    ส่งเคลมต่างประเทศ
-                  </h1>
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    isConnected ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                  }`}>
-                    <Wifi className="size-3" />
-                    {isConnected ? "ซิงก์เรียลไทม์" : "ออฟไลน์/แคช"}
-                  </span>
-                </div>
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+                  ส่งเคลมต่างประเทศ
+                </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
                   ติดตามอุปกรณ์ที่ส่งเคลมไปต่างประเทศทีละขั้น พร้อมนาฬิกาบทปรับของผู้ขาย
                 </p>

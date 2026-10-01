@@ -21,8 +21,7 @@ import {
   AlertCircle,
   Edit2,
   Trash2,
-  Loader2,
-  Wifi
+  Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -169,7 +168,7 @@ export function AssetsView() {
   }, [])
 
   // Real-time connection status
-  const { isConnected } = useRealtimeSync({})
+  useRealtimeSync({})
 
   const deferredQuery = React.useDeferredValue(searchQuery)
 
@@ -390,17 +389,9 @@ export function AssetsView() {
                 <HardDrive className="size-6 text-brand-gold" />
               </span>
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-                    ทะเบียนข้อมูลอุปกรณ์
-                  </h1>
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    isConnected ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                  }`}>
-                    <Wifi className="size-3" />
-                    {isConnected ? "ซิงก์เรียลไทม์" : "ออฟไลน์/แคช"}
-                  </span>
-                </div>
+                <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                  ทะเบียนข้อมูลอุปกรณ์
+                </h1>
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   ฐานข้อมูลอุปกรณ์ระบบโทรคมนาคม (ทั้งหมด {assetsList.length.toLocaleString()} รายการ)
                 </p>

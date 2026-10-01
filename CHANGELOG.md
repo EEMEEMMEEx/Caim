@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.2] - 2026-10-01
+
+### Removed
+- **Real-time Sync Pill Badge Removal across Target Modules (`TicketsView.tsx`, `OverseasView.tsx`, `AssetsView.tsx`, `StationsView.tsx`)**:
+  - Removed visual 'ซิงก์เรียลไทม์' (Real-time Sync) pill indicator badge (Wi-Fi icon and text capsule) from the headers and toolbars across 4 pages:
+    - 'รายการเคลม' (Claim List / Claims - `TicketsView.tsx`)
+    - 'ส่งเคลมต่างประเทศ' (Overseas Claim - `OverseasView.tsx`)
+    - 'ข้อมูลอุปกรณ์' (Equipment Information - `AssetsView.tsx`)
+    - 'ข้อมูลสถานี' (Station Information - `StationsView.tsx`)
+  - Preserved flex/grid layout alignment, spacing, and height of adjacent controls (search inputs, action buttons, export buttons, and headings).
+  - Maintained complete integrity of underlying background data synchronization and event subscriptions (`useRealtimeSync`) without disruption to active table mutation listeners.
+
 ## [0.30.1] - 2026-10-01
 
 ### Changed

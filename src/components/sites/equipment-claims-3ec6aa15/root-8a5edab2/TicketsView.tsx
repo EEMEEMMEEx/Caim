@@ -18,7 +18,6 @@ import {
   MapPin,
   RotateCcw,
   Trash2,
-  Wifi,
   Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -244,7 +243,7 @@ export function TicketsView() {
   }, [])
 
   // Real-time synchronization subscription for Tickets
-  const { isConnected } = useRealtimeSync({})
+  useRealtimeSync({})
 
   // Filter Form States
   const [statusFilter, setStatusFilter] = React.useState("all")
@@ -817,17 +816,9 @@ export function TicketsView() {
               <ClipboardList className="size-5.5 text-white" />
             </span>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-                  รายการงานเคลม
-                </h1>
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                  isConnected ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                }`}>
-                  <Wifi className="size-3" />
-                  {isConnected ? "ซิงก์เรียลไทม์" : "ออฟไลน์/แคช"}
-                </span>
-              </div>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+                รายการงานเคลม
+              </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
                 ทุกเคสเคลมที่บันทึกไว้ในฐานข้อมูลกลาง เลือกเงื่อนไขในการ์ดค้นหาแล้วกดค้นหา
               </p>
