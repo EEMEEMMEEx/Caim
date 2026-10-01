@@ -22,6 +22,8 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/components/theme-provider"
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
+import { useLocale } from "@/i18n/LocaleContext"
 import { getCurrentSession, clearSession, type UserSession, DEFAULT_USER_SESSION } from "@/lib/session"
 import packageInfo from "../../../../../package.json"
 
@@ -40,54 +42,6 @@ interface NavSection {
   items: NavItem[]
 }
 
-const NAV_SECTIONS: NavSection[] = [
-  {
-    title: "ภาพรวม",
-    items: [
-      {
-        label: "หน้าหลัก",
-        href: "/dashboard",
-        icon: LayoutDashboard,
-      },
-    ],
-  },
-  {
-    title: "งานเคลม",
-    items: [
-      {
-        label: "รายการงานเคลม",
-        href: "/tickets",
-        icon: Radar,
-      },
-      {
-        label: "แจ้งเคลม",
-        href: "/tickets/new",
-        icon: Wrench,
-      },
-      {
-        label: "ส่งเคลมต่างประเทศ",
-        href: "/repairs/overseas",
-        icon: PlaneTakeoff,
-      },
-    ],
-  },
-  {
-    title: "จัดการข้อมูล",
-    items: [
-      {
-        label: "ข้อมูลอุปกรณ์",
-        href: "/assets",
-        icon: HardDrive,
-      },
-      {
-        label: "ข้อมูลสถานี",
-        href: "/stations",
-        icon: MapPin,
-      },
-    ],
-  },
-]
-
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname()
   const router = useRouter()
@@ -96,6 +50,58 @@ export function AppShell({ children }: AppShellProps) {
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false)
   const [session, setSession] = React.useState<UserSession>(DEFAULT_USER_SESSION)
   const { theme, toggleTheme, mounted } = useTheme()
+  const { t } = useLocale()
+
+  const navSections = React.useMemo<NavSection[]>(
+    () => [
+      {
+        title: t("nav.sections.overview", "ภาพรวม"),
+        items: [
+          {
+            label: t("nav.dashboard", "หน้าหลัก"),
+            href: "/dashboard",
+            icon: LayoutDashboard,
+          },
+        ],
+      },
+      {
+        title: t("nav.sections.claims", "งานเคลม"),
+        items: [
+          {
+            label: t("nav.tickets", "รายการงานเคลม"),
+            href: "/tickets",
+            icon: Radar,
+          },
+          {
+            label: t("nav.newClaim", "แจ้งเคลม"),
+            href: "/tickets/new",
+            icon: Wrench,
+          },
+          {
+            label: t("nav.overseas", "ส่งเคลมต่างประเทศ"),
+            href: "/repairs/overseas",
+            icon: PlaneTakeoff,
+          },
+        ],
+      },
+      {
+        title: t("nav.sections.dataManagement", "จัดการข้อมูล"),
+        items: [
+          {
+            label: t("nav.assets", "ข้อมูลอุปกรณ์"),
+            href: "/assets",
+            icon: HardDrive,
+          },
+          {
+            label: t("nav.stations", "ข้อมูลสถานี"),
+            href: "/stations",
+            icon: MapPin,
+          },
+        ],
+      },
+    ],
+    [t]
+  )
 
   // Load active user session on client mount
   React.useEffect(() => {
@@ -175,7 +181,7 @@ export function AppShell({ children }: AppShellProps) {
             aria-label="เมนูหลัก"
             className="flex flex-1 flex-col gap-5 overflow-y-auto py-4 px-3"
           >
-            {NAV_SECTIONS.map((sec, sIdx) => (
+            {navSections.map((sec, sIdx) => (
               <div key={sIdx} className="flex flex-col gap-1">
                 {sidebarOpen && (
                   <p className="px-3 pb-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase">
@@ -221,10 +227,10 @@ export function AppShell({ children }: AppShellProps) {
                   ? "bg-blue-50/90 text-blue-700 font-semibold ring-1 ring-blue-600/15 dark:bg-blue-950/60 dark:text-sky-300 dark:ring-sky-500/30 shadow-2xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 hover:translate-x-0.5 active:scale-[0.98]"
               }`}
-              title={!sidebarOpen ? "คู่มือการใช้งาน" : undefined}
+              title={!sidebarOpen ? t("nav.manual", "คู่มือระบบ") : undefined}
             >
               <BookOpen className="size-4.5 shrink-0 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300" aria-hidden="true" />
-              {sidebarOpen && <span className="truncate">คู่มือการใช้งาน</span>}
+              {sidebarOpen && <span className="truncate">{t("nav.manual", "คู่มือระบบ")}</span>}
             </Link>
           </div>
 
@@ -266,7 +272,7 @@ export function AppShell({ children }: AppShellProps) {
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors mt-1 cursor-pointer"
                 >
                   <LogOut className="size-3.5" />
-                  ออกจากระบบ
+                  {t("nav.user.logout", "ออกจากระบบ")}
                 </button>
               </div>
             )}
@@ -287,7 +293,7 @@ export function AppShell({ children }: AppShellProps) {
             size="icon"
             onClick={() => setMobileMenuOpen(true)}
             className="size-8.5 lg:hidden rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-300"
-            aria-label="เปิดเมนู"
+            aria-label={t("nav.toggleSidebarOpen", "เปิดเมนู")}
           >
             <Menu className="size-5 text-slate-600 dark:text-slate-300" />
           </Button>
@@ -297,7 +303,7 @@ export function AppShell({ children }: AppShellProps) {
             size="icon"
             onClick={() => setSidebarOpen((v) => !v)}
             className="size-8.5 hidden lg:inline-flex rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
-            aria-label={sidebarOpen ? "ยุบเมนู" : "ขยายเมนู"}
+            aria-label={sidebarOpen ? t("nav.toggleSidebarCollapse", "ยุบเมนู") : t("nav.toggleSidebarExpand", "ขยายเมนู")}
           >
             {sidebarOpen ? (
               <PanelLeftClose className="size-5" />
@@ -312,33 +318,40 @@ export function AppShell({ children }: AppShellProps) {
           <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
             <span className="font-semibold text-slate-800 dark:text-slate-200">
               {pathname === "/dashboard" || pathname === "/"
-                ? "แดชบอร์ดภาพรวม"
+                ? t("nav.context.dashboard", "แดชบอร์ดภาพรวม")
                 : pathname === "/tickets"
-                ? "รายการงานเคลม"
+                ? t("nav.context.tickets", "รายการงานเคลม")
                 : pathname === "/tickets/new"
-                ? "แจ้งเคลมอุปกรณ์"
+                ? t("nav.context.newClaim", "แจ้งเคลมอุปกรณ์")
                 : pathname === "/assets"
-                ? "ข้อมูลอุปกรณ์"
+                ? t("nav.context.assets", "ข้อมูลอุปกรณ์")
                 : pathname === "/stations"
-                ? "ข้อมูลสถานี"
+                ? t("nav.context.stations", "ข้อมูลสถานี")
                 : pathname === "/repairs/overseas"
-                ? "ส่งเคลมต่างประเทศ"
-                : "ระบบจัดการงานเคลม"}
+                ? t("nav.context.overseas", "ส่งเคลมต่างประเทศ")
+                : pathname === "/manual"
+                ? t("nav.context.manual", "คู่มือระบบ")
+                : t("nav.context.default", "ระบบจัดการงานเคลม")}
             </span>
             <span>·</span>
-            <span className="text-slate-400 dark:text-slate-500">ระบบบริหารงานเคลมโครงข่าย SHF</span>
+            <span className="text-slate-400 dark:text-slate-500">
+              {t("nav.systemName", "ระบบบริหารงานเคลมโครงข่าย SHF")}
+            </span>
           </div>
 
           <div className="flex-1" />
 
           <div className="flex items-center gap-2.5">
+            {/* Language Selector Dropdown */}
+            <LanguageSwitcher />
+
             {/* Theme Toggle Button */}
             <button
               type="button"
               onClick={toggleTheme}
               className="inline-flex size-8.5 items-center justify-center rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-800/80 text-slate-600 dark:text-amber-300 shadow-2xs hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-all duration-200 active:scale-95 cursor-pointer"
-              aria-label={theme === "dark" ? "เปลี่ยนเป็นโหมดสว่าง (Light Mode)" : "เปลี่ยนเป็นโหมดมืด (Dark Mode)"}
-              title={theme === "dark" ? "โหมดมืด (คลิกเพื่อเปลี่ยนเป็นโหมดสว่าง)" : "โหมดสว่าง (คลิกเพื่อเปลี่ยนเป็นโหมดมืด)"}
+              aria-label={theme === "dark" ? t("nav.themeLight", "เปลี่ยนเป็นโหมดสว่าง (Light Mode)") : t("nav.themeDark", "เปลี่ยนเป็นโหมดมืด (Dark Mode)")}
+              title={theme === "dark" ? t("nav.themeLightTooltip", "โหมดมืด (คลิกเพื่อเปลี่ยนเป็นโหมดสว่าง)") : t("nav.themeDarkTooltip", "โหมดสว่าง (คลิกเพื่อเปลี่ยนเป็นโหมดมืด)")}
             >
               {mounted ? (
                 theme === "dark" ? (

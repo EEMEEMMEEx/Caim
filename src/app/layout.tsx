@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { IBM_Plex_Sans, Sarabun } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
+import { LocaleProvider } from "@/i18n/LocaleContext"
 import "./globals.css"
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -50,12 +51,16 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `(function() {
               try {
-                var stored = localStorage.getItem('theme');
-                var isDark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var storedTheme = localStorage.getItem('theme');
+                var isDark = storedTheme ? storedTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
                 if (isDark) {
                   document.documentElement.classList.add('dark');
                 } else {
                   document.documentElement.classList.remove('dark');
+                }
+                var storedLocale = localStorage.getItem('locale');
+                if (storedLocale === 'en' || storedLocale === 'th') {
+                  document.documentElement.lang = storedLocale;
                 }
               } catch (_) {}
             })();`,
@@ -63,9 +68,11 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full font-sans antialiased">
-        <ThemeProvider defaultTheme="system" storageKey="theme">
-          {children}
-        </ThemeProvider>
+        <LocaleProvider>
+          <ThemeProvider defaultTheme="system" storageKey="theme">
+            {children}
+          </ThemeProvider>
+        </LocaleProvider>
       </body>
     </html>
   )

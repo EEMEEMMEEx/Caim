@@ -28,6 +28,7 @@ import { useTicketsQuery, invalidateTicketsCache, type Ticket } from "@/hooks/us
 import { useStationsQuery } from "@/hooks/useStationsQuery"
 import { calculateCaseDuration, formatDisplayThaiDate } from "@/lib/utils/caseDuration"
 import { TableActionCell } from "./TableActionCell"
+import { useLocale } from "@/i18n/LocaleContext"
 
 interface TicketTableRowProps {
   item: Ticket
@@ -220,6 +221,7 @@ export function buildClaimFiltersQuery(filters: ClaimFilterParams): URLSearchPar
 
 export function TicketsView() {
   const searchParams = useSearchParams()
+  const { t } = useLocale()
   const { tickets, deleteTicket, updateTicket } = useTicketsQuery()
   const { stations: stationsList } = useStationsQuery()
   const [, startTransition] = React.useTransition()
@@ -1139,15 +1141,15 @@ export function TicketsView() {
                       checked={isAllSelected}
                       onChange={handleToggleSelectAll}
                       className="size-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
-                      aria-label="เลือกทั้งหมด"
+                      aria-label={t("table.selectAll", "เลือกทั้งหมด")}
                     />
                   </th>
-                  <th className="px-4 py-3.5">เคส</th>
-                  <th className="px-4 py-3.5">อุปกรณ์</th>
-                  <th className="px-4 py-3.5">สถานะ</th>
-                  <th className="px-4 py-3.5">รับแจ้ง</th>
-                  <th className="px-4 py-3.5">อายุงาน</th>
-                  <th className="px-4 py-3.5">จัดการ</th>
+                  <th className="px-4 py-3.5">{t("table.case", "เคส")}</th>
+                  <th className="px-4 py-3.5">{t("table.equipment", "อุปกรณ์")}</th>
+                  <th className="px-4 py-3.5">{t("table.status", "สถานะ")}</th>
+                  <th className="px-4 py-3.5">{t("table.reportedDate", "รับแจ้ง")}</th>
+                  <th className="px-4 py-3.5">{t("table.age", "อายุงาน")}</th>
+                  <th className="px-4 py-3.5">{t("table.actions", "จัดการ")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/90 dark:divide-white/10">

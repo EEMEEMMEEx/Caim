@@ -20,6 +20,7 @@ import {
   Activity
 } from "lucide-react"
 import { useRealtimeDashboard } from "@/hooks/useRealtimeDashboard"
+import { useLocale } from "@/i18n/LocaleContext"
 import type { DashboardMetrics } from "@/lib/dashboard/calculateMetrics"
 
 export interface DashboardViewProps {
@@ -30,6 +31,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
   const router = useRouter()
   const { metrics, connectionStatus, lastSyncTime, isRefreshing, refresh } =
     useRealtimeDashboard({ initialMetrics })
+  const { t, locale } = useLocale()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -37,17 +39,17 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
   }, [])
 
   const formattedSyncTime = React.useMemo(() => {
-    if (!mounted || !lastSyncTime) return "พร้อมใช้งาน"
+    if (!mounted || !lastSyncTime) return locale === "th" ? "พร้อมใช้งาน" : "Ready"
     try {
-      return lastSyncTime.toLocaleTimeString("th-TH", {
+      return lastSyncTime.toLocaleTimeString(locale === "th" ? "th-TH" : "en-US", {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
       })
     } catch {
-      return "พร้อมใช้งาน"
+      return locale === "th" ? "พร้อมใช้งาน" : "Ready"
     }
-  }, [mounted, lastSyncTime])
+  }, [mounted, lastSyncTime, locale])
 
   return (
     <main id="main" className="flex-1 bg-transparent py-7">
@@ -63,7 +65,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                 <li className="inline-flex items-center">
                   <Link
                     href="/dashboard"
-                    aria-label="หน้าแรก"
+                    aria-label={t("nav.dashboard", "หน้าแรก")}
                     className="transition-colors hover:text-slate-900 dark:hover:text-slate-100"
                   >
                     <House className="size-3.5 text-slate-500 dark:text-slate-400" />
@@ -73,7 +75,9 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   <ChevronRight className="size-3" />
                 </li>
                 <li className="inline-flex items-center">
-                  <span className="font-medium text-slate-700 dark:text-slate-300">ภาพรวมแดชบอร์ด</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                    {t("nav.context.dashboard", "ภาพรวมแดชบอร์ด")}
+                  </span>
                 </li>
               </ol>
             </nav>
@@ -86,12 +90,16 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
               <div>
                 <div className="flex items-center gap-2.5">
                   <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-                    ภาพรวมงานเคลมอุปกรณ์
+                    {t("dashboard.title", "ภาพรวมงานเคลมอุปกรณ์")}
                   </h1>
                   <span
                     role="status"
-                    aria-label="ระบบออนไลน์"
-                    title={mounted && lastSyncTime ? `ระบบออนไลน์ (ซิงก์ล่าสุด: ${formattedSyncTime})` : "ระบบออนไลน์"}
+                    aria-label={t("dashboard.online", "ระบบออนไลน์")}
+                    title={
+                      mounted && lastSyncTime
+                        ? `${t("dashboard.online", "ระบบออนไลน์")} (${t("dashboard.lastSync", "ซิงก์ล่าสุด")}: ${formattedSyncTime})`
+                        : t("dashboard.online", "ระบบออนไลน์")
+                    }
                     className="relative flex h-2.5 w-2.5 cursor-default shrink-0 items-center justify-center"
                   >
                     <span
@@ -115,7 +123,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm mt-0.5">
-                  สรุปสถานะการเคลมอุปกรณ์โครงข่ายวิทยุสื่อสารแบบเรียลไทม์
+                  {t("dashboard.subtitle", "สรุปสถานะการเคลมอุปกรณ์โครงข่ายวิทยุสื่อสารแบบเรียลไทม์")}
                 </p>
               </div>
             </div>
@@ -127,13 +135,19 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
               type="button"
               onClick={() => refresh()}
               disabled={isRefreshing}
-              title={mounted && lastSyncTime ? `อัปเดตล่าสุด: ${formattedSyncTime}` : "กดเพื่อดึงข้อมูลล่าสุดจากฐานข้อมูลทันที"}
+              title={
+                mounted && lastSyncTime
+                  ? `${t("dashboard.lastSync", "อัปเดตล่าสุด")}: ${formattedSyncTime}`
+                  : locale === "th"
+                  ? "กดเพื่อดึงข้อมูลล่าสุดจากฐานข้อมูลทันที"
+                  : "Click to refresh latest data from database immediately"
+              }
               className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-[#1e293b] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 shadow-xs transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               <RefreshCw
                 className={`size-3.5 ${isRefreshing ? "animate-spin text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400"}`}
               />
-              <span>รีเฟรชข้อมูล</span>
+              <span>{isRefreshing ? t("dashboard.refreshing", "กำลังรีเฟรช...") : t("dashboard.refresh", "รีเฟรชข้อมูล")}</span>
             </button>
           </div>
         </div>
@@ -148,7 +162,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
             <Link
               href="/tickets?status=all"
               className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a]/70 hover:dark:bg-[#0f172a] p-5 shadow-xs hover:shadow-card-hover hover:border-blue-400/60 hover:-translate-y-1 transition-all duration-200 cursor-pointer overflow-hidden"
-              title="ดูรายการงานเคลมทั้งหมด"
+              title={locale === "th" ? "ดูรายการงานเคลมทั้งหมด" : "View all claim cases"}
             >
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-400 opacity-90 group-hover:h-1.5 transition-all" />
               <div>
@@ -157,20 +171,24 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                     <ClipboardList className="size-5.5" />
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300">
-                    Total
+                    {t("dashboard.cards.totalBadge", "Total")}
                   </span>
                 </div>
                 <div className="mt-4">
                   <span suppressHydrationWarning className="tabular font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 transition-colors">
                     {metrics.summary.total}
                   </span>
-                  <p className="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-300">เคสทั้งหมด</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {t("dashboard.cards.total", "เคสทั้งหมด")}
+                  </p>
                 </div>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <span className="text-[11px] text-slate-500">รวมทุกสถานะในระบบ</span>
+                <span className="text-[11px] text-slate-500">
+                  {t("dashboard.cards.totalSub", "รวมทุกสถานะในระบบ")}
+                </span>
                 <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-blue-600 group-hover:translate-x-0.5 transition-transform">
-                  ดูรายการ
+                  {t("dashboard.cards.viewList", "ดูรายการ")}
                   <ChevronRight className="size-3.5" />
                 </span>
               </div>
@@ -180,7 +198,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
             <Link
               href="/tickets?status=in_progress"
               className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a]/70 hover:dark:bg-[#0f172a] p-5 shadow-xs hover:shadow-card-hover hover:border-amber-400/60 hover:-translate-y-1 transition-all duration-200 cursor-pointer overflow-hidden"
-              title="ดูรายการที่อยู่ระหว่างดำเนินการ"
+              title={locale === "th" ? "ดูรายการที่อยู่ระหว่างดำเนินการ" : "View in-progress cases"}
             >
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 opacity-90 group-hover:h-1.5 transition-all" />
               <div>
@@ -189,14 +207,16 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                     <Sun className="size-5.5" />
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/20 px-2.5 py-0.5 text-[11px] font-medium">
-                    In Progress
+                    {t("dashboard.cards.inProgressBadge", "In Progress")}
                   </span>
                 </div>
                 <div className="mt-4">
                   <span suppressHydrationWarning className="tabular font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-white tracking-tight group-hover:text-amber-600 transition-colors">
                     {metrics.summary.inProgress}
                   </span>
-                  <p className="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-300">อยู่ระหว่างดำเนินการ</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {t("dashboard.cards.inProgress", "อยู่ระหว่างดำเนินการ")}
+                  </p>
                 </div>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
@@ -207,9 +227,11 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   />
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">{metrics.summary.inProgressPct}% ของเคสทั้งหมด</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">
+                    {metrics.summary.inProgressPct}% {t("dashboard.cards.inProgressSub", "ของเคสทั้งหมด")}
+                  </span>
                   <span className="inline-flex items-center gap-0.5 font-semibold text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform">
-                    ดูรายการ
+                    {t("dashboard.cards.viewList", "ดูรายการ")}
                     <ChevronRight className="size-3.5" />
                   </span>
                 </div>
@@ -220,7 +242,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
             <Link
               href="/tickets?status=closed"
               className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a]/70 hover:dark:bg-[#0f172a] p-5 shadow-xs hover:shadow-card-hover hover:border-emerald-400/60 hover:-translate-y-1 transition-all duration-200 cursor-pointer overflow-hidden"
-              title="ดูรายการเคลมสำเร็จ / ปิดเคส"
+              title={locale === "th" ? "ดูรายการเคลมสำเร็จ / ปิดเคส" : "View closed cases"}
             >
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 opacity-90 group-hover:h-1.5 transition-all" />
               <div>
@@ -229,14 +251,16 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                     <CheckCircle2 className="size-5.5" />
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/20 px-2.5 py-0.5 text-[11px] font-medium">
-                    Closed
+                    {t("dashboard.cards.closedBadge", "Closed")}
                   </span>
                 </div>
                 <div className="mt-4">
                   <span suppressHydrationWarning className="tabular font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-white tracking-tight group-hover:text-emerald-600 transition-colors">
                     {metrics.summary.closed}
                   </span>
-                  <p className="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-300">เคลมสำเร็จ / ปิดเคส</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {t("dashboard.cards.closed", "เคลมสำเร็จ / ปิดเคส")}
+                  </p>
                 </div>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10">
@@ -247,9 +271,11 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   />
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">{metrics.summary.closedPct}% ของเคสทั้งหมด</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">
+                    {metrics.summary.closedPct}% {t("dashboard.cards.closedSub", "ของเคสทั้งหมด")}
+                  </span>
                   <span className="inline-flex items-center gap-0.5 font-semibold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform">
-                    ดูรายการ
+                    {t("dashboard.cards.viewList", "ดูรายการ")}
                     <ChevronRight className="size-3.5" />
                   </span>
                 </div>
@@ -260,7 +286,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
             <Link
               href="/tickets?status=rejected"
               className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a]/70 hover:dark:bg-[#0f172a] p-5 shadow-xs hover:shadow-card-hover hover:border-rose-400/60 hover:-translate-y-1 transition-all duration-200 cursor-pointer overflow-hidden"
-              title="ดูรายการปฏิเสธเคลม"
+              title={locale === "th" ? "ดูรายการปฏิเสธเคลม" : "View rejected cases"}
             >
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-400 opacity-90 group-hover:h-1.5 transition-all" />
               <div>
@@ -276,7 +302,9 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   <span suppressHydrationWarning className="tabular font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-white tracking-tight group-hover:text-rose-600 transition-colors">
                     {metrics.summary.rejected}
                   </span>
-                  <p className="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-300">ปฏิเสธเคลม</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {locale === "th" ? "ปฏิเสธเคลม" : "Rejected"}
+                  </p>
                 </div>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -287,9 +315,11 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   />
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-500 font-medium">{metrics.summary.rejectedPct}% ของเคสทั้งหมด</span>
+                  <span className="text-slate-500 font-medium">
+                    {metrics.summary.rejectedPct}% {t("dashboard.cards.closedSub", "ของเคสทั้งหมด")}
+                  </span>
                   <span className="inline-flex items-center gap-0.5 font-semibold text-rose-600 group-hover:translate-x-0.5 transition-transform">
-                    ดูรายการ
+                    {t("dashboard.cards.viewList", "ดูรายการ")}
                     <ChevronRight className="size-3.5" />
                   </span>
                 </div>

@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input"
 import { type Asset } from "./assetsData"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useEquipmentsQuery } from "@/hooks/useEquipmentsQuery"
+import { useLocale } from "@/i18n/LocaleContext"
 
 interface AssetTableRowProps {
   item: Asset
@@ -126,6 +127,7 @@ const AssetTableRow = React.memo(function AssetTableRow({
 })
 
 export function AssetsView() {
+  const { t, locale } = useLocale()
   const {
     equipments: assetsList,
     isLoading,
@@ -514,13 +516,13 @@ export function AssetsView() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-slate-200/70 dark:border-white/10 bg-slate-50/90 dark:bg-[#0f172a] text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
-                  <th className="py-3.5 px-4 w-16 text-center">ลำดับ</th>
-                  <th className="py-3.5 px-4 min-w-40">Serial Number</th>
-                  <th className="py-3.5 px-4 min-w-44">อุปกรณ์</th>
-                  <th className="py-3.5 px-4 w-28">ยี่ห้อ</th>
-                  <th className="py-3.5 px-4 min-w-32">รุ่น</th>
-                  <th className="py-3.5 px-4 min-w-56">หมวดหมู่</th>
-                  <th className="py-3.5 px-4 text-right w-36">จัดการ</th>
+                  <th className="py-3.5 px-4 w-16 text-center">{t("table.no", "ลำดับ")}</th>
+                  <th className="py-3.5 px-4 min-w-40">{t("table.serialNumber", "Serial Number")}</th>
+                  <th className="py-3.5 px-4 min-w-44">{t("table.equipment", "อุปกรณ์")}</th>
+                  <th className="py-3.5 px-4 w-28">{locale === "th" ? "ยี่ห้อ" : "Brand"}</th>
+                  <th className="py-3.5 px-4 min-w-32">{locale === "th" ? "รุ่น" : "Model"}</th>
+                  <th className="py-3.5 px-4 min-w-56">{t("table.category", "หมวดหมู่")}</th>
+                  <th className="py-3.5 px-4 text-right w-36">{t("table.actions", "จัดการ")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.0] - 2026-10-01
+
+### Added
+- **Interactive Global Multi-Language Switcher & Reactive i18n Engine**:
+  - **LanguageSwitcher Dropdown (`LanguageSwitcher.tsx`)**:
+    - Trigger button positioned at the top-right corner of the global navigation bar next to the theme toggle.
+    - Designed with Lucide `Globe` icon and active locale code ('TH' or 'EN') in a dark-themed rounded container (`px-2.5 py-1.5 rounded-lg border border-slate-700/60 bg-slate-900/80 text-slate-200 hover:bg-slate-800 transition-colors`).
+    - Modern dark glassmorphic floating dropdown (`bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-xl p-1.5 space-y-1`) with animated fade/zoom in.
+    - Option list with custom language badges ('TH' / 'EN'), localized labels ('ไทย' / 'English'), and glowing active indicator dot with check icon.
+    - Click-outside and Escape key dismissal for intuitive UX.
+  - **Reactive Localization Provider (`LocaleContext.tsx`, `types.ts`)**:
+    - Dedicated `LocaleProvider` context that globally synchronizes language state across all routes, layouts, and components.
+    - Type-safe dictionary access and deep nested key translation helper `t(key, fallback)`.
+    - Instant, flicker-free client state re-rendering without requiring full browser reload.
+    - Dual persistence in `localStorage` and `locale` cookie for seamless session survival.
+    - Synchronizes `document.documentElement.lang` dynamically.
+  - **Modular Translation Dictionaries (`th.json`, `en.json`)**:
+    - Navigation & Sidebar menus (Dashboard, Claims List, New Claim, Overseas Claim, Equipment Info, Station Info, System Manual).
+    - Dashboard metric cards, KPI titles, and live sync status indicators.
+    - Data table column headers (No., Serial Number, Case, Equipment, Status, Reported Date, Age, Actions).
+    - Landing page hero titles, subtext, and CTA buttons.
+
 ## [0.29.7] - 2026-10-01
 
 ### Changed

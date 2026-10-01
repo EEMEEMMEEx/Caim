@@ -1,0 +1,117 @@
+{
+  "locale": {
+    "th": "ไทย",
+    "en": "English",
+    "language": "ภาษา",
+    "switchLanguage": "เปลี่ยนภาษา"
+  },
+  "nav": {
+    "dashboard": "หน้าหลัก",
+    "tickets": "รายการงานเคลม",
+    "newClaim": "แจ้งเคลม",
+    "overseas": "ส่งเคลมต่างประเทศ",
+    "assets": "ข้อมูลอุปกรณ์",
+    "stations": "ข้อมูลสถานี",
+    "manual": "คู่มือระบบ",
+    "systemName": "ระบบบริหารงานเคลมโครงข่าย SHF",
+    "sections": {
+      "overview": "ภาพรวม",
+      "claims": "งานเคลม",
+      "dataManagement": "จัดการข้อมูล",
+      "help": "คู่มือและช่วยเหลือ"
+    },
+    "context": {
+      "dashboard": "แดชบอร์ดภาพรวม",
+      "tickets": "รายการงานเคลม",
+      "newClaim": "แจ้งเคลมอุปกรณ์",
+      "assets": "ข้อมูลอุปกรณ์",
+      "stations": "ข้อมูลสถานี",
+      "overseas": "ส่งเคลมต่างประเทศ",
+      "manual": "คู่มือระบบ",
+      "default": "ระบบจัดการงานเคลม"
+    },
+    "user": {
+      "profile": "โปรไฟล์ผู้ใช้",
+      "role": "เจ้าหน้าที่ดูแลระบบ",
+      "logout": "ออกจากระบบ"
+    },
+    "toggleSidebarOpen": "เปิดเมนู",
+    "toggleSidebarCollapse": "ยุบเมนู",
+    "toggleSidebarExpand": "ขยายเมนู",
+    "themeLight": "เปลี่ยนเป็นโหมดสว่าง (Light Mode)",
+    "themeDark": "เปลี่ยนเป็นโหมดมืด (Dark Mode)",
+    "themeLightTooltip": "โหมดสว่าง (คลิกเพื่อเปลี่ยนเป็นโหมดมืด)",
+    "themeDarkTooltip": "โหมดมืด (คลิกเพื่อเปลี่ยนเป็นโหมดสว่าง)"
+  },
+  "dashboard": {
+    "title": "ภาพรวมงานเคลมอุปกรณ์",
+    "subtitle": "สรุปสถานะการเคลมอุปกรณ์โครงข่ายวิทยุสื่อสารแบบเรียลไทม์",
+    "online": "ระบบออนไลน์",
+    "refresh": "รีเฟรชข้อมูล",
+    "refreshing": "กำลังรีเฟรช...",
+    "lastSync": "ซิงก์ล่าสุด",
+    "syncPolling": "ซิงก์แบบ Polling",
+    "connecting": "กำลังเชื่อมต่อ...",
+    "cards": {
+      "total": "เคสทั้งหมด",
+      "totalBadge": "Total",
+      "totalSub": "รวมทุกสถานะในระบบ",
+      "inProgress": "อยู่ระหว่างดำเนินการ",
+      "inProgressBadge": "In Progress",
+      "inProgressSub": "ของเคสทั้งหมด",
+      "closed": "เคลมสำเร็จ / ปิดเคส",
+      "closedBadge": "Closed",
+      "closedSub": "ของเคสทั้งหมด",
+      "overdue": "เกินกำหนด SLA",
+      "overdueBadge": "Overdue",
+      "overdueSub": "ต้องการการติดตามเร่งด่วน",
+      "viewList": "ดูรายการ"
+    },
+    "kpi": {
+      "overseasActive": "เคลมต่างประเทศที่กำลังดำเนินการ",
+      "slaCompliance": "อัตราปฏิบัติตาม SLA",
+      "avgDays": "ระยะเวลาเฉลี่ยต่อเคส",
+      "days": "วัน",
+      "target": "เป้าหมาย",
+      "cases": "เคส"
+    }
+  },
+  "table": {
+    "no": "ลำดับ",
+    "case": "เคส",
+    "caseNo": "หมายเลขเคส",
+    "equipment": "อุปกรณ์",
+    "serialNumber": "Serial Number",
+    "status": "สถานะ",
+    "reportedDate": "รับแจ้ง",
+    "age": "อายุงาน",
+    "station": "สถานี",
+    "category": "หมวดหมู่",
+    "towerHeight": "ความสูงทาวเวอร์",
+    "equipmentCount": "จำนวนอุปกรณ์",
+    "actions": "จัดการ",
+    "view": "ดูรายละเอียด",
+    "edit": "แก้ไข",
+    "delete": "ลบ",
+    "selectAll": "เลือกทั้งหมด",
+    "search": "ค้นหา",
+    "searchData": "ค้นหาข้อมูล",
+    "resetFilters": "ล้างตัวกรอง",
+    "overdueOnly": "เฉพาะที่เกินกำหนด",
+    "resultsFound": "ผลการค้นหา",
+    "items": "รายการ",
+    "empty": "ไม่พบเคสที่ตรงกับเงื่อนไขการค้นหา",
+    "emptySub": "ลองปรับเปลี่ยนตัวกรองหรือกดล้างตัวกรองเพื่อค้นหาใหม่",
+    "clearedTitle": "ล้างตัวกรองแล้ว — ไม่มีรายการแสดงผล",
+    "clearedSub": "ระบบได้ล้างรายการข้อมูลออกจากตารางแล้ว กรุณาเลือกเงื่อนไขที่ต้องการหรือกดปุ่ม \"ค้นหา\" เพื่อแสดงรายการงานเคลม"
+  },
+  "landing": {
+    "badge": "EQUIPMENT CLAIM OPERATIONS & TRACKING",
+    "heroTitlePrefix": "PROCESS",
+    "heroTitleSuffix": "CLAIM PORTAL",
+    "description": "ศูนย์กลางบริหารและติดตามงานเคลมอุปกรณ์โครงข่ายวิทยุสื่อสาร เชื่อมโยงสถานะงาน การส่งซ่อมต่างประเทศ SLA และบทปรับผู้ขายไว้ในระบบเดียวที่ทันสมัย เรียบหรู และใช้งานง่าย",
+    "enterPortal": "เข้าสู่ระบบจัดการงานเคลม",
+    "portalSub": "SHF Radio Network System",
+    "entering": "กำลังเข้าสู่ระบบ..."
+  }
+}

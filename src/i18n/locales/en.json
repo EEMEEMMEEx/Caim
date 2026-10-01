@@ -1,0 +1,117 @@
+{
+  "locale": {
+    "th": "ไทย",
+    "en": "English",
+    "language": "Language",
+    "switchLanguage": "Switch Language"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "tickets": "Claims List",
+    "newClaim": "New Claim",
+    "overseas": "Overseas Claim",
+    "assets": "Equipment Info",
+    "stations": "Station Info",
+    "manual": "System Manual",
+    "systemName": "SHF Radio Network Claim Management System",
+    "sections": {
+      "overview": "Overview",
+      "claims": "Claims",
+      "dataManagement": "Data Management",
+      "help": "Help & Docs"
+    },
+    "context": {
+      "dashboard": "Overview Dashboard",
+      "tickets": "Claims List",
+      "newClaim": "New Equipment Claim",
+      "assets": "Equipment Info",
+      "stations": "Station Info",
+      "overseas": "Overseas Claim",
+      "manual": "System Manual",
+      "default": "Claim Management System"
+    },
+    "user": {
+      "profile": "User Profile",
+      "role": "System Administrator",
+      "logout": "Sign Out"
+    },
+    "toggleSidebarOpen": "Open menu",
+    "toggleSidebarCollapse": "Collapse sidebar",
+    "toggleSidebarExpand": "Expand sidebar",
+    "themeLight": "Switch to light mode",
+    "themeDark": "Switch to dark mode",
+    "themeLightTooltip": "Light mode (Click to switch to dark mode)",
+    "themeDarkTooltip": "Dark mode (Click to switch to light mode)"
+  },
+  "dashboard": {
+    "title": "Equipment Claim Overview",
+    "subtitle": "Real-time summary of radio network equipment claim status",
+    "online": "System Online",
+    "refresh": "Refresh Data",
+    "refreshing": "Refreshing...",
+    "lastSync": "Last sync",
+    "syncPolling": "Polling sync",
+    "connecting": "Connecting...",
+    "cards": {
+      "total": "Total Cases",
+      "totalBadge": "Total",
+      "totalSub": "Across all system statuses",
+      "inProgress": "In Progress",
+      "inProgressBadge": "In Progress",
+      "inProgressSub": "of total cases",
+      "closed": "Claim Closed",
+      "closedBadge": "Closed",
+      "closedSub": "of total cases",
+      "overdue": "Overdue SLA",
+      "overdueBadge": "Overdue",
+      "overdueSub": "Requires urgent escalation",
+      "viewList": "View List"
+    },
+    "kpi": {
+      "overseasActive": "Active Overseas Claims",
+      "slaCompliance": "SLA Compliance Rate",
+      "avgDays": "Avg Duration per Case",
+      "days": "Days",
+      "target": "Target",
+      "cases": "Cases"
+    }
+  },
+  "table": {
+    "no": "No.",
+    "case": "Case",
+    "caseNo": "Case No.",
+    "equipment": "Equipment",
+    "serialNumber": "Serial Number",
+    "status": "Status",
+    "reportedDate": "Reported Date",
+    "age": "Case Age",
+    "station": "Station",
+    "category": "Category",
+    "towerHeight": "Tower Height",
+    "equipmentCount": "Equipment Count",
+    "actions": "Actions",
+    "view": "View Details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "selectAll": "Select All",
+    "search": "Search",
+    "searchData": "Search Data",
+    "resetFilters": "Clear Filters",
+    "overdueOnly": "Overdue Only",
+    "resultsFound": "Search Results",
+    "items": "items",
+    "empty": "No cases match the search criteria",
+    "emptySub": "Try adjusting filters or reset filters to search again",
+    "clearedTitle": "Filters Cleared — No items displayed",
+    "clearedSub": "Table data has been cleared. Select desired criteria or click \"Search\" to display claim records"
+  },
+  "landing": {
+    "badge": "EQUIPMENT CLAIM OPERATIONS & TRACKING",
+    "heroTitlePrefix": "PROCESS",
+    "heroTitleSuffix": "CLAIM PORTAL",
+    "description": "Central hub for managing and tracking radio network equipment claims. Connect claim workflows, overseas repairs, SLAs, and vendor penalties in one unified, sleek system.",
+    "enterPortal": "Enter Claim Portal",
+    "portalSub": "SHF Radio Network System",
+    "entering": "Entering portal..."
+  }
+}

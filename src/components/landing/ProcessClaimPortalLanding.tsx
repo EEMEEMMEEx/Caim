@@ -10,12 +10,15 @@ import {
   Loader2,
 } from "lucide-react"
 import { ProcessClaimLogoMark } from "@/components/brand/ProcessClaimLogo"
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
+import { useLocale } from "@/i18n/LocaleContext"
 import { initDefaultSession } from "@/lib/session"
 
 export function ProcessClaimPortalLanding() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get("next") ?? "/dashboard"
+  const { t } = useLocale()
   const [isPending, setIsPending] = React.useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = React.useState(false)
   const videoRef = React.useRef<HTMLVideoElement>(null)
@@ -112,9 +115,14 @@ export function ProcessClaimPortalLanding() {
               </span>
             </span>
             <span className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
-              SHF Radio Network System
+              {t("landing.portalSub", "SHF Radio Network System")}
             </span>
           </div>
+        </div>
+
+        {/* Right Action: Language Switcher */}
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
         </div>
       </header>
 
@@ -130,23 +138,23 @@ export function ProcessClaimPortalLanding() {
               <span className="relative inline-flex size-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8]" />
             </span>
             <span className="font-mono text-[11px] sm:text-xs tracking-wider uppercase">
-              EQUIPMENT CLAIM OPERATIONS &amp; TRACKING
+              {t("landing.badge", "EQUIPMENT CLAIM OPERATIONS & TRACKING")}
             </span>
           </div>
 
           {/* Main Title */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-white">
             <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-300 bg-clip-text text-transparent drop-shadow-[0_4px_24px_rgba(56,189,248,0.3)]">
-              PROCESS
+              {t("landing.heroTitlePrefix", "PROCESS")}
             </span>{" "}
             <span className="text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
-              CLAIM PORTAL
+              {t("landing.heroTitleSuffix", "CLAIM PORTAL")}
             </span>
           </h1>
 
           {/* Description Paragraph */}
           <p className="text-slate-300 text-sm sm:text-base lg:text-lg leading-relaxed font-normal max-w-2xl text-balance">
-            ศูนย์กลางบริหารและติดตามงานเคลมอุปกรณ์โครงข่ายวิทยุสื่อสาร เชื่อมโยงสถานะงาน การส่งซ่อมต่างประเทศ SLA และบทปรับผู้ขายไว้ในระบบเดียวที่ทันสมัย เรียบหรู และใช้งานง่าย
+            {t("landing.description", "ศูนย์กลางบริหารและติดตามงานเคลมอุปกรณ์โครงข่ายวิทยุสื่อสาร เชื่อมโยงสถานะงาน การส่งซ่อมต่างประเทศ SLA และบทปรับผู้ขายไว้ในระบบเดียวที่ทันสมัย เรียบหรู และใช้งานง่าย")}
           </p>
 
           {/* CTA Action Area */}
@@ -161,11 +169,11 @@ export function ProcessClaimPortalLanding() {
               {isPending ? (
                 <>
                   <Loader2 className="size-5 animate-spin" aria-hidden="true" />
-                  <span>กำลังเข้าสู่ระบบ...</span>
+                  <span>{t("landing.entering", "กำลังเข้าสู่ระบบ...")}</span>
                 </>
               ) : (
                 <>
-                  <span>เข้าสู่ระบบงาน</span>
+                  <span>{t("landing.enterPortal", "เข้าสู่ระบบจัดการงานเคลม")}</span>
                   <ArrowRight className="size-4.5 transition-transform duration-200 group-hover:translate-x-1" />
                 </>
               )}
