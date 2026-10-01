@@ -1267,20 +1267,32 @@ export function OverseasView() {
                             {item.caseName}
                           </p>
                           {/* Attached Permit Indicator Badge/Chip inside RMA row */}
-                          {item.permitInfo && (
-                            <div className="mt-1 flex items-center gap-1">
-                              <span
-                                className="inline-flex items-center gap-1 rounded-md border border-cyan-400/50 bg-cyan-50 dark:bg-cyan-950/50 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-800 dark:text-cyan-300 shadow-2xs"
-                                title={`ใบอนุญาต: ${item.permitInfo.permitNo} (${item.permitInfo.authority}) ออกเมื่อ ${item.permitInfo.issueDate} หมดอายุ ${item.permitInfo.expiryDate}`}
-                              >
-                                <ShieldCheck className="size-2.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
-                                <span className="truncate max-w-[140px]">
-                                  {item.permitInfo.permitType === "import_after_repair" ? "ใบอนุญาตนำเข้า: " : "ใบอนุญาตส่งออก: "}
-                                  {item.permitInfo.permitNo}
-                                </span>
-                              </span>
-                            </div>
-                          )}
+                          {(() => {
+                            const permitList =
+                              item.permits && item.permits.length > 0
+                                ? item.permits
+                                : item.permitInfo
+                                ? [item.permitInfo]
+                                : []
+                            if (permitList.length === 0) return null
+                            return (
+                              <div className="mt-1 flex flex-wrap items-center gap-1">
+                                {permitList.map((p) => (
+                                  <span
+                                    key={p.permitNo}
+                                    className="inline-flex items-center gap-1 rounded-md border border-cyan-400/50 bg-cyan-50 dark:bg-cyan-950/50 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-800 dark:text-cyan-300 shadow-2xs"
+                                    title={`ใบอนุญาต: ${p.permitNo} (${p.authority}) ออกเมื่อ ${p.issueDate} หมดอายุ ${p.expiryDate}`}
+                                  >
+                                    <ShieldCheck className="size-2.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
+                                    <span className="truncate max-w-[140px]">
+                                      {p.permitType === "import_after_repair" ? "ใบนำเข้า: " : "ใบส่งออก: "}
+                                      {p.permitNo}
+                                    </span>
+                                  </span>
+                                ))}
+                              </div>
+                            )
+                          })()}
                         </td>
 
                         {/* อุปกรณ์ */}
@@ -1814,33 +1826,35 @@ export function OverseasView() {
                             ? [timelineItem.permitInfo]
                             : []
 
-                        const coveringPermit = activePermits.find(
+                        const coveringPermits = activePermits.filter(
                           (p) => p.coveredSteps && p.coveredSteps.includes(stage.stageNumber)
                         )
+                        const isCovered = coveringPermits.length > 0
 
-                        const isCovered = Boolean(coveringPermit)
-                        const isFirstCoveredStep =
-                          coveringPermit &&
-                          coveringPermit.coveredSteps &&
-                          Math.min(...coveringPermit.coveredSteps) === stage.stageNumber
-
-                        const permitSla = coveringPermit
-                          ? calculatePermitSla(coveringPermit.issueDate, coveringPermit.expiryDate)
-                          : null
+                        const startingPermits = activePermits.filter(
+                          (p) =>
+                            p.coveredSteps &&
+                            Math.min(...p.coveredSteps) === stage.stageNumber
+                        )
 
                         return (
                           <div key={stage.stageNumber} className="relative">
-                            {/* Attached permit pill above the covered step range */}
-                            {isFirstCoveredStep && coveringPermit && permitSla && (
-                              <div className="mb-2 -ml-3 pl-3 animate-in fade-in">
-                                <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/80 bg-cyan-100/90 dark:bg-cyan-950/90 px-3 py-1 text-[11px] font-semibold text-cyan-900 dark:text-cyan-200 shadow-xs">
-                                  <ShieldCheck className="size-3.5 text-cyan-600 dark:text-cyan-400" />
-                                  <span>
-                                    ใบอนุญาต: {coveringPermit.permitNo} | คุ้มครองขั้นตอน {coveringPermit.permitType === "import_after_repair" ? "5-8" : "1-5"} | เหลือ {permitSla.remainingDays} วัน
+                            {/* Attached permit pills above the covered step range for each starting permit */}
+                            {startingPermits.map((p) => {
+                              const sla = calculatePermitSla(p.issueDate, p.expiryDate)
+                              const isImport = p.permitType === "import_after_repair"
+                              return (
+                                <div key={p.permitNo} className="mb-2 -ml-3 pl-3 animate-in fade-in">
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/80 bg-cyan-100/90 dark:bg-cyan-950/90 px-3 py-1 text-[11px] font-semibold text-cyan-900 dark:text-cyan-200 shadow-xs">
+                                    <ShieldCheck className="size-3.5 text-cyan-600 dark:text-cyan-400" />
+                                    <span>
+                                      {isImport ? "ใบอนุญาตนำเข้า: " : "ใบอนุญาตส่งออก: "}
+                                      {p.permitNo} | คุ้มครองขั้นตอน {isImport ? "5–8" : "1–5"} | เหลือ {sla.remainingDays} วัน
+                                    </span>
                                   </span>
-                                </span>
-                              </div>
-                            )}
+                                </div>
+                              )
+                            })}
 
                             <div
                               className={`relative flex flex-col md:flex-row md:items-start justify-between gap-3 text-xs p-3 rounded-xl transition-all ${
@@ -1902,28 +1916,30 @@ export function OverseasView() {
                                       <span>เริ่มนับบทปรับผู้ขาย</span>
                                     </span>
                                   )}
-                                  {/* Conditional Step-Coverage Permit Badge */}
-                                  {coveringPermit && (() => {
-                                    const badgeInfo = formatPermitStepBadge(coveringPermit)
-                                    return (
-                                      <span
-                                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium transition-all ${
-                                          badgeInfo.isExpired
-                                            ? "border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300"
-                                            : badgeInfo.isExpiringSoon
-                                            ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse"
-                                            : "border-cyan-300/80 bg-cyan-50/80 text-cyan-800 dark:border-cyan-700/60 dark:bg-cyan-950/40 dark:text-cyan-300"
-                                        }`}
-                                        title={`ใบอนุญาต: ${coveringPermit.permitNo} (${coveringPermit.authority}) ออกเมื่อ ${coveringPermit.issueDate} หมดอายุ ${coveringPermit.expiryDate}`}
-                                      >
-                                        <ShieldCheck className="size-3 shrink-0" />
-                                        <span>
-                                          {coveringPermit.permitType === "import_after_repair" ? "ใบอนุญาตนำเข้า: " : "ใบอนุญาตส่งออก: "}
-                                          {coveringPermit.permitNo} · เหลืออีก {badgeInfo.remainingDays} วัน
-                                        </span>
-                                      </span>
-                                    )
-                                  })()}
+                                   {/* Conditional Step-Coverage Permit Badges */}
+                                   {coveringPermits.map((p) => {
+                                     const badgeInfo = formatPermitStepBadge(p)
+                                     const isImport = p.permitType === "import_after_repair"
+                                     return (
+                                       <span
+                                         key={p.permitNo}
+                                         className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium transition-all ${
+                                           badgeInfo.isExpired
+                                             ? "border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300"
+                                             : badgeInfo.isExpiringSoon
+                                             ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse"
+                                             : "border-cyan-300/80 bg-cyan-50/80 text-cyan-800 dark:border-cyan-700/60 dark:bg-cyan-950/40 dark:text-cyan-300"
+                                         }`}
+                                         title={`ใบอนุญาต: ${p.permitNo} (${p.authority}) ออกเมื่อ ${p.issueDate} หมดอายุ ${p.expiryDate}`}
+                                       >
+                                         <ShieldCheck className="size-3 shrink-0" />
+                                         <span>
+                                           {isImport ? "ใบนำเข้า: " : "ใบส่งออก: "}
+                                           {p.permitNo} · เหลืออีก {badgeInfo.remainingDays} วัน
+                                         </span>
+                                       </span>
+                                     )
+                                   })}
                                   {isRetroactiveEditing && (
                                     <select
                                       value={stage.status}

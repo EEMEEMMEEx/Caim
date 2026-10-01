@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.2] - 2026-10-01
+
+### Fixed & Enhanced
+- **Multi-Permit Stepper Coverage & MongoDB Case Resolution (`api/rma/permit/route.ts`, `OverseasView.tsx`, `StageProgressBarCell.tsx`)**:
+  - **Resolved Missing Import Permit Issue**: Diagnosed why user-submitted import permit `E05036903929` and export permit `E05046900335` did not bind to MongoDB case `TL20260708` — `/api/rma/permit` was resolving target RMA exclusively against disk JSON instead of MongoDB collection, falling back to disk ID `"1"`.
+  - **MongoDB First Target Resolution**: Updated `/api/rma/permit/route.ts` to query active MongoDB collection first by `rmaNo` / `id` / `serialNo`, correctly binding updates to live database documents.
+  - **Multi-Permit Visual Stepper Coverage**: Enhanced Stepper rendering to support multiple concurrent permits on the same RMA (e.g. Export `E05046900335` covering steps 1–5 AND Import `E05036903929` covering steps 5–8) with individual attached pills, glowing borders, and stage badges.
+  - **RMA Table & Progress Bar Multi-Chip**: Updated RMA table and progress bar cells to display chips for both export and import permits simultaneously.
+  - **Bound User Permits**: Successfully attached both user-created permits `E05036903929` (นำเข้า) and `E05046900335` (ส่งออก) to case `TL20260708` in MongoDB.
+
 ## [0.34.1] - 2026-10-01
 
 ### Fixed & Enhanced

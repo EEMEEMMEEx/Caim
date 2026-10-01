@@ -19,37 +19,85 @@
     "penaltyStandard": "จาก 14 วัน",
     "isOverduePenalty": false,
     "permitInfo": {
-      "permitNo": "EXP-2026-0089",
-      "permitType": "export_for_repair",
+      "permitNo": "E05036903929",
+      "permitType": "import_after_repair",
       "authority": "สำนักงาน กสทช. (NBTC)",
-      "destinationCountry": "ฮ่องกง (Hong Kong)",
-      "issueDate": "2026-07-15",
-      "expiryDate": "2026-10-13",
-      "coveredSteps": [1, 2, 3, 4, 5],
-      "coveredStages": [1, 2, 3, 4, 5],
-      "rmaId": "1",
-      "rmaNo": "TEST20",
-      "serialNo": "200426",
-      "remarks": "ใบอนุญาตส่งออกเพื่อซ่อมแซมอุปกรณ์สื่อสาร DIB-R5 ไปยังศูนย์บริการต่างประเทศ",
-      "createdAt": "2026-07-15T09:00:00.000Z",
-      "updatedAt": "2026-07-15T09:00:00.000Z"
+      "destinationCountry": "ไทย (Bangkok)",
+      "issueDate": "2026-08-27",
+      "expiryDate": "2026-11-25",
+      "coveredSteps": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "coveredStages": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "rmaId": "1790326585735",
+      "rmaNo": "TL20260708",
+      "serialNo": "1000167600349",
+      "remarks": "ใบอนุญาตนำเข้าหลังการซ่อมแซมอุปกรณ์สื่อสารกลับสู่ประเทศไทย",
+      "createdAt": "2026-10-01T07:58:16.575Z",
+      "updatedAt": "2026-10-01T08:14:35.669Z"
     },
     "permits": [
       {
-        "permitNo": "EXP-2026-0089",
+        "permitNo": "E05036903929",
+        "permitType": "import_after_repair",
+        "authority": "สำนักงาน กสทช. (NBTC)",
+        "destinationCountry": "ไทย (Bangkok)",
+        "issueDate": "2026-08-27",
+        "expiryDate": "2026-11-25",
+        "coveredSteps": [
+          5,
+          6,
+          7,
+          8
+        ],
+        "coveredStages": [
+          5,
+          6,
+          7,
+          8
+        ],
+        "rmaId": "1790326585735",
+        "rmaNo": "TL20260708",
+        "serialNo": "1000167600349",
+        "remarks": "ใบอนุญาตนำเข้าหลังการซ่อมแซมอุปกรณ์สื่อสารกลับสู่ประเทศไทย",
+        "createdAt": "2026-10-01T07:58:16.575Z",
+        "updatedAt": "2026-10-01T08:14:35.669Z"
+      },
+      {
+        "permitNo": "E05046900335",
         "permitType": "export_for_repair",
         "authority": "สำนักงาน กสทช. (NBTC)",
         "destinationCountry": "ฮ่องกง (Hong Kong)",
-        "issueDate": "2026-07-15",
-        "expiryDate": "2026-10-13",
-        "coveredSteps": [1, 2, 3, 4, 5],
-        "coveredStages": [1, 2, 3, 4, 5],
-        "rmaId": "1",
-        "rmaNo": "TEST20",
-        "serialNo": "200426",
-        "remarks": "ใบอนุญาตส่งออกเพื่อซ่อมแซมอุปกรณ์สื่อสาร DIB-R5 ไปยังศูนย์บริการต่างประเทศ",
-        "createdAt": "2026-07-15T09:00:00.000Z",
-        "updatedAt": "2026-07-15T09:00:00.000Z"
+        "issueDate": "2026-07-21",
+        "expiryDate": "2026-10-19",
+        "coveredSteps": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "coveredStages": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "rmaId": "1790326585735",
+        "rmaNo": "TL20260708",
+        "serialNo": "1000167600349",
+        "remarks": "ใบอนุญาตส่งออกเพื่อซ่อมแซมอุปกรณ์สื่อสาร",
+        "createdAt": "2026-10-01T07:55:26.901Z",
+        "updatedAt": "2026-10-01T08:14:35.668Z"
       }
     ],
     "stageHistory": [

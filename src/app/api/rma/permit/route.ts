@@ -64,26 +64,51 @@ export async function POST(request: NextRequest) {
     const targetRmaNo = (body.rmaNo || body.linkedRmaNo || body.rmaId || "").trim()
     const targetSerial = (body.selectedAssetSerial || body.serialNo || "").trim()
 
-    const diskItems = getPersistentRma()
     let targetRma: RmaDocument | undefined
 
-    if (targetRmaNo) {
-      targetRma = diskItems.find(
-        (r) =>
-          r.rmaNo.toLowerCase() === targetRmaNo.toLowerCase() ||
-          r.id.toLowerCase() === targetRmaNo.toLowerCase()
-      )
+    if (isMongoConfigured()) {
+      const db = await getDb()
+      if (db) {
+        const collection = db.collection<RmaDocument>("rma")
+        if (targetRmaNo) {
+          const found = await collection.findOne({
+            $or: [
+              { rmaNo: { $regex: new RegExp(`^${targetRmaNo}$`, "i") } },
+              { id: targetRmaNo },
+            ],
+          })
+          if (found) targetRma = found
+        }
+        if (!targetRma && targetSerial) {
+          const found = await collection.findOne({
+            serialNo: { $regex: new RegExp(`^${targetSerial}$`, "i") },
+          })
+          if (found) targetRma = found
+        }
+        if (!targetRma) {
+          const first = await collection.findOne({})
+          if (first) targetRma = first
+        }
+      }
     }
 
-    if (!targetRma && targetSerial) {
-      targetRma = diskItems.find(
-        (r) => r.serialNo.toLowerCase() === targetSerial.toLowerCase()
-      )
-    }
-
-    // If still not matched and there are active RMAs, bind to the most recent in-progress RMA
-    if (!targetRma && diskItems.length > 0) {
-      targetRma = diskItems[0]
+    if (!targetRma) {
+      const diskItems = getPersistentRma()
+      if (targetRmaNo) {
+        targetRma = diskItems.find(
+          (r) =>
+            r.rmaNo.toLowerCase() === targetRmaNo.toLowerCase() ||
+            r.id.toLowerCase() === targetRmaNo.toLowerCase()
+        )
+      }
+      if (!targetRma && targetSerial) {
+        targetRma = diskItems.find(
+          (r) => r.serialNo.toLowerCase() === targetSerial.toLowerCase()
+        )
+      }
+      if (!targetRma && diskItems.length > 0) {
+        targetRma = diskItems[0]
+      }
     }
 
     const permitDoc: PermitTrackingInfo = {
@@ -124,7 +149,7 @@ export async function POST(request: NextRequest) {
         const db = await getDb()
         if (db) {
           await db.collection<RmaDocument>("rma").updateOne(
-            { id: targetRma.id },
+            { $or: [{ id: targetRma.id }, { rmaNo: targetRma.rmaNo }] },
             {
               $set: {
                 permitInfo: permitDoc,
