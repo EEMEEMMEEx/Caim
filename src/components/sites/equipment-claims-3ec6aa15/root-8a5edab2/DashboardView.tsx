@@ -84,43 +84,34 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                 <Activity className="size-6 text-blue-400" />
               </span>
               <div>
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex items-center gap-2.5">
                   <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
                     ภาพรวมงานเคลมอุปกรณ์
                   </h1>
                   <span
-                    title={mounted && lastSyncTime ? `สถานะ: ออนไลน์ (อัปเดตล่าสุด ${formattedSyncTime})` : "สถานะ: ระบบออนไลน์"}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 cursor-default"
+                    role="status"
+                    aria-label="ระบบออนไลน์"
+                    title={mounted && lastSyncTime ? `ระบบออนไลน์ (ซิงก์ล่าสุด: ${formattedSyncTime})` : "ระบบออนไลน์"}
+                    className="relative flex h-2.5 w-2.5 cursor-default shrink-0 items-center justify-center"
                   >
-                    <span className="relative flex size-2">
-                      <span
-                        className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
-                          connectionStatus === "connected"
-                            ? "bg-emerald-400"
-                            : connectionStatus === "fallback-polling"
-                            ? "bg-amber-400"
-                            : "bg-blue-400"
-                        }`}
-                      />
-                      <span
-                        className={`relative inline-flex size-2 rounded-full ${
-                          connectionStatus === "connected"
-                            ? "bg-emerald-500"
-                            : connectionStatus === "fallback-polling"
-                            ? "bg-amber-500"
-                            : "bg-blue-500"
-                        }`}
-                      />
-                    </span>
-                    <span suppressHydrationWarning>
-                      {mounted
-                        ? connectionStatus === "connected"
-                          ? "ระบบออนไลน์"
+                    <span
+                      className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
+                        connectionStatus === "connected"
+                          ? "bg-emerald-400"
                           : connectionStatus === "fallback-polling"
-                          ? "ซิงก์แบบ Polling"
-                          : "กำลังเชื่อมต่อ..."
-                        : "ระบบออนไลน์"}
-                    </span>
+                          ? "bg-amber-400"
+                          : "bg-blue-400"
+                      }`}
+                    />
+                    <span
+                      className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
+                        connectionStatus === "connected"
+                          ? "bg-emerald-500 shadow-[0_0_8px_#10b981]"
+                          : connectionStatus === "fallback-polling"
+                          ? "bg-amber-500 shadow-[0_0_8px_#f59e0b]"
+                          : "bg-blue-500 shadow-[0_0_8px_#3b82f6]"
+                      }`}
+                    />
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm mt-0.5">

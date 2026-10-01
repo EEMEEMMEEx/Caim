@@ -350,12 +350,6 @@ export function AppShell({ children }: AppShellProps) {
                 <span className="size-4.5" />
               )}
             </button>
-
-            {/* Online Status Badge */}
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-500/30 text-xs text-emerald-700 dark:text-emerald-300 font-medium shadow-2xs">
-              <span className="size-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
-              <span>ระบบออนไลน์</span>
-            </div>
           </div>
         </header>
 

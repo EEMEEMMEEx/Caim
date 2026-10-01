@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.7] - 2026-10-01
+
+### Changed
+- **Top Navigation Bar & Dashboard Status Indicator Refactor (`AppShell.tsx`, `DashboardView.tsx`)**:
+  - **Removed Top-Right Status Badge (`AppShell.tsx`)**: Completely removed the redundant `"ระบบออนไลน์"` pill container (green dot, text, and border capsule) next to the theme toggle button in the top navigation bar.
+  - **Standalone Animated Pulsing Indicator (`DashboardView.tsx`)**: Stripped the text string `"ระบบออนไลน์"` and removed the outer pill border container wrapper next to the `"ภาพรวมงานเคลมอุปกรณ์"` heading. Retained a sleek standalone pulsing green dot indicator with subtle ping and glow animations (`h-2.5 w-2.5` with outer `animate-ping` and inner `bg-emerald-500 shadow-[0_0_8px_#10b981]`).
+  - **Accessible Tooltip & Hover Title**: Retained accessible context with `title="ระบบออนไลน์"`, `role="status"`, and `aria-label="ระบบออนไลน์"`.
+
 ## [0.29.6] - 2026-10-01
 
 ### Changed
