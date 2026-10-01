@@ -23,7 +23,8 @@ import {
   Save,
   Undo2,
   Loader2,
-  ArrowLeftRight
+  ArrowLeftRight,
+  ShieldCheck
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,6 +40,11 @@ import {
   type RmaStageConfig,
 } from "@/lib/utils/rmaDuration"
 import { StageProgressBarCell } from "./StageProgressBarCell"
+import {
+  calculatePermitExpirationDate,
+  calculatePermitSla,
+  formatPermitStepBadge,
+} from "@/lib/utils/permitSla"
 
 export { RMA_STAGES_CONFIG, type RmaStageConfig }
 
@@ -625,20 +631,33 @@ export function OverseasView() {
   })
   const [formValidationError, setFormValidationError] = React.useState<string | null>(null)
 
-  // New Import/Export Permit Modal state
+  // New Import/Export Permit Modal state with 90-Day SLA & Lifecycle Tracking
   const [isImportExportModalOpen, setIsImportExportModalOpen] = React.useState(false)
-  const [importExportForm, setImportExportForm] = React.useState({
-    permitNo: "",
-    permitType: "export_for_repair",
-    authority: "กสทช. (NBTC)",
-    linkedRmaNo: "",
-    selectedAssetSerial: "",
-    destinationCountry: "ฮ่องกง (Hong Kong)",
-    issueDate: new Date().toISOString().slice(0, 10),
-    expiryDate: "",
-    remarks: "",
+  const [isSubmittingPermit, setIsSubmittingPermit] = React.useState(false)
+  const [importExportForm, setImportExportForm] = React.useState(() => {
+    const today = new Date().toISOString().slice(0, 10)
+    return {
+      permitNo: "",
+      permitType: "export_for_repair" as "export_for_repair" | "import_after_repair" | "nbtc_permit" | "customs_clearance",
+      authority: "กสทช. (NBTC)",
+      linkedRmaNo: "",
+      selectedAssetSerial: "",
+      destinationCountry: "ฮ่องกง (Hong Kong)",
+      issueDate: today,
+      expiryDate: calculatePermitExpirationDate(today, 90),
+      remarks: "",
+    }
   })
   const [importExportValidationError, setImportExportValidationError] = React.useState<string | null>(null)
+
+  const handlePermitIssueDateChange = (newDate: string) => {
+    const calculatedExpiry = calculatePermitExpirationDate(newDate, 90)
+    setImportExportForm((prev) => ({
+      ...prev,
+      issueDate: newDate,
+      expiryDate: calculatedExpiry,
+    }))
+  }
 
   const handleCaseChange = (caseId: string) => {
     setNewRmaForm((prev) => {
@@ -907,27 +926,57 @@ export function OverseasView() {
     showToast(`เปิดใบส่งซ่อม ${generatedRmaNo} และบันทึกเข้าฐานข้อมูลเรียบร้อยแล้ว`)
   }
 
-  const handleCreateImportExportPermit = (e: React.FormEvent) => {
+  const handleCreateImportExportPermit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    const generatedPermitNo =
-      importExportForm.permitNo.trim() ||
-      `EXP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
-
-    setIsImportExportModalOpen(false)
-    setImportExportForm({
-      permitNo: "",
-      permitType: "export_for_repair",
-      authority: "กสทช. (NBTC)",
-      linkedRmaNo: "",
-      selectedAssetSerial: "",
-      destinationCountry: "ฮ่องกง (Hong Kong)",
-      issueDate: new Date().toISOString().slice(0, 10),
-      expiryDate: "",
-      remarks: "",
-    })
+    setIsSubmittingPermit(true)
     setImportExportValidationError(null)
-    showToast(`เปิดใบนำเข้า-ส่งออก ${generatedPermitNo} เรียบร้อยแล้ว`)
+
+    try {
+      const generatedPermitNo =
+        importExportForm.permitNo.trim() ||
+        (importExportForm.permitType === "import_after_repair"
+          ? `IMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
+          : `EXP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`)
+
+      const calculatedExpiry =
+        importExportForm.expiryDate || calculatePermitExpirationDate(importExportForm.issueDate, 90)
+
+      const payload = {
+        ...importExportForm,
+        permitNo: generatedPermitNo,
+        expiryDate: calculatedExpiry,
+        rmaNo: importExportForm.linkedRmaNo,
+      }
+
+      const res = await fetch("/api/rma/permit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "เกิดข้อผิดพลาดในการบันทึกใบอนุญาต")
+      }
+
+      // Re-fetch RMA items from API to activate step badges in active timeline
+      await refetchRma()
+
+      setIsImportExportModalOpen(false)
+      const coveredDesc =
+        importExportForm.permitType === "export_for_repair"
+          ? "ขั้นตอน 1–5"
+          : importExportForm.permitType === "import_after_repair"
+          ? "ขั้นตอน 5–8"
+          : "ขั้นตอนที่กำหนด"
+
+      showToast(`บันทึกใบอนุญาต ${generatedPermitNo} (ครอบคลุม ${coveredDesc} · กรอบเวลา 90 วัน) เรียบร้อยแล้ว`)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึกใบอนุญาต"
+      setImportExportValidationError(msg)
+    } finally {
+      setIsSubmittingPermit(false)
+    }
   }
 
   const handleSaveEdit = (e: React.FormEvent) => {
@@ -1419,6 +1468,92 @@ export function OverseasView() {
                   </div>
                 )}
 
+                {/* Active Permit SLA Summary Banner (if RMA has covered permits) */}
+                {(() => {
+                  const activePermits =
+                    timelineItem.permits && timelineItem.permits.length > 0
+                      ? timelineItem.permits
+                      : timelineItem.permitInfo
+                      ? [timelineItem.permitInfo]
+                      : []
+
+                  if (activePermits.length === 0) return null
+
+                  return (
+                    <div className="mb-4 space-y-2">
+                      {activePermits.map((permit) => {
+                        const sla = calculatePermitSla(permit.issueDate, permit.expiryDate)
+                        const isExport = permit.permitType === "export_for_repair"
+                        return (
+                          <div
+                            key={permit.permitNo}
+                            className={`rounded-xl border p-3 text-xs transition-all ${
+                              sla.isExpired
+                                ? "border-red-300 bg-red-50/60 dark:border-red-900/60 dark:bg-red-950/30"
+                                : sla.isExpiringSoon
+                                ? "border-amber-300 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/30"
+                                : "border-cyan-300/70 bg-cyan-50/60 dark:border-cyan-900/60 dark:bg-cyan-950/30"
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="flex size-7 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-bold">
+                                  <ShieldCheck className="size-4" />
+                                </span>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-slate-800 dark:text-slate-100">
+                                      ใบอนุญาต: {permit.permitNo}
+                                    </span>
+                                    <span className="rounded-full bg-slate-200/70 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300">
+                                      {isExport ? "ส่งออกเพื่อซ่อมแซม (ขั้นตอน 1–5)" : "นำเข้าหลังการซ่อมแซม (ขั้นตอน 5–8)"}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    หน่วยงาน: {permit.authority} · วันที่ออก {permit.issueDate} · หมดอายุ {permit.expiryDate}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <span
+                                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${
+                                    sla.isExpired
+                                      ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
+                                      : sla.isExpiringSoon
+                                      ? "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300"
+                                      : "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-300"
+                                  }`}
+                                >
+                                  <Clock className="size-3" />
+                                  <span>{sla.badgeText}</span>
+                                </span>
+                                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                  กรอบเวลา SLA 90 วัน (ผ่านไป {sla.elapsedDays} วัน)
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* SLA Progress Bar */}
+                            <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                              <div
+                                className={`h-full transition-all duration-500 ${
+                                  sla.isExpired
+                                    ? "bg-red-500"
+                                    : sla.isExpiringSoon
+                                    ? "bg-amber-500"
+                                    : "bg-cyan-500"
+                                }`}
+                                style={{ width: `${Math.min(100, Math.max(5, (sla.elapsedDays / 90) * 100))}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
+
                 {/* Vertical Timeline */}
                 <div className="relative pl-6 space-y-5 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
                   {retroactiveStages.map((stage) => {
@@ -1478,6 +1613,39 @@ export function OverseasView() {
                                 <span>เริ่มนับบทปรับผู้ขาย</span>
                               </span>
                             )}
+                            {/* Conditional Step-Coverage Permit Badge */}
+                            {(() => {
+                              const activePermits =
+                                timelineItem.permits && timelineItem.permits.length > 0
+                                  ? timelineItem.permits
+                                  : timelineItem.permitInfo
+                                  ? [timelineItem.permitInfo]
+                                  : []
+
+                              const coveringPermit = activePermits.find(
+                                (p) => p.coveredSteps && p.coveredSteps.includes(stage.stageNumber)
+                              )
+
+                              if (!coveringPermit) return null
+
+                              const badgeInfo = formatPermitStepBadge(coveringPermit)
+
+                              return (
+                                <span
+                                  className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium transition-all ${
+                                    badgeInfo.isExpired
+                                      ? "border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300"
+                                      : badgeInfo.isExpiringSoon
+                                      ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse"
+                                      : "border-cyan-300/80 bg-cyan-50/80 text-cyan-800 dark:border-cyan-700/60 dark:bg-cyan-950/40 dark:text-cyan-300"
+                                  }`}
+                                  title={`ใบอนุญาต: ${coveringPermit.permitNo} (${coveringPermit.authority}) ออกเมื่อ ${coveringPermit.issueDate} หมดอายุ ${coveringPermit.expiryDate}`}
+                                >
+                                  <ShieldCheck className="size-3 shrink-0" />
+                                  <span>{badgeInfo.text}</span>
+                                </span>
+                              )
+                            })()}
                             {isRetroactiveEditing && (
                               <select
                                 value={stage.status}
@@ -1925,7 +2093,14 @@ export function OverseasView() {
                       <select
                         value={importExportForm.permitType}
                         onChange={(e) =>
-                          setImportExportForm((prev) => ({ ...prev, permitType: e.target.value }))
+                          setImportExportForm((prev) => ({
+                            ...prev,
+                            permitType: e.target.value as
+                              | "export_for_repair"
+                              | "import_after_repair"
+                              | "nbtc_permit"
+                              | "customs_clearance",
+                          }))
                         }
                         className="h-9 w-full appearance-none rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] px-3 pr-8 text-xs text-slate-700 dark:text-slate-200 focus:border-cyan-500 focus:outline-none"
                         required
@@ -2033,7 +2208,30 @@ export function OverseasView() {
                   </div>
                 </div>
 
-                {/* Row 4: วันที่ออกเอกสาร & วันหมดอายุ */}
+                {/* Step Coverage Indicator Preview */}
+                <div className="rounded-xl border border-cyan-500/20 bg-cyan-50/50 dark:bg-cyan-950/20 p-3 text-xs">
+                  <div className="flex items-start gap-2.5 text-cyan-800 dark:text-cyan-300">
+                    <ShieldCheck className="size-4 shrink-0 text-cyan-600 dark:text-cyan-400 mt-0.5" />
+                    <div>
+                      <span className="font-semibold block">
+                        {importExportForm.permitType === "export_for_repair"
+                          ? "คุ้มครองขั้นตอนที่ 1 – 5 (Export for Repair)"
+                          : importExportForm.permitType === "import_after_repair"
+                          ? "คุ้มครองขั้นตอนที่ 5 – 8 (Import after Repair)"
+                          : "คุ้มครองตามข้อกำหนดใบอนุญาต"}
+                      </span>
+                      <p className="text-[11px] text-cyan-700/80 dark:text-cyan-400/80 mt-0.5">
+                        {importExportForm.permitType === "export_for_repair"
+                          ? "ผูกความคุ้มครอง: 1. เปิดใบ RMA → 2. Forth ตรวจสอบ → 3. กสทช. อนุมัติ → 4. ส่งออก → 5. ถึงศูนย์ต่างประเทศ"
+                          : importExportForm.permitType === "import_after_repair"
+                          ? "ผูกความคุ้มครอง: 5. ถึงศูนย์ต่างประเทศ → 6. กระบวนการซ่อมแซม → 7. ส่งกลับเครื่องบิน → 8. ศุลกากรขาเข้า"
+                          : "ผูกความคุ้มครองขั้นตอนตามประเภทใบอนุญาต"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 4: วันที่ออกเอกสาร & วันหมดอายุ (90-Day SLA Window) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -2042,16 +2240,14 @@ export function OverseasView() {
                     <Input
                       type="date"
                       value={importExportForm.issueDate}
-                      onChange={(e) =>
-                        setImportExportForm((prev) => ({ ...prev, issueDate: e.target.value }))
-                      }
+                      onChange={(e) => handlePermitIssueDateChange(e.target.value)}
                       className="h-9 text-xs rounded-lg border-slate-200/80 dark:border-white/10 dark:bg-[#0f172a] dark:text-slate-100 focus-visible:ring-1 focus-visible:ring-cyan-500"
                     />
                   </div>
 
                   <div>
                     <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      วันหมดอายุ (ถ้ามี)
+                      วันหมดอายุ (กรอบเวลา 90 วัน) <span className="text-red-500">*</span>
                     </label>
                     <Input
                       type="date"
@@ -2060,7 +2256,12 @@ export function OverseasView() {
                         setImportExportForm((prev) => ({ ...prev, expiryDate: e.target.value }))
                       }
                       className="h-9 text-xs rounded-lg border-slate-200/80 dark:border-white/10 dark:bg-[#0f172a] dark:text-slate-100 focus-visible:ring-1 focus-visible:ring-cyan-500"
+                      required
                     />
+                    <p className="mt-1 text-[11px] text-cyan-600 dark:text-cyan-400 font-medium flex items-center gap-1">
+                      <ShieldCheck className="size-3 shrink-0" />
+                      <span>คำนวณวันหมดอายุอัตโนมัติ (issueDate + 90 วัน)</span>
+                    </p>
                   </div>
                 </div>
 
@@ -2086,6 +2287,7 @@ export function OverseasView() {
                     type="button"
                     variant="outline"
                     size="sm"
+                    disabled={isSubmittingPermit}
                     onClick={() => setIsImportExportModalOpen(false)}
                     className="h-9 px-4 text-xs font-medium text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-white/10 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg cursor-pointer"
                   >
@@ -2094,10 +2296,15 @@ export function OverseasView() {
                   <Button
                     type="submit"
                     size="sm"
+                    disabled={isSubmittingPermit}
                     className="h-9 px-4 bg-slate-900 dark:bg-cyan-600 hover:bg-slate-800 dark:hover:bg-cyan-500 text-white text-xs font-medium rounded-lg shadow-xs cursor-pointer gap-1.5"
                   >
-                    <ArrowLeftRight className="size-3.5" />
-                    <span>บันทึกใบนำเข้า-ส่งออก</span>
+                    {isSubmittingPermit ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <ArrowLeftRight className="size-3.5" />
+                    )}
+                    <span>{isSubmittingPermit ? "กำลังบันทึก..." : "บันทึกใบนำเข้า-ส่งออก"}</span>
                   </Button>
                 </div>
               </form>

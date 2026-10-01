@@ -1,5 +1,5 @@
 // Storage & API persistence helper for CAIM system (Equipments, Stations, Tickets, RMA)
-import type { StageHistoryRecord } from "@/types/database"
+import type { StageHistoryRecord, PermitTrackingInfo } from "@/types/database"
 
 export const STORAGE_KEYS = {
   DELETED_TICKETS: "forth_caim_deleted_ticket_ids_v1",
@@ -93,6 +93,8 @@ export interface StoredRma {
   penaltyStandard?: string
   isOverduePenalty?: boolean
   stageHistory?: StageHistoryRecord[]
+  permitInfo?: PermitTrackingInfo
+  permits?: PermitTrackingInfo[]
 }
 
 // ---------------------------------------------------------------------------

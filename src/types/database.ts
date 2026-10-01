@@ -96,6 +96,18 @@ export interface StageHistoryRecord {
   notes?: string
 }
 
+export interface PermitTrackingInfo {
+  permitNo: string
+  permitType: "export_for_repair" | "import_after_repair" | "nbtc_permit" | "customs_clearance"
+  authority: string
+  coveredSteps: number[] // [1, 2, 3, 4, 5] for export, [5, 6, 7, 8] for import
+  issueDate: string // YYYY-MM-DD
+  expiryDate: string // YYYY-MM-DD
+  destinationCountry?: string
+  remarks?: string
+  createdAt?: string
+}
+
 export interface RmaDocument {
   id: string // e.g. "RMA-2026-001"
   rmaNo: string
@@ -125,6 +137,8 @@ export interface RmaDocument {
   penaltyStandard?: string
   isOverduePenalty?: boolean
   stageHistory?: StageHistoryRecord[]
+  permitInfo?: PermitTrackingInfo
+  permits?: PermitTrackingInfo[]
   createdAt?: string
   updatedAt?: string
 }

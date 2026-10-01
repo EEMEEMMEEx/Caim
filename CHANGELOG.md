@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.0] - 2026-10-01
+
+### Added
+- **Conditional Lifecycle Tracking & 90-Day Permit SLA Timeline Trigger (`OverseasView.tsx`, `permitSla.ts`, `/api/rma/permit`)**:
+  - **Conditional Step-Coverage & Tracking Scope**:
+    - **Case 1 ('ส่งออกเพื่อซ่อมแซม' / Export for Repair)**: Automatically binds and activates coverage across Steps 1 through 5 in the Overseas Claim timeline (เปิดใบ RMA → Forth ตรวจสอบ → กสทช. อนุมัติ → ส่งออก → ถึงศูนย์ต่างประเทศ).
+    - **Case 2 ('นำเข้าหลังการซ่อมแซม' / Import after Repair)**: Automatically binds and activates coverage across Steps 5 through 8 in the Overseas Claim timeline (ถึงศูนย์ต่างประเทศ → กระบวนการซ่อมแซม → ส่งกลับเครื่องบิน → ศุลกากรขาเข้า).
+  - **90-Day Permit Validity & Deadline Calculation Utility (`permitSla.ts`)**:
+    - Enforced strict 90-day SLA window with automatic expiration calculation (`expiryDate = issueDate + 90 days`).
+    - Dynamic calculation of elapsed days vs. remaining days within the SLA window, flagging warning status when 15 days or fewer remain.
+    - Added reactive date-picker calculation in permit modal auto-filling expiration date and showing SLA window helper.
+  - **Backend Permit Submission Handler (`/api/rma/permit/route.ts`)**:
+    - Created dedicated API route accepting permit creation/linking requests, attaching permit metadata and step coverage to target RMA records.
+    - Persists permit records to disk (`rma.json`) and MongoDB with transaction logging and real-time event broadcasting (`RMA_CHANGED`).
+  - **UI Timeline Step Indicator & Overview Banner (`OverseasView.tsx`)**:
+    - Injected compact badges beside covered steps in the Overseas Claim Timeline modal: `[ใบอนุญาต: EXP-2026-XXXX | เหลืออีก XX วัน]` with warning/expired badges.
+    - Added Active Permit SLA Summary banner with visual progress bar at the top of the timeline tracking modal.
+
 ## [0.32.0] - 2026-10-01
 
 ### Added
