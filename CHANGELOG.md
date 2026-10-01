@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0] - 2026-10-01
+
+### Added
+- **Full Responsive Application Layout & Touch Ergonomics Revamp across Viewports**:
+  - **Adaptive Navigation & Mobile Sheet Drawer (`AppShell.tsx`, `LanguageSwitcher.tsx`)**:
+    - Mobile (< 768px): Collapsed fixed desktop sidebar into an accessible slide-over sheet drawer with darkened backdrop blur (`bg-black/60 backdrop-blur-sm`).
+    - Tablet (768px - 1023px): Implemented viewport auto-detection defaulting to an icon-only collapsed sidebar (`w-16`) to maximize table and chart display area without horizontal page-level overflow.
+    - Touch Targets: Upgraded all header controls, theme toggles, hamburger buttons, and language switcher to meet WCAG touch target guidelines (minimum 44x44px touch area with `touch-manipulation`).
+  - **Dynamic Multi-Column Dashboard & Metric Cards (`DashboardView.tsx`)**:
+    - Reconfigured summary KPI cards and performance indicators to responsive grids (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`).
+    - Weekly overview summary boxes stack on small viewports (`grid-cols-1 sm:grid-cols-3`) to prevent number clipping.
+  - **Data Tables Horizontal Overflow & Sticky Columns Management (`TicketsView.tsx`, `OverseasView.tsx`, `AssetsView.tsx`, `StationsView.tsx`, `TableActionCell.tsx`, `globals.css`)**:
+    - Wrapped all four data tables with `overflow-x-auto scrollbar-subtle` using custom CSS thin scrollbars.
+    - Pinned critical key columns on horizontal swipe: sticky left index/checkbox and sticky right action buttons (`sticky left-0` and `sticky right-0` with boundary box-shadows).
+    - Added string truncation (`truncate`) with full hover/touch tooltips on serial numbers, equipment models, station locations, and problem descriptions.
+    - Increased touch targets on table row action triggers (View, Edit, Delete, Copy) for smooth touch interaction.
+
 ## [0.30.2] - 2026-10-01
 
 ### Removed

@@ -18,7 +18,8 @@ import {
   MapPin,
   RotateCcw,
   Trash2,
-  Loader2
+  Loader2,
+  Plus
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -57,8 +58,8 @@ const TicketTableRow = React.memo(function TicketTableRow({
           : "hover:bg-slate-50/80 dark:hover:bg-slate-800/60"
       } ${isSelected ? "bg-blue-50/50 dark:bg-blue-950/40" : ""}`}
     >
-      {/* Checkbox */}
-      <td className="px-4 py-3.5 text-center">
+      {/* Checkbox (Sticky Left Column) */}
+      <td className="sticky left-0 z-10 px-4 py-3.5 text-center bg-white/95 dark:bg-[#1e293b] shadow-[1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.08)]">
         <input
           type="checkbox"
           checked={isSelected}
@@ -73,13 +74,13 @@ const TicketTableRow = React.memo(function TicketTableRow({
         <p className="font-bold text-slate-800 dark:text-slate-100 text-xs">
           {item.title}
         </p>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 max-w-xs truncate">
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 max-w-[180px] sm:max-w-xs truncate" title={item.problemDesc}>
           {item.problemDesc}
         </p>
         {item.station && (
           <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-400">
             <MapPin className="size-3 text-slate-400 dark:text-slate-500 shrink-0" />
-            <span className="font-medium text-slate-700 dark:text-slate-300">{item.station}</span>
+            <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[160px] sm:max-w-none" title={item.station}>{item.station}</span>
             {(item.district || item.province) && (
               <span className="text-slate-400 dark:text-slate-500">
                 ({[item.district && `อ.${item.district}`, item.province && `จ.${item.province}`].filter(Boolean).join(", ")})
@@ -99,7 +100,7 @@ const TicketTableRow = React.memo(function TicketTableRow({
             <p className="text-xs font-medium text-slate-800 dark:text-slate-100">
               {item.vendor} / {item.model}
             </p>
-            <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
+            <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-0.5 truncate max-w-[140px] sm:max-w-[200px]" title={`S/N: ${item.serialNo}`}>
               S/N {item.serialNo}
             </p>
           </div>
@@ -174,8 +175,9 @@ const TicketTableRow = React.memo(function TicketTableRow({
         )}
       </td>
 
-      {/* Action Links (ดู / แก้ไข / ลบ) with clean icon-only triggers & tooltips */}
+      {/* Action Links with clean icon-only triggers & tooltips (Sticky Right Column) */}
       <TableActionCell
+        cellClassName="sticky right-0 z-10 bg-white/95 dark:bg-[#1e293b] shadow-[-1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[-1px_0_0_0_rgba(255,255,255,0.08)]"
         onView={() => onView(item)}
         onEdit={() => onEdit(item)}
         onDelete={() => onConfirmDelete(item)}
@@ -810,19 +812,30 @@ export function TicketsView() {
         {/* =========================================================================
             1. HEADER SECTION
            ========================================================================= */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#0c1a30] text-white shadow-xs">
               <ClipboardList className="size-5.5 text-white" />
             </span>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-                รายการงานเคลม
+                {t("claims.title")}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-                ทุกเคสเคลมที่บันทึกไว้ในฐานข้อมูลกลาง เลือกเงื่อนไขในการ์ดค้นหาแล้วกดค้นหา
+                {t("claims.subtitle")}
               </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <Link href="/tickets/new">
+              <Button
+                size="sm"
+                className="h-10 px-4 min-h-[44px] min-w-[44px] gap-1.5 bg-[#0c1a30] hover:bg-[#1e293b] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer touch-manipulation"
+              >
+                <Plus className="size-4" />
+                <span>เปิดเคสใหม่</span>
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -1122,11 +1135,11 @@ export function TicketsView() {
             3. DATA TABLE & SELECTABLE ROWS
            ========================================================================= */}
         <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto scrollbar-subtle">
+            <table className="w-full text-left text-xs min-w-[680px]">
               <thead className="border-b border-slate-200/70 dark:border-white/10 bg-slate-50/90 dark:bg-[#0f172a] text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
                 <tr>
-                  <th className="w-12 px-4 py-3.5 text-center">
+                  <th className="sticky left-0 z-20 w-12 px-4 py-3.5 text-center bg-slate-50 dark:bg-[#0f172a] shadow-[1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.08)]">
                     <input
                       type="checkbox"
                       checked={isAllSelected}
@@ -1135,12 +1148,12 @@ export function TicketsView() {
                       aria-label={t("table.selectAll", "เลือกทั้งหมด")}
                     />
                   </th>
-                  <th className="px-4 py-3.5">{t("table.case", "เคส")}</th>
-                  <th className="px-4 py-3.5">{t("table.equipment", "อุปกรณ์")}</th>
-                  <th className="px-4 py-3.5">{t("table.status", "สถานะ")}</th>
-                  <th className="px-4 py-3.5">{t("table.reportedDate", "รับแจ้ง")}</th>
-                  <th className="px-4 py-3.5">{t("table.age", "อายุงาน")}</th>
-                  <th className="px-4 py-3.5">{t("table.actions", "จัดการ")}</th>
+                  <th className="px-4 py-3.5 min-w-[180px]">{t("table.case", "เคส")}</th>
+                  <th className="px-4 py-3.5 min-w-[160px]">{t("table.equipment", "อุปกรณ์")}</th>
+                  <th className="px-4 py-3.5 min-w-[120px]">{t("table.status", "สถานะ")}</th>
+                  <th className="px-4 py-3.5 min-w-[110px]">{t("table.reportedDate", "รับแจ้ง")}</th>
+                  <th className="px-4 py-3.5 min-w-[130px]">{t("table.age", "อายุงาน")}</th>
+                  <th className="sticky right-0 z-20 px-4 py-3.5 text-right min-w-[100px] bg-slate-50 dark:bg-[#0f172a] shadow-[-1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[-1px_0_0_0_rgba(255,255,255,0.08)]">{t("table.actions", "จัดการ")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/90 dark:divide-white/10">

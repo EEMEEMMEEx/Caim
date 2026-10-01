@@ -142,7 +142,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
                   ? "กดเพื่อดึงข้อมูลล่าสุดจากฐานข้อมูลทันที"
                   : "Click to refresh latest data from database immediately"
               }
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-[#1e293b] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 shadow-xs transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-2 min-h-[44px] text-xs font-medium rounded-xl bg-white dark:bg-[#1e293b] hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 shadow-xs transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer touch-manipulation"
             >
               <RefreshCw
                 className={`size-3.5 ${isRefreshing ? "animate-spin text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400"}`}
@@ -574,7 +574,7 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
               </div>
 
               {/* 3 Summary Stat Boxes */}
-              <div className="mt-5 grid grid-cols-3 gap-3">
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Link
                   href="/tickets?stage=1&status=1"
                   className="rounded-xl border border-slate-200/70 dark:border-white/10 bg-slate-50/60 dark:bg-[#0f172a]/60 p-3.5 hover:bg-white dark:hover:bg-[#0f172a] hover:border-blue-300 dark:hover:border-blue-500/40 hover:shadow-card transition-all cursor-pointer group block"
@@ -705,8 +705,8 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
               </div>
 
               {/* Table */}
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="mt-4 overflow-x-auto scrollbar-subtle">
+                <table className="w-full text-left text-xs min-w-[480px]">
                   <thead>
                     <tr className="border-b border-slate-200/80 dark:border-white/10 text-[11px] text-slate-600 dark:text-slate-400">
                       <th className="pb-2.5 font-medium">ศูนย์บริการ</th>

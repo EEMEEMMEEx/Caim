@@ -84,9 +84,9 @@ export function LanguageSwitcher({ className = "", align = "right" }: LanguageSw
         aria-expanded={isOpen}
         aria-label={t("locale.switchLanguage", "เปลี่ยนภาษา")}
         title={t("locale.switchLanguage", "เปลี่ยนภาษา")}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700/60 bg-slate-900/80 text-slate-200 hover:bg-slate-800 transition-colors text-xs font-semibold shadow-2xs cursor-pointer active:scale-95"
+        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-all text-xs font-semibold shadow-2xs cursor-pointer active:scale-95 touch-manipulation"
       >
-        <Globe className="size-3.5 text-slate-400 group-hover:text-slate-200" />
+        <Globe className="size-4 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200" />
         <span className="font-mono tracking-wide">{activeOption.tag}</span>
       </button>
 

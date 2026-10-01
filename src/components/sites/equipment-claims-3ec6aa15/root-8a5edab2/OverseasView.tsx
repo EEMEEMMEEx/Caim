@@ -954,7 +954,7 @@ export function OverseasView() {
             <button
               type="button"
               onClick={() => setNewRmaModalOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#0c1a30] dark:bg-blue-600 hover:bg-[#1e293b] dark:hover:bg-blue-500 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0c1a30] dark:bg-blue-600 hover:bg-[#1e293b] dark:hover:bg-blue-500 h-10 px-4 min-h-[44px] min-w-[44px] text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer touch-manipulation"
             >
               <Plus className="size-4" />
               <span>เปิดใบส่งซ่อม</span>
@@ -1076,17 +1076,17 @@ export function OverseasView() {
             3. RMA DATA TABLE & SEGMENTED PROGRESS BARS
            ========================================================================= */}
         <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto scrollbar-subtle">
+            <table className="w-full text-left text-xs min-w-[760px]">
               <thead className="border-b border-slate-200/70 dark:border-white/10 bg-slate-50/90 dark:bg-[#0f172a] text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
                 <tr>
-                  <th className="px-5 py-3.5 font-medium">ใบ RMA / เคส</th>
-                  <th className="px-4 py-3.5 font-medium">อุปกรณ์</th>
-                  <th className="px-4 py-3.5 font-medium">ขั้นตอนปัจจุบัน</th>
-                  <th className="px-4 py-3.5 font-medium">เปิดใบ</th>
-                  <th className="px-4 py-3.5 font-medium">รวม</th>
-                  <th className="px-4 py-3.5 font-medium">บทปรับผู้ขาย</th>
-                  <th className="px-4 py-3.5 text-right font-medium"></th>
+                  <th className="sticky left-0 z-20 px-5 py-3.5 font-medium bg-slate-50 dark:bg-[#0f172a] shadow-[1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.08)]">ใบ RMA / เคส</th>
+                  <th className="px-4 py-3.5 font-medium min-w-[140px]">อุปกรณ์</th>
+                  <th className="px-4 py-3.5 font-medium min-w-[200px]">ขั้นตอนปัจจุบัน</th>
+                  <th className="px-4 py-3.5 font-medium min-w-[100px]">เปิดใบ</th>
+                  <th className="px-4 py-3.5 font-medium min-w-[110px]">รวม</th>
+                  <th className="px-4 py-3.5 font-medium min-w-[140px]">บทปรับผู้ขาย</th>
+                  <th className="sticky right-0 z-20 px-4 py-3.5 text-right font-medium min-w-[110px] bg-slate-50 dark:bg-[#0f172a] shadow-[-1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[-1px_0_0_0_rgba(255,255,255,0.08)]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/90 dark:divide-white/10">
@@ -1141,22 +1141,22 @@ export function OverseasView() {
                             : "hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
                         }`}
                       >
-                        {/* ใบ RMA / เคส */}
-                        <td className="px-5 py-3.5">
+                        {/* ใบ RMA / เคส (Sticky Left Column) */}
+                        <td className="sticky left-0 z-10 px-5 py-3.5 bg-white/95 dark:bg-[#1e293b] shadow-[1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.08)]">
                           <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">
                             {item.rmaNo}
                           </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-[140px] sm:max-w-[180px]" title={item.caseName}>
                             {item.caseName}
                           </p>
                         </td>
 
                         {/* อุปกรณ์ */}
                         <td className="px-4 py-3.5">
-                          <p className="font-mono text-xs text-slate-800 dark:text-slate-200">
+                          <p className="font-mono text-xs text-slate-800 dark:text-slate-200 truncate max-w-[130px] sm:max-w-none" title={`S/N: ${item.serialNo}`}>
                             {item.serialNo}
                           </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-[140px] sm:max-w-none" title={`${item.vendor} / ${item.model}`}>
                             {item.vendor} / {item.model}
                           </p>
                         </td>
@@ -1214,13 +1214,13 @@ export function OverseasView() {
                           )}
                         </td>
 
-                        {/* Action Links */}
-                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center gap-2">
+                        {/* Action Links (Sticky Right Column) */}
+                        <td className="sticky right-0 z-10 px-4 py-3.5 text-right whitespace-nowrap bg-white/95 dark:bg-[#1e293b] shadow-[-1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[-1px_0_0_0_rgba(255,255,255,0.08)]">
+                          <div className="inline-flex items-center gap-1">
                             <button
                               type="button"
                               onClick={() => setTimelineItem(item)}
-                              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-colors"
+                              className="rounded-lg p-2 sm:p-1.5 min-h-[38px] min-w-[38px] sm:min-h-8 sm:min-w-8 inline-flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-colors touch-manipulation"
                               title="ดูไทม์ไลน์กระบวนการ"
                               aria-label="ดูไทม์ไลน์"
                             >
@@ -1229,7 +1229,7 @@ export function OverseasView() {
                             <button
                               type="button"
                               onClick={() => setEditingItem({ ...item })}
-                              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                              className="rounded-lg p-2 sm:p-1.5 min-h-[38px] min-w-[38px] sm:min-h-8 sm:min-w-8 inline-flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors touch-manipulation"
                               title="แก้ไข"
                               aria-label="แก้ไข"
                             >
@@ -1238,7 +1238,7 @@ export function OverseasView() {
                             <button
                               type="button"
                               onClick={() => confirmDeleteItem(item)}
-                              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-600 dark:hover:text-red-400 cursor-pointer transition-colors"
+                              className="rounded-lg p-2 sm:p-1.5 min-h-[38px] min-w-[38px] sm:min-h-8 sm:min-w-8 inline-flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-600 dark:hover:text-red-400 cursor-pointer transition-colors touch-manipulation"
                               title="ลบใบส่งซ่อมนี้ถาวร"
                               aria-label="ลบ"
                             >

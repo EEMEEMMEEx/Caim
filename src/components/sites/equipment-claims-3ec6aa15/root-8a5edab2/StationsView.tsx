@@ -55,8 +55,8 @@ const StationTableRow = React.memo(function StationTableRow({
 }: StationTableRowProps) {
   return (
     <tr className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 transition-colors group">
-      {/* Index */}
-      <td className="py-3.5 px-4 text-center">
+      {/* Index (Sticky Left Column) */}
+      <td className="sticky left-0 z-10 py-3.5 px-4 text-center bg-white/95 dark:bg-[#1e293b] shadow-[1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.08)]">
         <span className="inline-flex size-6.5 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-mono font-semibold text-slate-500">
           {index}
         </span>
@@ -158,14 +158,14 @@ const StationTableRow = React.memo(function StationTableRow({
         </div>
       </td>
 
-      {/* Actions */}
-      <td className="py-3.5 px-4 text-right">
+      {/* Actions (Sticky Right Column) */}
+      <td className="sticky right-0 z-10 py-3.5 px-4 text-right bg-white/95 dark:bg-[#1e293b] shadow-[-1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[-1px_0_0_0_rgba(255,255,255,0.08)]">
         <div className="flex items-center justify-end gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onViewDetail(item)}
-            className="size-7.5 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-all shadow-2xs border border-transparent hover:border-blue-200"
+            className="p-2 sm:p-1.5 min-h-[38px] min-w-[38px] sm:min-h-8 sm:min-w-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-all shadow-2xs border border-transparent hover:border-blue-200 touch-manipulation cursor-pointer"
             title="ดูรายละเอียด"
           >
             <Eye className="size-3.5" />
@@ -174,7 +174,7 @@ const StationTableRow = React.memo(function StationTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onEdit(item)}
-            className="size-7.5 p-0 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 active:scale-95 transition-all shadow-2xs border border-transparent hover:border-amber-200"
+            className="p-2 sm:p-1.5 min-h-[38px] min-w-[38px] sm:min-h-8 sm:min-w-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 active:scale-95 transition-all shadow-2xs border border-transparent hover:border-amber-200 touch-manipulation cursor-pointer"
             title="แก้ไขข้อมูล"
           >
             <Edit2 className="size-3.5" />
@@ -183,7 +183,7 @@ const StationTableRow = React.memo(function StationTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onDelete(item)}
-            className="size-7.5 p-0 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all shadow-2xs border border-transparent hover:border-rose-200"
+            className="p-2 sm:p-1.5 min-h-[38px] min-w-[38px] sm:min-h-8 sm:min-w-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all shadow-2xs border border-transparent hover:border-rose-200 touch-manipulation cursor-pointer"
             title="ลบสถานี"
           >
             <Trash2 className="size-3.5" />
@@ -592,12 +592,12 @@ export function StationsView() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handleExportCSV}
-              className="h-9 gap-1.5 border-border bg-card text-xs font-medium hover:bg-muted text-foreground"
+              className="h-10 px-3.5 min-h-[44px] min-w-[44px] rounded-xl gap-1.5 border-border bg-card text-xs font-semibold hover:bg-muted text-foreground touch-manipulation cursor-pointer"
             >
               <Download className="size-3.5" />
               ส่งออก CSV
@@ -605,7 +605,7 @@ export function StationsView() {
             <Button
               size="sm"
               onClick={openAddModal}
-              className="h-9 gap-1.5 bg-brand text-white hover:bg-brand/90 text-xs font-medium shadow-xs"
+              className="h-10 px-3.5 min-h-[44px] min-w-[44px] rounded-xl gap-1.5 bg-brand text-white hover:bg-brand/90 text-xs font-semibold shadow-xs touch-manipulation cursor-pointer"
             >
               <Plus className="size-3.5" />
               เพิ่มสถานีใหม่
@@ -613,7 +613,7 @@ export function StationsView() {
             <Link href="/tickets/new">
               <Button
                 size="sm"
-                className="h-9 gap-1.5 bg-brand-navy text-white hover:bg-brand-navy/90 text-xs font-medium shadow-xs"
+                className="h-10 px-3.5 min-h-[44px] min-w-[44px] rounded-xl gap-1.5 bg-brand-navy text-white hover:bg-brand-navy/90 text-xs font-semibold shadow-xs touch-manipulation cursor-pointer"
               >
                 <Plus className="size-3.5" />
                 สร้างใบแจ้งเคลม
@@ -623,7 +623,7 @@ export function StationsView() {
         </div>
 
         {/* 4 Stat Overview Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs p-4.5 shadow-card hover:shadow-card-hover transition-all duration-200 flex items-center justify-between">
             <div>
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">จุดติดตั้งทั้งหมด</span>
@@ -763,18 +763,18 @@ export function StationsView() {
 
         {/* Stations Table */}
         <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto scrollbar-subtle">
+            <table className="w-full text-left text-xs border-collapse min-w-[760px]">
               <thead>
                 <tr className="border-b border-slate-200/70 dark:border-white/10 bg-slate-50/90 dark:bg-[#0f172a] text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
-                  <th className="py-3 px-4 w-16 text-center">ลำดับ</th>
+                  <th className="sticky left-0 z-20 py-3 px-4 w-16 text-center bg-slate-50 dark:bg-[#0f172a] shadow-[1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.08)]">ลำดับ</th>
                   <th className="py-3 px-4 w-28">รหัสสถานี</th>
                   <th className="py-3 px-4 min-w-56">ชื่อสถานี / สถานที่ติดตั้ง</th>
                   <th className="py-3 px-4 text-center">ความสูงเสา</th>
                   <th className="py-3 px-4 min-w-36">ตำบล / อำเภอ</th>
                   <th className="py-3 px-4 min-w-36">จังหวัด / เขต</th>
                   <th className="py-3 px-4 min-w-36">พิกัด GPS</th>
-                  <th className="py-3 px-4 text-right w-36">จัดการ</th>
+                  <th className="sticky right-0 z-20 py-3 px-4 text-right w-36 bg-slate-50 dark:bg-[#0f172a] shadow-[-1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[-1px_0_0_0_rgba(255,255,255,0.08)]">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

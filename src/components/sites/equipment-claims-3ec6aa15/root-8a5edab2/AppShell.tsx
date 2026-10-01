@@ -108,6 +108,22 @@ export function AppShell({ children }: AppShellProps) {
     setSession(getCurrentSession())
   }, [])
 
+  // Auto-adapt sidebar state to device viewport (tablet icon-only vs desktop full)
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false)
+      } else if (window.innerWidth < 1024) {
+        setSidebarOpen(false) // tablet: collapsed icon-only sidebar
+      } else {
+        setSidebarOpen(true) // desktop: expanded sidebar
+      }
+    }
+    handleResize()
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
   // Auto close mobile drawer on navigation
   React.useEffect(() => {
     setMobileMenuOpen(false)
@@ -140,16 +156,16 @@ export function AppShell({ children }: AppShellProps) {
       {/* Mobile Drawer Backdrop */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 lg:hidden backdrop-blur-xs animate-in fade-in"
+          className="fixed inset-0 z-50 bg-black/60 md:hidden backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
-      {/* Sidebar - Desktop and Mobile Drawer (Surface: #0f172a, Translucent Border) */}
+      {/* Sidebar - Desktop, Tablet Icon-Only and Mobile Drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 border-r border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#0f172a] backdrop-blur-xl transition-all duration-200 ${
-          mobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
-        } ${sidebarOpen ? "lg:w-64" : "lg:w-16"}`}
+        className={`fixed inset-y-0 left-0 z-50 border-r border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#0f172a] backdrop-blur-xl transition-all duration-300 ease-in-out ${
+          mobileMenuOpen ? "translate-x-0 w-64 shadow-2xl" : "-translate-x-full md:translate-x-0"
+        } ${sidebarOpen ? "md:w-64" : "md:w-16"}`}
       >
         <div className="flex h-full flex-col">
           {/* Logo Header */}
@@ -157,7 +173,7 @@ export function AppShell({ children }: AppShellProps) {
             <Link
               href="/dashboard"
               className={`flex items-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
-                !sidebarOpen ? "lg:justify-center lg:w-full" : ""
+                !sidebarOpen ? "md:justify-center md:w-full" : ""
               }`}
               aria-label="Process Claim Home"
             >
@@ -168,7 +184,7 @@ export function AppShell({ children }: AppShellProps) {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden transition-colors"
+                className="rounded-xl p-2.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
                 aria-label="ปิดเมนู"
               >
                 <X className="size-5" />
@@ -282,17 +298,17 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* Main Wrapper */}
       <div
-        className={`flex flex-1 flex-col transition-all duration-200 ${
-          sidebarOpen ? "lg:pl-64" : "lg:pl-16"
-        }`}
+        className={`flex flex-1 flex-col min-w-0 transition-all duration-300 ease-in-out ${
+          sidebarOpen ? "md:pl-64" : "md:pl-16"
+        } pl-0`}
       >
         {/* Sticky Top Header (Surface: #0f172a/85 with translucent border) */}
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-slate-200/70 dark:border-white/10 bg-white/80 dark:bg-[#0f172a]/85 backdrop-blur-md px-4 shadow-2xs transition-colors duration-200">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 sm:gap-3 border-b border-slate-200/70 dark:border-white/10 bg-white/80 dark:bg-[#0f172a]/85 backdrop-blur-md px-3 sm:px-4 lg:px-6 shadow-2xs transition-colors duration-200">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setMobileMenuOpen(true)}
-            className="size-8.5 lg:hidden rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-300"
+            className="size-10 md:hidden rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-300 min-h-[44px] min-w-[44px] touch-manipulation cursor-pointer"
             aria-label={t("nav.toggleSidebarOpen", "เปิดเมนู")}
           >
             <Menu className="size-5 text-slate-600 dark:text-slate-300" />
@@ -302,7 +318,7 @@ export function AppShell({ children }: AppShellProps) {
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen((v) => !v)}
-            className="size-8.5 hidden lg:inline-flex rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+            className="size-10 hidden md:inline-flex rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 min-h-[44px] min-w-[44px] touch-manipulation cursor-pointer"
             aria-label={sidebarOpen ? t("nav.toggleSidebarCollapse", "ยุบเมนู") : t("nav.toggleSidebarExpand", "ขยายเมนู")}
           >
             {sidebarOpen ? (
@@ -349,7 +365,7 @@ export function AppShell({ children }: AppShellProps) {
             <button
               type="button"
               onClick={toggleTheme}
-              className="inline-flex size-8.5 items-center justify-center rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-800/80 text-slate-600 dark:text-amber-300 shadow-2xs hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-all duration-200 active:scale-95 cursor-pointer"
+              className="inline-flex size-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-800/80 text-slate-600 dark:text-amber-300 shadow-2xs hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-all duration-200 active:scale-95 cursor-pointer touch-manipulation"
               aria-label={theme === "dark" ? t("nav.themeLight", "เปลี่ยนเป็นโหมดสว่าง (Light Mode)") : t("nav.themeDark", "เปลี่ยนเป็นโหมดมืด (Dark Mode)")}
               title={theme === "dark" ? t("nav.themeLightTooltip", "โหมดมืด (คลิกเพื่อเปลี่ยนเป็นโหมดสว่าง)") : t("nav.themeDarkTooltip", "โหมดสว่าง (คลิกเพื่อเปลี่ยนเป็นโหมดมืด)")}
             >

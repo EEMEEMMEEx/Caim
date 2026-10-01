@@ -50,17 +50,17 @@ const AssetTableRow = React.memo(function AssetTableRow({
   onDelete,
 }: AssetTableRowProps) {
   return (
-    <tr className="hover:bg-slate-50/80 transition-colors group">
-      <td className="py-3.5 px-4 text-center font-mono text-slate-400">
+    <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group">
+      <td className="sticky left-0 z-10 py-3.5 px-4 text-center font-mono text-slate-400 bg-white/95 dark:bg-[#1e293b] shadow-[1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.08)]">
         {index}
       </td>
       <td className="py-3.5 px-4">
         <div className="flex items-center gap-1.5">
-          <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{item.serial}</span>
+          <span className="font-mono font-bold text-slate-800 dark:text-slate-200 truncate max-w-[150px] sm:max-w-none" title={`S/N: ${item.serial}`}>{item.serial}</span>
           <button
             type="button"
             onClick={() => onCopy(item.serial)}
-            className="text-slate-400 hover:text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded"
+            className="text-slate-400 hover:text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg touch-manipulation cursor-pointer"
             title="คัดลอก S/N"
           >
             {isCopied ? (
@@ -72,31 +72,33 @@ const AssetTableRow = React.memo(function AssetTableRow({
         </div>
       </td>
       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">
-        {item.name || "-"}
+        <span className="truncate max-w-[160px] sm:max-w-none block" title={item.name || "-"}>{item.name || "-"}</span>
       </td>
       <td className="py-3.5 px-4">
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 ring-1 ring-blue-600/20 dark:bg-blue-950/50 dark:text-blue-300 shadow-2xs">
           {item.vendor}
         </span>
       </td>
-      <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-300">{item.model}</td>
+      <td className="py-3.5 px-4 font-medium text-slate-700 dark:text-slate-300">
+        <span className="truncate max-w-[120px] sm:max-w-none block" title={item.model}>{item.model}</span>
+      </td>
       <td className="py-3.5 px-4 text-slate-500 max-w-xs">
         <span className="line-clamp-2">{item.category}</span>
       </td>
-      <td className="py-3.5 px-4 text-right">
+      <td className="sticky right-0 z-10 py-3.5 px-4 text-right bg-white/95 dark:bg-[#1e293b] shadow-[-1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[-1px_0_0_0_rgba(255,255,255,0.08)]">
         <div className="flex items-center justify-end gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onDetail(item)}
-            className="size-7 p-0 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all"
+            className="p-2 sm:p-1.5 min-h-[38px] min-w-[38px] sm:min-h-8 sm:min-w-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all touch-manipulation cursor-pointer"
             title="ดูรายละเอียด"
           >
             <Eye className="size-3.5" />
           </Button>
           <Link
             href={`/tickets/new?serial=${encodeURIComponent(item.serial)}`}
-            className="inline-flex items-center justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 size-7 rounded-lg active:scale-95 transition-all"
+            className="p-2 sm:p-1.5 min-h-[38px] min-w-[38px] sm:min-h-8 sm:min-w-8 inline-flex items-center justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg active:scale-95 transition-all touch-manipulation cursor-pointer"
             title="เปิดเคสเคลม"
           >
             <Wrench className="size-3.5" />
@@ -105,7 +107,7 @@ const AssetTableRow = React.memo(function AssetTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onEdit(item)}
-            className="size-7 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-all"
+            className="p-2 sm:p-1.5 min-h-[38px] min-w-[38px] sm:min-h-8 sm:min-w-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-all touch-manipulation cursor-pointer"
             title="แก้ไขข้อมูล"
           >
             <Edit2 className="size-3.5" />
@@ -114,7 +116,7 @@ const AssetTableRow = React.memo(function AssetTableRow({
             variant="ghost"
             size="sm"
             onClick={() => onDelete(item)}
-            className="size-7 p-0 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all"
+            className="p-2 sm:p-1.5 min-h-[38px] min-w-[38px] sm:min-h-8 sm:min-w-8 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all touch-manipulation cursor-pointer"
             title="ลบอุปกรณ์"
           >
             <Trash2 className="size-3.5" />
@@ -399,12 +401,12 @@ export function AssetsView() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handleExportCSV}
-              className="h-9 gap-1.5 border-border bg-card text-xs font-medium hover:bg-muted text-foreground"
+              className="h-10 px-3.5 min-h-[44px] min-w-[44px] rounded-xl gap-1.5 border-border bg-card text-xs font-semibold hover:bg-muted text-foreground touch-manipulation cursor-pointer"
             >
               <Download className="size-3.5" />
               ส่งออก CSV
@@ -412,7 +414,7 @@ export function AssetsView() {
             <Button
               size="sm"
               onClick={openAddModal}
-              className="h-9 gap-1.5 bg-brand text-white hover:bg-brand/90 text-xs font-medium shadow-xs"
+              className="h-10 px-3.5 min-h-[44px] min-w-[44px] rounded-xl gap-1.5 bg-brand text-white hover:bg-brand/90 text-xs font-semibold shadow-xs touch-manipulation cursor-pointer"
             >
               <Plus className="size-3.5" />
               เพิ่มอุปกรณ์ใหม่
@@ -420,7 +422,7 @@ export function AssetsView() {
             <Link href="/tickets/new">
               <Button
                 size="sm"
-                className="h-9 gap-1.5 bg-brand-navy text-white hover:bg-brand-navy/90 text-xs font-medium shadow-xs"
+                className="h-10 px-3.5 min-h-[44px] min-w-[44px] rounded-xl gap-1.5 bg-brand-navy text-white hover:bg-brand-navy/90 text-xs font-semibold shadow-xs touch-manipulation cursor-pointer"
               >
                 <Wrench className="size-3.5" />
                 เปิดเคสใหม่
@@ -503,17 +505,17 @@ export function AssetsView() {
 
         {/* Table */}
         <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto scrollbar-subtle">
+            <table className="w-full text-left text-xs border-collapse min-w-[720px]">
               <thead>
                 <tr className="border-b border-slate-200/70 dark:border-white/10 bg-slate-50/90 dark:bg-[#0f172a] text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
-                  <th className="py-3.5 px-4 w-16 text-center">{t("table.no", "ลำดับ")}</th>
+                  <th className="sticky left-0 z-20 py-3.5 px-4 w-16 text-center bg-slate-50 dark:bg-[#0f172a] shadow-[1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.08)]">{t("table.no", "ลำดับ")}</th>
                   <th className="py-3.5 px-4 min-w-40">{t("table.serialNumber", "Serial Number")}</th>
                   <th className="py-3.5 px-4 min-w-44">{t("table.equipment", "อุปกรณ์")}</th>
                   <th className="py-3.5 px-4 w-28">{locale === "th" ? "ยี่ห้อ" : "Brand"}</th>
                   <th className="py-3.5 px-4 min-w-32">{locale === "th" ? "รุ่น" : "Model"}</th>
                   <th className="py-3.5 px-4 min-w-56">{t("table.category", "หมวดหมู่")}</th>
-                  <th className="py-3.5 px-4 text-right w-36">{t("table.actions", "จัดการ")}</th>
+                  <th className="sticky right-0 z-20 py-3.5 px-4 text-right w-36 bg-slate-50 dark:bg-[#0f172a] shadow-[-1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[-1px_0_0_0_rgba(255,255,255,0.08)]">{t("table.actions", "จัดการ")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
