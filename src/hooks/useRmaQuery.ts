@@ -16,6 +16,8 @@ export interface RmaItem {
   totalStages: number
   currentStageName: string
   stageWaitDays: string
+  currentStageStartedAt?: string
+  currentStageCompletedAt?: string
   openDate: string
   totalDays: string
   statusBadge: "in_progress" | "returned"

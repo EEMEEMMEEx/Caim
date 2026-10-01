@@ -35,7 +35,12 @@ import {
   calculateRmaMetrics,
   calculateStageDuration,
   calculateCumulativeStagesDays,
+  RMA_STAGES_CONFIG,
+  type RmaStageConfig,
 } from "@/lib/utils/rmaDuration"
+import { StageProgressBarCell } from "./StageProgressBarCell"
+
+export { RMA_STAGES_CONFIG, type RmaStageConfig }
 
 interface ClaimCaseOption {
   id: string
@@ -46,25 +51,6 @@ interface ClaimCaseOption {
   model: string
   status: string
 }
-
-export interface RmaStageConfig {
-  stageNumber: number
-  name: string
-  shortName: string
-  standardDays: number
-  hasVendorPenalty?: boolean
-}
-
-export const RMA_STAGES_CONFIG: RmaStageConfig[] = [
-  { stageNumber: 1, name: "ระบบใบ RMA", shortName: "เปิดใบ RMA", standardDays: 2 },
-  { stageNumber: 2, name: "Forth (ส่งตรวจสอบภายใน)", shortName: "Forth ตรวจ", standardDays: 7 },
-  { stageNumber: 3, name: "กสทช. (ตรวจสอบ / อนุมัติ)", shortName: "กสทช. อนุมัติ", standardDays: 5 },
-  { stageNumber: 4, name: "ส่งออก", shortName: "ส่งออก", standardDays: 3 },
-  { stageNumber: 5, name: "Hytera / Huawei Hongkong (ถึงศูนย์ต่างประเทศ)", shortName: "ถึงศูนย์ ตปท.", standardDays: 21 },
-  { stageNumber: 6, name: "จีน (เข้ากระบวนการซ่อม)", shortName: "จีน — ซ่อม", standardDays: 14, hasVendorPenalty: true },
-  { stageNumber: 7, name: "ส่งกลับเครื่องบิน", shortName: "ขนส่งกลับ", standardDays: 3 },
-  { stageNumber: 8, name: "เคลียร์ของออก (ศุลกากรขาเข้า)", shortName: "ศุลกากรขาเข้า", standardDays: 5 },
-]
 
 export interface StageHistoryItem {
   stageNumber: number
@@ -458,14 +444,56 @@ export function OverseasView() {
       const nextStageNum = Math.min(8, currentStageNum + 1)
       const nextStageObj = RMA_STAGES_CONFIG.find((s) => s.stageNumber === nextStageNum)
       const isCompleted = currentStageNum >= 8
+      const transitionTime = actualDateTime || toDateTimeLocalString(new Date())
+
+      // Update retroactiveStages for timeline tracking and lock previous stage duration
+      const updatedStages: StageHistoryItem[] = (
+        retroactiveStages.length === 8 ? retroactiveStages : []
+      ).map((s) => {
+        if (s.stageNumber === currentStageNum) {
+          // Finalize current stage: lock duration to elapsed days between startDate and transitionTime
+          const sDate = s.startDate || transitionTime
+          const eDate = transitionTime
+          const duration = calculateStageDuration({
+            startDate: sDate,
+            endDate: eDate,
+            status: "completed",
+            standardDays: s.standardDays,
+          })
+          return {
+            ...s,
+            status: "completed" as const,
+            endDate: eDate,
+            actualDays: duration.elapsedDays,
+          }
+        }
+        if (!isCompleted && s.stageNumber === nextStageNum) {
+          // Initialize new active stage: reset duration counter to count from day 0
+          return {
+            ...s,
+            status: "active" as const,
+            startDate: transitionTime,
+            endDate: "",
+            actualDays: 0,
+          }
+        }
+        return s
+      })
+
+      // If completing at stage 8, ensure stage 8 is locked to its elapsed days
+      const stage8 = updatedStages.find((s) => s.stageNumber === 8)
+      const stage8LockedDays = stage8?.actualDays || 0
 
       const updates: Partial<RmaItem> & { id: string } = {
         id: timelineItem.id,
         currentStageNumber: nextStageNum,
         currentStageName: nextStageObj?.name || "ของกลับถึงแล้ว (เสร็จสิ้น)",
-        stageWaitDays: "0 วัน",
+        currentStageStartedAt: isCompleted ? (stage8?.startDate || transitionTime) : transitionTime,
+        currentStageCompletedAt: isCompleted ? transitionTime : undefined,
+        stageWaitDays: isCompleted ? `${stage8LockedDays} วัน` : "0 วัน",
         statusBadge: isCompleted ? "returned" : "in_progress",
         statusBadgeText: isCompleted ? "ของกลับถึงแล้ว" : "กำลังดำเนินการ",
+        stageHistory: updatedStages.length === 8 ? updatedStages : timelineItem.stageHistory,
       }
 
       const res = await updateRma(updates)
@@ -477,6 +505,11 @@ export function OverseasView() {
             : `อัปเดตสถานะเป็น "${nextStageObj?.shortName}" (บันทึกเวลา: ${formattedDate})`
         )
         setTimelineItem((prev) => (prev ? { ...prev, ...updates } : null))
+        if (updatedStages.length === 8) {
+          setRetroactiveStages(updatedStages)
+          setStagesSnapshot(JSON.parse(JSON.stringify(updatedStages)))
+        }
+        await refetchRma()
       } else {
         showToast(res.error || "เกิดข้อผิดพลาดในการอัปเดตขั้นตอน")
       }
@@ -521,12 +554,17 @@ export function OverseasView() {
       const penaltyStandardStr =
         chinaStage?.status === "completed" ? "จาก 14 วัน · ซ่อมเสร็จแล้ว" : "จาก 14 วัน"
 
+      const stage8Item = retroactiveStages.find((s) => s.stageNumber === 8)
       const updates: Partial<RmaItem> & { id: string } = {
         id: timelineItem.id,
         currentStageNumber: effectiveStageNum,
         currentStageName: stageConfig?.name || timelineItem.currentStageName,
+        currentStageStartedAt: activeStage?.startDate || (isCompleted ? stage8Item?.startDate : undefined),
+        currentStageCompletedAt: isCompleted ? (stage8Item?.endDate || activeStage?.endDate) : undefined,
         totalDays: `${totalRecomputedDays} วัน`,
-        stageWaitDays: `${activeStage?.actualDays || 0} วัน`,
+        stageWaitDays: isCompleted
+          ? `${stage8Item?.actualDays || 0} วัน`
+          : `${activeStage?.actualDays || 0} วัน`,
         statusBadge: isCompleted ? "returned" : "in_progress",
         statusBadgeText: isCompleted ? "ของกลับถึงแล้ว" : "กำลังดำเนินการ",
         penaltyDays: penaltyDaysStr,
@@ -799,7 +837,8 @@ export function OverseasView() {
       currentStageNumber: 1,
       totalStages: 8,
       currentStageName: "1. ระบบใบ RMA",
-      stageWaitDays: "ค้างมา 0 วัน",
+      stageWaitDays: "0 วัน",
+      currentStageStartedAt: rmaOpenDate,
       openDate: rmaOpenDate,
       totalDays: initialMetrics.total.text,
       statusBadge: initialMetrics.total.statusBadge,
@@ -826,6 +865,7 @@ export function OverseasView() {
       totalStages: newItem.totalStages,
       currentStageName: newItem.currentStageName,
       stageWaitDays: newItem.stageWaitDays,
+      currentStageStartedAt: newItem.currentStageStartedAt,
       openDate: newItem.openDate,
       totalDays: newItem.totalDays,
       penaltyDays: newItem.penaltyDays,
@@ -1131,39 +1171,7 @@ export function OverseasView() {
                         </td>
 
                         {/* ขั้นตอนปัจจุบัน (Segmented Progress Bars) */}
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1">
-                            {Array.from({ length: item.totalStages }).map((_, idx) => {
-                              const step = idx + 1
-                              let color = "bg-slate-200 dark:bg-slate-700"
-                              if (step < item.currentStageNumber) {
-                                color = "bg-emerald-500"
-                              } else if (step === item.currentStageNumber) {
-                                color =
-                                   item.currentStageNumber === item.totalStages
-                                    ? "bg-emerald-500"
-                                    : "bg-blue-600"
-                              }
-                              return (
-                                <span
-                                  key={idx}
-                                  className={`h-1.5 w-3.5 rounded-full ${color}`}
-                                />
-                              )
-                            })}
-                            <span className="ml-1.5 text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                              {item.currentStageNumber}/{item.totalStages}
-                            </span>
-                          </div>
-                          <div className="mt-1.5">
-                            <p className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
-                              {item.currentStageName}
-                            </p>
-                            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                              {item.stageWaitDays}
-                            </p>
-                          </div>
-                        </td>
+                        <StageProgressBarCell item={item} />
 
                         {/* เปิดใบ */}
                         <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap">

@@ -112,6 +112,8 @@ export interface RmaDocument {
   totalStages?: number
   currentStageName?: string
   stageWaitDays?: string
+  currentStageStartedAt?: string
+  currentStageCompletedAt?: string
   openDate?: string
   sentDate?: string
   trackNo?: string

@@ -9,14 +9,36 @@ import type { StageHistoryRecord } from "@/types/database"
 export const VENDOR_PENALTY_STANDARD_DAYS = 14
 export const VENDOR_PENALTY_STAGE_NUMBER = 6 // 6. จีน (เข้ากระบวนการซ่อม)
 
+export interface RmaStageConfig {
+  stageNumber: number
+  name: string
+  shortName: string
+  standardDays: number
+  hasVendorPenalty?: boolean
+}
+
+export const RMA_STAGES_CONFIG: RmaStageConfig[] = [
+  { stageNumber: 1, name: "ระบบใบ RMA", shortName: "เปิดใบ RMA", standardDays: 2 },
+  { stageNumber: 2, name: "Forth (ส่งตรวจสอบภายใน)", shortName: "Forth ตรวจ", standardDays: 7 },
+  { stageNumber: 3, name: "กสทช. (ตรวจสอบ / อนุมัติ)", shortName: "กสทช. อนุมัติ", standardDays: 5 },
+  { stageNumber: 4, name: "ส่งออก", shortName: "ส่งออก", standardDays: 3 },
+  { stageNumber: 5, name: "Hytera / Huawei Hongkong (ถึงศูนย์ต่างประเทศ)", shortName: "ถึงศูนย์ ตปท.", standardDays: 21 },
+  { stageNumber: 6, name: "จีน (เข้ากระบวนการซ่อม)", shortName: "จีน — ซ่อม", standardDays: 14, hasVendorPenalty: true },
+  { stageNumber: 7, name: "ส่งกลับเครื่องบิน", shortName: "ขนส่งกลับ", standardDays: 3 },
+  { stageNumber: 8, name: "เคลียร์ของออก (ศุลกากรขาเข้า)", shortName: "ศุลกากรขาเข้า", standardDays: 5 },
+]
+
 export interface RmaCalculationItem {
   id?: string
   openDate?: string | null
   createdAt?: string | null
   updatedAt?: string | null
   currentStageNumber?: number | null
+  totalStages?: number | null
   currentStageName?: string | null
   stageWaitDays?: string | null
+  currentStageStartedAt?: string | null
+  currentStageCompletedAt?: string | null
   status?: string | null
   statusBadge?: "in_progress" | "returned" | null
   statusBadgeText?: string | null
@@ -411,3 +433,131 @@ export function calculateCumulativeStagesDays(
     .filter((s) => s.status === "completed" || s.status === "active")
     .reduce((sum, s) => sum + (Number(s.actualDays) || 0), 0)
 }
+
+export interface CurrentStageDurationResult {
+  days: number
+  text: string
+  isFinalized: boolean
+  stageNumber: number
+  stageName: string
+  startedAt: Date | null
+  completedAt: Date | null
+}
+
+/**
+ * 6. Dynamic Current-Stage Duration Calculation for Overseas Tracking Progress Bar
+ * - Calculates strictly the elapsed days within the active ongoing step itself:
+ *   (currentDate - currentStepStartedAt)
+ * - Excludes cumulative total case age or durations from prior stages.
+ * - If the stage is finalized or closed, locks duration to the total elapsed days
+ *   spent between entry and completion timestamps.
+ * - On transition to a new stage, resets duration counter to count from day 0/1.
+ * - Formats localized string template: '{days} วัน'
+ */
+export function calculateCurrentStageDuration(
+  item: RmaCalculationItem,
+  currentDateInput: Date = new Date()
+): CurrentStageDurationResult {
+  const currentMidnight = toLocalMidnight(currentDateInput) || new Date()
+  const stageNumber = Math.max(1, Math.min(8, item.currentStageNumber ?? 1))
+  const stageConfig = RMA_STAGES_CONFIG.find((s) => s.stageNumber === stageNumber)
+
+  // Resolve clean stage name without numerical prefixes like "6. "
+  let stageName = stageConfig?.name || item.currentStageName || `ขั้นตอนที่ ${stageNumber}`
+  if (item.currentStageName) {
+    const trimmed = item.currentStageName.replace(/^\d+\.\s*/, "").trim()
+    if (trimmed) {
+      if (stageConfig && (trimmed === stageConfig.shortName || trimmed === stageConfig.name)) {
+        stageName = stageConfig.name
+      } else {
+        stageName = trimmed
+      }
+    }
+  }
+
+  // Determine if the RMA case or stage is finalized/closed
+  const isFinalized =
+    item.statusBadge === "returned" ||
+    item.status === "returned" ||
+    item.status === "completed" ||
+    item.status === "เสร็จสิ้น" ||
+    item.statusBadgeText === "ของกลับถึงแล้ว" ||
+    Boolean(item.currentStageCompletedAt)
+
+  let startedAt: Date | null = null
+  let completedAt: Date | null = null
+  let historyStageActualDays: number | null = null
+
+  // 1. Direct explicit stage timestamps
+  if (item.currentStageStartedAt) {
+    startedAt = parseRmaCalendarDate(item.currentStageStartedAt)
+  }
+  if (item.currentStageCompletedAt) {
+    completedAt = parseRmaCalendarDate(item.currentStageCompletedAt)
+  }
+
+  // 2. Stage history inspection if present
+  if (Array.isArray(item.stageHistory) && item.stageHistory.length > 0) {
+    const stageRec = item.stageHistory.find((s) => s.stageNumber === stageNumber)
+    if (stageRec) {
+      if (stageRec.startDate && !startedAt) {
+        startedAt = parseRmaCalendarDate(stageRec.startDate)
+      }
+      if (stageRec.endDate && !completedAt) {
+        completedAt = parseRmaCalendarDate(stageRec.endDate)
+      }
+      if (typeof stageRec.actualDays === "number") {
+        historyStageActualDays = stageRec.actualDays
+      }
+    }
+  }
+
+  // 3. Fallback for stage 1 if startedAt is not yet set
+  if (!startedAt && stageNumber === 1) {
+    startedAt = parseRmaCalendarDate(item.openDate) || parseRmaCalendarDate(item.createdAt)
+  }
+
+  let days = 0
+
+  if (isFinalized) {
+    // Finalized/closed stage: lock duration to elapsed days between stage entry and completion
+    if (completedAt && startedAt) {
+      const diffMs = completedAt.getTime() - startedAt.getTime()
+      days = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
+    } else if (historyStageActualDays !== null && historyStageActualDays > 0) {
+      days = historyStageActualDays
+    } else if (item.stageWaitDays) {
+      days = extractDaysFromString(item.stageWaitDays)
+    } else if (startedAt) {
+      const fallbackEnd = parseRmaCalendarDate(item.updatedAt) || currentMidnight
+      const diffMs = fallbackEnd.getTime() - startedAt.getTime()
+      days = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
+    } else {
+      days = 0
+    }
+  } else {
+    // Active ongoing stage: calculate strictly elapsed days within this active step
+    // strictly currentDate - currentStepStartedAt
+    if (startedAt) {
+      const diffMs = currentMidnight.getTime() - startedAt.getTime()
+      days = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
+    } else if (historyStageActualDays !== null && historyStageActualDays > 0) {
+      days = historyStageActualDays
+    } else if (item.stageWaitDays) {
+      days = extractDaysFromString(item.stageWaitDays)
+    } else {
+      days = 0
+    }
+  }
+
+  return {
+    days,
+    text: `${days} วัน`,
+    isFinalized,
+    stageNumber,
+    stageName,
+    startedAt,
+    completedAt,
+  }
+}
+

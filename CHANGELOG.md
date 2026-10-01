@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.4] - 2026-10-01
+
+### Added
+- **Dynamic Current-Stage Duration Calculation Utility (`rmaDuration.ts`)**:
+  - Implemented `calculateCurrentStageDuration`: Strictly computes elapsed days within the active ongoing step itself (`currentDate - currentStepStartedAt`), completely isolated from cumulative total case age or durations from prior steps.
+  - Added stage-transition reactivity: Automatically resets duration counter to day 0 upon transitioning to a new stage with the newly recorded entry timestamp.
+  - Finalized/closed stage duration locking: For completed or returned cases, locks stage duration to the total elapsed days between stage entry and completion timestamps.
+  - Re-exported `RMA_STAGES_CONFIG` and added `currentStageStartedAt` and `currentStageCompletedAt` database/type interfaces.
+- **Dedicated Overseas Tracking Segmented Progress Bar (`StageProgressBarCell.tsx`)**:
+  - Modular table cell component rendering segmented step pills (emerald for completed, blue for current ongoing, slate for pending).
+  - Clean stage label (e.g., "จีน (เข้ากระบวนการซ่อม)") and localized subtext (e.g., "4 วัน") styled in `text-xs text-slate-400 font-medium mt-0.5`.
+
+### Changed
+- **Overseas Claim Tracking Table (`OverseasView.tsx`)**:
+  - Replaced inline stage progress markup with `<StageProgressBarCell item={item} />`.
+  - Updated stage transition workflow (`handleAdvanceStage` and `handleSaveRetroactive`) to record active entry timestamps and lock previous step durations upon advancement.
+- **RMA Backend API & Data (`/api/rma`, `rma.json`)**:
+  - Enriched API response with dynamic active stage wait days and stage timestamp persistence.
+
 ## [0.29.3] - 2026-09-29
 
 ### Added

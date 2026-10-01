@@ -8,15 +8,99 @@
     "model": "DIB-R5 outdoor",
     "currentStageNumber": 6,
     "totalStages": 8,
-    "currentStageName": "6. จีน — ซ่อม",
-    "stageWaitDays": "ค้างมา 0 วัน",
+    "currentStageName": "จีน (เข้ากระบวนการซ่อม)",
+    "currentStageStartedAt": "2026-09-27T09:00:00.000Z",
+    "stageWaitDays": "4 วัน",
     "openDate": "11 ก.ย. 2569",
-    "totalDays": "11 วัน",
+    "totalDays": "20 วัน",
     "statusBadge": "in_progress",
     "statusBadgeText": "กำลังดำเนินการ",
-    "penaltyDays": "0 วัน",
+    "penaltyDays": "4 วัน",
     "penaltyStandard": "จาก 14 วัน",
-    "isOverduePenalty": false
+    "isOverduePenalty": false,
+    "stageHistory": [
+      {
+        "stageNumber": 1,
+        "name": "ระบบใบ RMA",
+        "shortName": "เปิดใบ RMA",
+        "standardDays": 2,
+        "startDate": "2026-09-11T09:00:00.000Z",
+        "endDate": "2026-09-13T09:00:00.000Z",
+        "actualDays": 2,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 2,
+        "name": "Forth (ส่งตรวจสอบภายใน)",
+        "shortName": "Forth ตรวจ",
+        "standardDays": 7,
+        "startDate": "2026-09-13T09:00:00.000Z",
+        "endDate": "2026-09-18T09:00:00.000Z",
+        "actualDays": 5,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 3,
+        "name": "กสทช. (ตรวจสอบ / อนุมัติ)",
+        "shortName": "กสทช. อนุมัติ",
+        "standardDays": 5,
+        "startDate": "2026-09-18T09:00:00.000Z",
+        "endDate": "2026-09-22T09:00:00.000Z",
+        "actualDays": 4,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 4,
+        "name": "ส่งออก",
+        "shortName": "ส่งออก",
+        "standardDays": 3,
+        "startDate": "2026-09-22T09:00:00.000Z",
+        "endDate": "2026-09-24T09:00:00.000Z",
+        "actualDays": 2,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 5,
+        "name": "Hytera / Huawei Hongkong (ถึงศูนย์ต่างประเทศ)",
+        "shortName": "ถึงศูนย์ ตปท.",
+        "standardDays": 21,
+        "startDate": "2026-09-24T09:00:00.000Z",
+        "endDate": "2026-09-27T09:00:00.000Z",
+        "actualDays": 3,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 6,
+        "name": "จีน (เข้ากระบวนการซ่อม)",
+        "shortName": "จีน — ซ่อม",
+        "standardDays": 14,
+        "hasVendorPenalty": true,
+        "startDate": "2026-09-27T09:00:00.000Z",
+        "endDate": "",
+        "actualDays": 4,
+        "status": "active"
+      },
+      {
+        "stageNumber": 7,
+        "name": "ส่งกลับเครื่องบิน",
+        "shortName": "ขนส่งกลับ",
+        "standardDays": 3,
+        "startDate": "",
+        "endDate": "",
+        "actualDays": 0,
+        "status": "pending"
+      },
+      {
+        "stageNumber": 8,
+        "name": "เคลียร์ของออก (ศุลกากรขาเข้า)",
+        "shortName": "ศุลกากรขาเข้า",
+        "standardDays": 5,
+        "startDate": "",
+        "endDate": "",
+        "actualDays": 0,
+        "status": "pending"
+      }
+    ]
   },
   {
     "id": "2",
@@ -27,14 +111,99 @@
     "model": "OMXD30000",
     "currentStageNumber": 8,
     "totalStages": 8,
-    "currentStageName": "8. เคลียร์ศุลกากร",
-    "stageWaitDays": "ค้างมา 0 วัน",
+    "currentStageName": "เคลียร์ของออก (ศุลกากรขาเข้า)",
+    "currentStageStartedAt": "2026-09-20T09:00:00.000Z",
+    "currentStageCompletedAt": "2026-09-25T14:00:00.000Z",
+    "stageWaitDays": "5 วัน",
     "openDate": "11 ก.ย. 2569",
     "totalDays": "66 วัน",
     "statusBadge": "returned",
     "statusBadgeText": "ของกลับถึงแล้ว",
     "penaltyDays": "เกิน 7 วัน",
     "penaltyStandard": "จาก 14 วัน · ซ่อมเสร็จแล้ว",
-    "isOverduePenalty": true
+    "isOverduePenalty": true,
+    "stageHistory": [
+      {
+        "stageNumber": 1,
+        "name": "ระบบใบ RMA",
+        "shortName": "เปิดใบ RMA",
+        "standardDays": 2,
+        "startDate": "2026-07-20T09:00:00.000Z",
+        "endDate": "2026-07-22T09:00:00.000Z",
+        "actualDays": 2,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 2,
+        "name": "Forth (ส่งตรวจสอบภายใน)",
+        "shortName": "Forth ตรวจ",
+        "standardDays": 7,
+        "startDate": "2026-07-22T09:00:00.000Z",
+        "endDate": "2026-07-29T09:00:00.000Z",
+        "actualDays": 7,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 3,
+        "name": "กสทช. (ตรวจสอบ / อนุมัติ)",
+        "shortName": "กสทช. อนุมัติ",
+        "standardDays": 5,
+        "startDate": "2026-07-29T09:00:00.000Z",
+        "endDate": "2026-08-04T09:00:00.000Z",
+        "actualDays": 6,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 4,
+        "name": "ส่งออก",
+        "shortName": "ส่งออก",
+        "standardDays": 3,
+        "startDate": "2026-08-04T09:00:00.000Z",
+        "endDate": "2026-08-08T09:00:00.000Z",
+        "actualDays": 4,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 5,
+        "name": "Hytera / Huawei Hongkong (ถึงศูนย์ต่างประเทศ)",
+        "shortName": "ถึงศูนย์ ตปท.",
+        "standardDays": 21,
+        "startDate": "2026-08-08T09:00:00.000Z",
+        "endDate": "2026-08-28T09:00:00.000Z",
+        "actualDays": 20,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 6,
+        "name": "จีน (เข้ากระบวนการซ่อม)",
+        "shortName": "จีน — ซ่อม",
+        "standardDays": 14,
+        "hasVendorPenalty": true,
+        "startDate": "2026-08-28T09:00:00.000Z",
+        "endDate": "2026-09-18T09:00:00.000Z",
+        "actualDays": 21,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 7,
+        "name": "ส่งกลับเครื่องบิน",
+        "shortName": "ขนส่งกลับ",
+        "standardDays": 3,
+        "startDate": "2026-09-18T09:00:00.000Z",
+        "endDate": "2026-09-20T09:00:00.000Z",
+        "actualDays": 2,
+        "status": "completed"
+      },
+      {
+        "stageNumber": 8,
+        "name": "เคลียร์ของออก (ศุลกากรขาเข้า)",
+        "shortName": "ศุลกากรขาเข้า",
+        "standardDays": 5,
+        "startDate": "2026-09-20T09:00:00.000Z",
+        "endDate": "2026-09-25T14:00:00.000Z",
+        "actualDays": 5,
+        "status": "completed"
+      }
+    ]
   }
 ]

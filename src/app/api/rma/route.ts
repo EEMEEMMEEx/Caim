@@ -9,7 +9,7 @@ import {
   deletePersistentRma,
   getPersistentDeletedRmaIds,
 } from "@/lib/storage/serverRmaStorage"
-import { calculateRmaMetrics } from "@/lib/utils/rmaDuration"
+import { calculateRmaMetrics, calculateCurrentStageDuration } from "@/lib/utils/rmaDuration"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -17,8 +17,10 @@ export const fetchCache = "force-no-store"
 
 function enrichRma(doc: RmaDocument): RmaDocument {
   const metrics = calculateRmaMetrics(doc)
+  const stageDuration = calculateCurrentStageDuration(doc)
   return {
     ...doc,
+    stageWaitDays: stageDuration.text,
     totalDays: metrics.total.text,
     statusBadge: metrics.total.statusBadge,
     statusBadgeText: metrics.total.statusBadgeText,
@@ -140,7 +142,9 @@ export async function POST(request: NextRequest) {
       currentStageNumber: body.currentStageNumber || 1,
       totalStages: body.totalStages || 8,
       currentStageName: body.currentStageName || "1. ระบบใบ RMA",
-      stageWaitDays: body.stageWaitDays || "ค้างมา 0 วัน",
+      stageWaitDays: body.stageWaitDays || "0 วัน",
+      currentStageStartedAt: body.currentStageStartedAt || rmaOpenDate,
+      currentStageCompletedAt: body.currentStageCompletedAt,
       openDate: rmaOpenDate,
       sentDate: body.sentDate || new Date().toLocaleDateString("th-TH"),
       trackNo: body.trackNo || "-",
