@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { ShieldCheck } from "lucide-react"
 import {
   calculateCurrentStageDuration,
   type RmaCalculationItem,
@@ -63,6 +64,17 @@ export function StageProgressBar({
         <p className="text-xs text-slate-400 font-medium mt-0.5">
           {currentStageDuration.text}
         </p>
+        {item.permitInfo && (
+          <div className="mt-1 flex items-center gap-1">
+            <span className="inline-flex items-center gap-1 rounded bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border border-cyan-400/30 px-1.5 py-0.2 text-[10px] font-medium">
+              <ShieldCheck className="size-2.5 shrink-0" />
+              <span>
+                {item.permitInfo.permitType === "import_after_repair" ? "ใบนำเข้า: " : "ใบส่งออก: "}
+                {item.permitInfo.permitNo}
+              </span>
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -47,6 +47,8 @@ export interface RmaCalculationItem {
   penaltyStandard?: string | null
   isOverduePenalty?: boolean | null
   stageHistory?: StageHistoryRecord[] | null
+  permitInfo?: import("@/types/database").PermitTrackingInfo | null
+  permits?: import("@/types/database").PermitTrackingInfo[] | null
 }
 
 export interface RmaTotalDaysResult {

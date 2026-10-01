@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input"
 import { type Asset } from "./assetsData"
 import { saveRmaApi } from "@/lib/storage/recordStorage"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
-import { useRmaQuery, type RmaItem } from "@/hooks/useRmaQuery"
+import { useRmaQuery, applyRmaMutation, invalidateRmaCache, type RmaItem } from "@/hooks/useRmaQuery"
 import {
   calculateRmaMetrics,
   calculateStageDuration,
@@ -222,12 +222,23 @@ export function OverseasView() {
 
   // Selected item for timeline modal
   const [timelineItem, setTimelineItem] = React.useState<RmaItem | null>(null)
+  const [timelineModalTab, setTimelineModalTab] = React.useState<"timeline" | "permits">("timeline")
   const [isRetroactiveEditing, setIsRetroactiveEditing] = React.useState(false)
   const [actualDateTime, setActualDateTime] = React.useState<string>(getInitialDateTimeLocal)
   const [isSubmittingStage, setIsSubmittingStage] = React.useState(false)
   const [retroactiveStages, setRetroactiveStages] = React.useState<StageHistoryItem[]>([])
   const [stagesSnapshot, setStagesSnapshot] = React.useState<StageHistoryItem[]>([])
   const dateTimeInputRef = React.useRef<HTMLInputElement>(null)
+
+  // Synchronize timelineItem with active rmaList record whenever rmaList updates
+  React.useEffect(() => {
+    if (timelineItem) {
+      const fresh = rmaList.find((r) => r.id === timelineItem.id || r.rmaNo === timelineItem.rmaNo)
+      if (fresh && fresh !== timelineItem) {
+        setTimelineItem(fresh)
+      }
+    }
+  }, [rmaList, timelineItem])
 
   // Initialize stage history & date-time whenever timelineItem changes
   React.useEffect(() => {
@@ -932,6 +943,8 @@ export function OverseasView() {
     setImportExportValidationError(null)
 
     try {
+      console.log("[PermitSubmit] Submitting permit payload...", importExportForm)
+
       const generatedPermitNo =
         importExportForm.permitNo.trim() ||
         (importExportForm.permitType === "import_after_repair"
@@ -946,7 +959,11 @@ export function OverseasView() {
         permitNo: generatedPermitNo,
         expiryDate: calculatedExpiry,
         rmaNo: importExportForm.linkedRmaNo,
+        rmaId: importExportForm.linkedRmaNo,
+        serialNo: importExportForm.selectedAssetSerial,
       }
+
+      console.log("[PermitSubmit] Sending payload to /api/rma/permit:", payload)
 
       const res = await fetch("/api/rma/permit", {
         method: "POST",
@@ -955,25 +972,25 @@ export function OverseasView() {
       })
 
       const data = await res.json()
+      console.log("[PermitSubmit] API response:", data)
+
       if (!res.ok || !data.success) {
         throw new Error(data.error || "เกิดข้อผิดพลาดในการบันทึกใบอนุญาต")
       }
 
-      // Re-fetch RMA items from API to activate step badges in active timeline
-      await refetchRma()
+      // Optimistically update in-memory cache and revalidate remote query
+      if (data.linkedRma) {
+        applyRmaMutation("update", data.linkedRma)
+      }
+      await invalidateRmaCache()
 
       setIsImportExportModalOpen(false)
-      const coveredDesc =
-        importExportForm.permitType === "export_for_repair"
-          ? "ขั้นตอน 1–5"
-          : importExportForm.permitType === "import_after_repair"
-          ? "ขั้นตอน 5–8"
-          : "ขั้นตอนที่กำหนด"
-
-      showToast(`บันทึกใบอนุญาต ${generatedPermitNo} (ครอบคลุม ${coveredDesc} · กรอบเวลา 90 วัน) เรียบร้อยแล้ว`)
+      showToast("บันทึกใบอนุญาตนำเข้า-ส่งออกสำเร็จ")
     } catch (err: unknown) {
+      console.error("[PermitSubmit] Submission failure:", err)
       const msg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึกใบอนุญาต"
       setImportExportValidationError(msg)
+      showToast(`บันทึกไม่สำเร็จ: ${msg}`)
     } finally {
       setIsSubmittingPermit(false)
     }
@@ -1248,6 +1265,21 @@ export function OverseasView() {
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-[140px] sm:max-w-[180px]" title={item.caseName}>
                             {item.caseName}
                           </p>
+                          {/* Attached Permit Indicator Badge/Chip inside RMA row */}
+                          {item.permitInfo && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <span
+                                className="inline-flex items-center gap-1 rounded-md border border-cyan-400/50 bg-cyan-50 dark:bg-cyan-950/50 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-800 dark:text-cyan-300 shadow-2xs"
+                                title={`ใบอนุญาต: ${item.permitInfo.permitNo} (${item.permitInfo.authority}) ออกเมื่อ ${item.permitInfo.issueDate} หมดอายุ ${item.permitInfo.expiryDate}`}
+                              >
+                                <ShieldCheck className="size-2.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
+                                <span className="truncate max-w-[140px]">
+                                  {item.permitInfo.permitType === "import_after_repair" ? "ใบอนุญาตนำเข้า: " : "ใบอนุญาตส่งออก: "}
+                                  {item.permitInfo.permitNo}
+                                </span>
+                              </span>
+                            </div>
+                          )}
                         </td>
 
                         {/* อุปกรณ์ */}
@@ -1410,37 +1442,71 @@ export function OverseasView() {
               className="relative w-full max-w-xl rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#1e293b] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Modal Header */}
-              <div className="flex items-start justify-between border-b border-slate-200/80 dark:border-white/10 px-6 py-4 bg-white dark:bg-[#0f172a]">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-slate-900">
-                      ใบ {timelineItem.rmaNo}
-                    </h3>
-                    {isRetroactiveEditing && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                        <Pencil className="size-3" />
-                        <span>โหมดแก้ไขข้อมูลย้อนหลัง</span>
+              {/* Modal Header with Tabs */}
+              <div className="border-b border-slate-200/80 dark:border-white/10 px-6 pt-4 pb-0 bg-white dark:bg-[#0f172a]">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                        ใบ {timelineItem.rmaNo}
+                      </h3>
+                      {isRetroactiveEditing && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                          <Pencil className="size-3" />
+                          <span>โหมดแก้ไขข้อมูลย้อนหลัง</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      S/N {timelineItem.serialNo} · เคส {timelineItem.caseName} · {timelineItem.vendor} Hongkong
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isRetroactiveEditing) {
+                        handleCancelRetroactive()
+                      }
+                      setTimelineItem(null)
+                    }}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                    aria-label="ปิดหน้าต่าง"
+                  >
+                    <X className="size-4.5" />
+                  </button>
+                </div>
+
+                {/* Sub-Panel Tabs Navigation */}
+                <div className="flex items-center gap-1 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setTimelineModalTab("timeline")}
+                    className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                      timelineModalTab === "timeline"
+                        ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+                        : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    }`}
+                  >
+                    ไทม์ไลน์ขั้นตอน (8 ขั้นตอน)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTimelineModalTab("permits")}
+                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                      timelineModalTab === "permits"
+                        ? "border-cyan-500 text-cyan-600 dark:border-cyan-400 dark:text-cyan-400"
+                        : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    }`}
+                  >
+                    <ShieldCheck className="size-3.5" />
+                    <span>ใบอนุญาตขนส่ง (Permits)</span>
+                    {((timelineItem.permits && timelineItem.permits.length > 0) || timelineItem.permitInfo) && (
+                      <span className="ml-1 rounded-full bg-cyan-100 dark:bg-cyan-950 px-1.5 py-0.2 text-[10px] font-bold text-cyan-700 dark:text-cyan-300">
+                        {(timelineItem.permits?.length || (timelineItem.permitInfo ? 1 : 0))}
                       </span>
                     )}
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    S/N {timelineItem.serialNo} · เคส {timelineItem.caseName} · {timelineItem.vendor} Hongkong
-                  </p>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isRetroactiveEditing) {
-                      handleCancelRetroactive()
-                    }
-                    setTimelineItem(null)
-                  }}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
-                  aria-label="ปิดหน้าต่าง"
-                >
-                  <X className="size-4.5" />
-                </button>
               </div>
 
               {/* Modal Timeline & Inline Date-Time Editing Content (Scrollable) */}
@@ -1468,411 +1534,548 @@ export function OverseasView() {
                   </div>
                 )}
 
-                {/* Active Permit SLA Summary Banner (if RMA has covered permits) */}
-                {(() => {
-                  const activePermits =
-                    timelineItem.permits && timelineItem.permits.length > 0
-                      ? timelineItem.permits
-                      : timelineItem.permitInfo
-                      ? [timelineItem.permitInfo]
-                      : []
+                {timelineModalTab === "permits" ? (
+                  /* =========================================================================
+                      SUB-PANEL: DEDICATED PERMITS & AUDIT LOG TAB
+                     ========================================================================= */
+                  <div className="space-y-4 animate-in fade-in">
+                    {(() => {
+                      const activePermits =
+                        timelineItem.permits && timelineItem.permits.length > 0
+                          ? timelineItem.permits
+                          : timelineItem.permitInfo
+                          ? [timelineItem.permitInfo]
+                          : []
 
-                  if (activePermits.length === 0) return null
-
-                  return (
-                    <div className="mb-4 space-y-2">
-                      {activePermits.map((permit) => {
-                        const sla = calculatePermitSla(permit.issueDate, permit.expiryDate)
-                        const isExport = permit.permitType === "export_for_repair"
+                      if (activePermits.length === 0) {
                         return (
-                          <div
-                            key={permit.permitNo}
-                            className={`rounded-xl border p-3 text-xs transition-all ${
-                              sla.isExpired
-                                ? "border-red-300 bg-red-50/60 dark:border-red-900/60 dark:bg-red-950/30"
-                                : sla.isExpiringSoon
-                                ? "border-amber-300 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/30"
-                                : "border-cyan-300/70 bg-cyan-50/60 dark:border-cyan-900/60 dark:bg-cyan-950/30"
-                            }`}
-                          >
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className="flex size-7 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-bold">
-                                  <ShieldCheck className="size-4" />
-                                </span>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-bold text-slate-800 dark:text-slate-100">
-                                      ใบอนุญาต: {permit.permitNo}
+                          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
+                            <ShieldCheck className="size-10 text-slate-400 mx-auto mb-2 opacity-50" />
+                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                              ยังไม่มีใบอนุญาตขนส่งผูกกับใบส่งซ่อมนี้
+                            </h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                              สามารถออกใบอนุญาตส่งออกเพื่อซ่อมแซม หรือใบอนุญาตนำเข้าหลังซ่อมผ่านปุ่ม &apos;เปิดใบนำเข้า-ส่งออก&apos; ที่แถบเครื่องมือ
+                            </p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => {
+                                setImportExportForm((prev) => ({
+                                  ...prev,
+                                  linkedRmaNo: timelineItem.rmaNo,
+                                  selectedAssetSerial: timelineItem.serialNo,
+                                }))
+                                setIsImportExportModalOpen(true)
+                              }}
+                              className="mt-4 gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-xl cursor-pointer"
+                            >
+                              <Plus className="size-3.5" />
+                              <span>เปิดใบนำเข้า-ส่งออกสำหรับเคสนี้</span>
+                            </Button>
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <div className="space-y-4">
+                          {activePermits.map((permit, idx) => {
+                            const sla = calculatePermitSla(permit.issueDate, permit.expiryDate)
+                            const isExport = permit.permitType === "export_for_repair"
+                            return (
+                              <div
+                                key={permit.permitNo || idx}
+                                className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#0f172a] p-5 shadow-xs space-y-4"
+                              >
+                                {/* Permit Header & Status Badge */}
+                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
+                                  <div className="flex items-center gap-2.5">
+                                    <span className="flex size-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-bold">
+                                      <ShieldCheck className="size-5" />
                                     </span>
-                                    <span className="rounded-full bg-slate-200/70 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300">
-                                      {isExport ? "ส่งออกเพื่อซ่อมแซม (ขั้นตอน 1–5)" : "นำเข้าหลังการซ่อมแซม (ขั้นตอน 5–8)"}
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                                          {permit.permitNo}
+                                        </h4>
+                                        <span className="rounded-full bg-cyan-100 dark:bg-cyan-950/80 border border-cyan-300/60 dark:border-cyan-800 px-2.5 py-0.5 text-[10px] font-semibold text-cyan-800 dark:text-cyan-300">
+                                          {isExport ? "ส่งออกเพื่อซ่อมแซม" : "นำเข้าหลังการซ่อมแซม"}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        หน่วยงานผู้อนุญาต: {permit.authority}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="text-right">
+                                    <span
+                                      className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${
+                                        sla.isExpired
+                                          ? "bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-300"
+                                          : sla.isExpiringSoon
+                                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300"
+                                          : "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/80 dark:text-cyan-300"
+                                      }`}
+                                    >
+                                      <Clock className="size-3" />
+                                      <span>{sla.badgeText}</span>
                                     </span>
                                   </div>
-                                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                    หน่วยงาน: {permit.authority} · วันที่ออก {permit.issueDate} · หมดอายุ {permit.expiryDate}
-                                  </p>
+                                </div>
+
+                                {/* 90-Day SLA Progress Bar */}
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                                    <span>กรอบเวลาความคุ้มครอง 90 วัน</span>
+                                    <span className="font-mono font-medium text-slate-700 dark:text-slate-300">
+                                      ผ่านไปแล้ว {sla.elapsedDays} วัน · คงเหลือ {sla.remainingDays} วัน
+                                    </span>
+                                  </div>
+                                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-white/5">
+                                    <div
+                                      className={`h-full transition-all duration-500 ${
+                                        sla.isExpired ? "bg-red-500" : sla.isExpiringSoon ? "bg-amber-500" : "bg-cyan-500"
+                                      }`}
+                                      style={{ width: `${Math.min(100, Math.max(5, (sla.elapsedDays / 90) * 100))}%` }}
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Permit Details Grid */}
+                                <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50/70 dark:bg-slate-800/40 rounded-xl p-3 border border-slate-200/50 dark:border-white/5">
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-500 block text-[11px]">วันที่ออกใบอนุญาต</span>
+                                    <span className="font-medium text-slate-800 dark:text-slate-200">{permit.issueDate}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-500 block text-[11px]">วันหมดอายุ (90 วัน)</span>
+                                    <span className="font-medium text-slate-800 dark:text-slate-200">{permit.expiryDate}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-500 block text-[11px]">ขั้นตอนที่คุ้มครอง</span>
+                                    <span className="font-semibold text-cyan-700 dark:text-cyan-400">
+                                      {isExport ? "ขั้นตอนที่ 1 – 5" : "ขั้นตอนที่ 5 – 8"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-400 dark:text-slate-500 block text-[11px]">ประเทศปลายทาง / ต้นทาง</span>
+                                    <span className="font-medium text-slate-800 dark:text-slate-200">{permit.destinationCountry || "ฮ่องกง"}</span>
+                                  </div>
+                                  <div className="col-span-2 pt-1 border-t border-slate-200/50 dark:border-white/5">
+                                    <span className="text-slate-400 dark:text-slate-500 block text-[11px]">หมายเหตุ / ข้อมูลกำกับ</span>
+                                    <span className="text-slate-700 dark:text-slate-300">{permit.remarks || "ไม่มีหมายเหตุเพิ่มเติม"}</span>
+                                  </div>
+                                </div>
+
+                                {/* Audit Log Details */}
+                                <div className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-between pt-1">
+                                  <span>บันทึกเมื่อ: {permit.createdAt ? new Date(permit.createdAt).toLocaleString("th-TH") : "พร้อมการเปิดเคส"}</span>
+                                  <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium">● ผูกสมบูรณ์ (Active Linkage)</span>
                                 </div>
                               </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })()}
+                  </div>
+                ) : (
+                  /* =========================================================================
+                      TIMELINE STEPS TAB WITH VISUAL COVERAGE & GLOWING NODES
+                     ========================================================================= */
+                  <>
+                    {/* Active Permit SLA Summary Banner (if RMA has covered permits) */}
+                    {(() => {
+                      const activePermits =
+                        timelineItem.permits && timelineItem.permits.length > 0
+                          ? timelineItem.permits
+                          : timelineItem.permitInfo
+                          ? [timelineItem.permitInfo]
+                          : []
 
-                              <div className="text-right">
+                      if (activePermits.length === 0) return null
+
+                      return (
+                        <div className="mb-4 space-y-2">
+                          {activePermits.map((permit) => {
+                            const sla = calculatePermitSla(permit.issueDate, permit.expiryDate)
+                            const isExport = permit.permitType === "export_for_repair"
+                            return (
+                              <div
+                                key={permit.permitNo}
+                                className={`rounded-xl border p-3 text-xs transition-all ${
+                                  sla.isExpired
+                                    ? "border-red-300 bg-red-50/60 dark:border-red-900/60 dark:bg-red-950/30"
+                                    : sla.isExpiringSoon
+                                    ? "border-amber-300 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/30"
+                                    : "border-cyan-300/70 bg-cyan-50/60 dark:border-cyan-900/60 dark:bg-cyan-950/30"
+                                }`}
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="flex size-7 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-bold">
+                                      <ShieldCheck className="size-4" />
+                                    </span>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-bold text-slate-800 dark:text-slate-100">
+                                          ใบอนุญาต: {permit.permitNo}
+                                        </span>
+                                        <span className="rounded-full bg-slate-200/70 dark:bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300">
+                                          {isExport ? "ส่งออกเพื่อซ่อมแซม (ขั้นตอน 1–5)" : "นำเข้าหลังการซ่อมแซม (ขั้นตอน 5–8)"}
+                                        </span>
+                                      </div>
+                                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                        หน่วยงาน: {permit.authority} · วันที่ออก {permit.issueDate} · หมดอายุ {permit.expiryDate}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="text-right">
+                                    <span
+                                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${
+                                        sla.isExpired
+                                          ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
+                                          : sla.isExpiringSoon
+                                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300"
+                                          : "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-300"
+                                      }`}
+                                    >
+                                      <Clock className="size-3" />
+                                      <span>{sla.badgeText}</span>
+                                    </span>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                      กรอบเวลา SLA 90 วัน (ผ่านไป {sla.elapsedDays} วัน)
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* SLA Progress Bar */}
+                                <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                                  <div
+                                    className={`h-full transition-all duration-500 ${
+                                      sla.isExpired
+                                        ? "bg-red-500"
+                                        : sla.isExpiringSoon
+                                        ? "bg-amber-500"
+                                        : "bg-cyan-500"
+                                    }`}
+                                    style={{ width: `${Math.min(100, Math.max(5, (sla.elapsedDays / 90) * 100))}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })()}
+
+                    {/* Vertical Timeline */}
+                    <div className="relative pl-6 space-y-5 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-700">
+                      {retroactiveStages.map((stage) => {
+                        const isCompleted = stage.status === "completed"
+                        const isActive = stage.status === "active"
+                        const isPending = stage.status === "pending"
+                        const isEditableStep = isCompleted || isActive
+                        const hasDateError = Boolean(dateValidationErrors[stage.stageNumber])
+                        const stageDuration = calculateStageDuration(stage)
+                        const isOverStandard = stageDuration.isOverStandard
+
+                        const activePermits =
+                          timelineItem.permits && timelineItem.permits.length > 0
+                            ? timelineItem.permits
+                            : timelineItem.permitInfo
+                            ? [timelineItem.permitInfo]
+                            : []
+
+                        const coveringPermit = activePermits.find(
+                          (p) => p.coveredSteps && p.coveredSteps.includes(stage.stageNumber)
+                        )
+
+                        const isCovered = Boolean(coveringPermit)
+                        const isFirstCoveredStep =
+                          coveringPermit &&
+                          coveringPermit.coveredSteps &&
+                          Math.min(...coveringPermit.coveredSteps) === stage.stageNumber
+
+                        const permitSla = coveringPermit
+                          ? calculatePermitSla(coveringPermit.issueDate, coveringPermit.expiryDate)
+                          : null
+
+                        return (
+                          <div key={stage.stageNumber} className="relative">
+                            {/* Attached permit pill above the covered step range */}
+                            {isFirstCoveredStep && coveringPermit && permitSla && (
+                              <div className="mb-2 -ml-3 pl-3 animate-in fade-in">
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/80 bg-cyan-100/90 dark:bg-cyan-950/90 px-3 py-1 text-[11px] font-semibold text-cyan-900 dark:text-cyan-200 shadow-xs">
+                                  <ShieldCheck className="size-3.5 text-cyan-600 dark:text-cyan-400" />
+                                  <span>
+                                    ใบอนุญาต: {coveringPermit.permitNo} | คุ้มครองขั้นตอน {coveringPermit.permitType === "import_after_repair" ? "5-8" : "1-5"} | เหลือ {permitSla.remainingDays} วัน
+                                  </span>
+                                </span>
+                              </div>
+                            )}
+
+                            <div
+                              className={`relative flex flex-col md:flex-row md:items-start justify-between gap-3 text-xs p-3 rounded-xl transition-all ${
+                                isCovered
+                                  ? "bg-cyan-50/50 dark:bg-cyan-950/20 border-2 border-cyan-400/70 dark:border-cyan-500/60 shadow-sm shadow-cyan-500/10"
+                                  : isRetroactiveEditing
+                                  ? isOverStandard
+                                    ? "bg-amber-50/40 border border-amber-200/70 shadow-2xs"
+                                    : "bg-slate-50/60 border border-slate-200/70"
+                                  : "border border-transparent"
+                              }`}
+                            >
+                              {/* Stage Icon Marker with Distinct Glowing Ring for Covered Steps */}
+                              {isCompleted && (
                                 <span
-                                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${
-                                    sla.isExpired
-                                      ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
-                                      : sla.isExpiringSoon
-                                      ? "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300"
-                                      : "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-300"
+                                  className={`absolute -left-6 flex size-6 items-center justify-center rounded-full bg-[#ecfdf5] border border-emerald-300 text-[#16a34a] font-bold text-[10px] ${
+                                    isCovered ? "ring-2 ring-cyan-400 ring-offset-2 dark:ring-offset-slate-900 shadow-xs" : ""
                                   }`}
                                 >
-                                  <Clock className="size-3" />
-                                  <span>{sla.badgeText}</span>
+                                  ✓
                                 </span>
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                                  กรอบเวลา SLA 90 วัน (ผ่านไป {sla.elapsedDays} วัน)
-                                </p>
-                              </div>
-                            </div>
+                              )}
+                              {isActive && (
+                                <span
+                                  className={`absolute -left-6 flex size-6 items-center justify-center rounded-full bg-[#2563eb] text-white font-bold text-xs shadow-xs ${
+                                    isCovered ? "ring-2 ring-cyan-400 ring-offset-2 dark:ring-offset-slate-900" : ""
+                                  }`}
+                                >
+                                  {stage.stageNumber}
+                                </span>
+                              )}
+                              {isPending && (
+                                <span
+                                  className={`absolute -left-6 flex size-6 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-xs ${
+                                    isCovered ? "ring-2 ring-cyan-400 ring-offset-2 dark:ring-offset-slate-900 border-cyan-400 text-cyan-700 dark:text-cyan-300 font-semibold" : ""
+                                  }`}
+                                >
+                                  {stage.stageNumber}
+                                </span>
+                              )}
 
-                            {/* SLA Progress Bar */}
-                            <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-                              <div
-                                className={`h-full transition-all duration-500 ${
-                                  sla.isExpired
-                                    ? "bg-red-500"
-                                    : sla.isExpiringSoon
-                                    ? "bg-amber-500"
-                                    : "bg-cyan-500"
-                                }`}
-                                style={{ width: `${Math.min(100, Math.max(5, (sla.elapsedDays / 90) * 100))}%` }}
-                              />
+                              {/* Stage Info (Left Column) */}
+                              <div className="pl-3 flex-1 pr-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p
+                                    className={`text-xs ${
+                                      isActive
+                                        ? "font-bold text-slate-900 dark:text-white"
+                                        : isCompleted
+                                        ? "font-semibold text-slate-900 dark:text-white"
+                                        : "text-slate-600 dark:text-slate-300 font-medium"
+                                    }`}
+                                  >
+                                    {stage.name}
+                                  </p>
+                                  {isActive && stage.hasVendorPenalty && (
+                                    <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-[#fff7ed] px-2 py-0.5 text-[11px] font-medium text-[#d97706]">
+                                      <Clock className="size-3" />
+                                      <span>เริ่มนับบทปรับผู้ขาย</span>
+                                    </span>
+                                  )}
+                                  {/* Conditional Step-Coverage Permit Badge */}
+                                  {coveringPermit && (() => {
+                                    const badgeInfo = formatPermitStepBadge(coveringPermit)
+                                    return (
+                                      <span
+                                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium transition-all ${
+                                          badgeInfo.isExpired
+                                            ? "border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300"
+                                            : badgeInfo.isExpiringSoon
+                                            ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse"
+                                            : "border-cyan-300/80 bg-cyan-50/80 text-cyan-800 dark:border-cyan-700/60 dark:bg-cyan-950/40 dark:text-cyan-300"
+                                        }`}
+                                        title={`ใบอนุญาต: ${coveringPermit.permitNo} (${coveringPermit.authority}) ออกเมื่อ ${coveringPermit.issueDate} หมดอายุ ${coveringPermit.expiryDate}`}
+                                      >
+                                        <ShieldCheck className="size-3 shrink-0" />
+                                        <span>{badgeInfo.text}</span>
+                                      </span>
+                                    )
+                                  })()}
+                                  {isRetroactiveEditing && (
+                                    <select
+                                      value={stage.status}
+                                      onChange={(e) =>
+                                        handleStageStatusChange(
+                                          stage.stageNumber,
+                                          e.target.value as "completed" | "active" | "pending"
+                                        )
+                                      }
+                                      className="h-6 text-[10px] rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] px-1.5 py-0 text-slate-700 dark:text-slate-200 font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
+                                    >
+                                      <option value="completed">เสร็จสิ้นแล้ว</option>
+                                      <option value="active">กำลังดำเนินการ</option>
+                                      <option value="pending">ยังไม่ถึงขั้นนี้</option>
+                                    </select>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                  มาตรฐาน {stage.standardDays} วัน
+                                  {stage.notes && !isRetroactiveEditing ? ` · หมายเหตุ: ${stage.notes}` : ""}
+                                </p>
+                                {isRetroactiveEditing && (
+                                  <input
+                                    type="text"
+                                    placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
+                                    value={stage.notes || ""}
+                                    onChange={(e) =>
+                                      handleUpdateRetroactiveField(stage.stageNumber, "notes", e.target.value)
+                                    }
+                                    className="mt-1.5 h-6.5 w-full rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] px-2 text-[11px] text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
+                                  />
+                                )}
+                              </div>
+
+                              {/* Stage Timestamps / Interactive Inputs (Right Column) */}
+                              <div className="pl-3 md:pl-0 text-left md:text-right text-xs shrink-0">
+                                {isRetroactiveEditing ? (
+                                  /* Inline Date-Time Editing Mode */
+                                  <div className="flex flex-col items-start md:items-end gap-1.5">
+                                    {isEditableStep ? (
+                                      <div className="flex flex-wrap items-center gap-1.5">
+                                        {/* Start Date-Time Picker Input */}
+                                        <div className="relative inline-flex items-center">
+                                          <input
+                                            type="datetime-local"
+                                            value={formatToInputDateTime(stage.startDate)}
+                                            onChange={(e) =>
+                                              handleStageDateChange(stage.stageNumber, "startDate", e.target.value)
+                                            }
+                                            onClick={(e) => {
+                                              try {
+                                                if (typeof e.currentTarget.showPicker === "function") {
+                                                  e.currentTarget.showPicker()
+                                                }
+                                              } catch {}
+                                            }}
+                                            className={`h-7.5 rounded-md border bg-white dark:bg-[#0f172a] px-2 pr-7 text-[11px] font-mono text-slate-700 dark:text-slate-200 shadow-2xs transition-all hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer ${
+                                              hasDateError ? "border-red-400 ring-1 ring-red-400 bg-red-50/20" : "border-slate-200 dark:border-white/10"
+                                            }`}
+                                            title="เลือกวันและเวลาเริ่มต้น"
+                                          />
+                                          <button
+                                            type="button"
+                                            tabIndex={-1}
+                                            onClick={(e) => {
+                                              const input = e.currentTarget.parentElement?.querySelector("input")
+                                              if (input) {
+                                                try {
+                                                  if (typeof input.showPicker === "function") {
+                                                    input.showPicker()
+                                                  }
+                                                } catch {}
+                                              }
+                                            }}
+                                            className="absolute right-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
+                                          >
+                                            <Calendar className="size-3.5" />
+                                          </button>
+                                        </div>
+
+                                        <span className="text-slate-400 text-[10px]">ถึง</span>
+
+                                        {/* End Date-Time Picker Input */}
+                                        <div className="relative inline-flex items-center">
+                                          <input
+                                            type="datetime-local"
+                                            value={formatToInputDateTime(stage.endDate)}
+                                            onChange={(e) =>
+                                              handleStageDateChange(stage.stageNumber, "endDate", e.target.value)
+                                            }
+                                            onClick={(e) => {
+                                              try {
+                                                if (typeof e.currentTarget.showPicker === "function") {
+                                                  e.currentTarget.showPicker()
+                                                }
+                                              } catch {}
+                                            }}
+                                            className={`h-7.5 rounded-md border bg-white dark:bg-[#0f172a] px-2 pr-7 text-[11px] font-mono text-slate-700 dark:text-slate-200 shadow-2xs transition-all hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer ${
+                                              hasDateError ? "border-red-400 ring-1 ring-red-400 bg-red-50/20" : "border-slate-200 dark:border-white/10"
+                                            }`}
+                                            title="เลือกวันและเวลาสิ้นสุด"
+                                          />
+                                          <button
+                                            type="button"
+                                            tabIndex={-1}
+                                            onClick={(e) => {
+                                              const input = e.currentTarget.parentElement?.querySelector("input")
+                                              if (input) {
+                                                try {
+                                                  if (typeof input.showPicker === "function") {
+                                                    input.showPicker()
+                                                  }
+                                                } catch {}
+                                              }
+                                            }}
+                                            className="absolute right-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
+                                          >
+                                            <Calendar className="size-3.5" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <span className="text-[11px] text-slate-400 italic">ยังไม่เริ่มดำเนินการ</span>
+                                    )}
+
+                                    {/* Inline calculated stage duration badge */}
+                                    {isEditableStep && (
+                                      <div className="flex items-center gap-1.5 mt-0.5">
+                                        <span
+                                          className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono font-medium ${
+                                            isOverStandard
+                                              ? "bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/50 dark:text-red-300"
+                                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                                          }`}
+                                        >
+                                          {isOverStandard && <AlertTriangle className="size-2.5 text-red-600" />}
+                                          <span>ใช้เวลา: {stageDuration.badgeText}</span>
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  /* Static View Mode */
+                                  <div>
+                                    {stage.startDate ? (
+                                      <>
+                                        <p className="font-mono text-slate-700 dark:text-slate-200 text-xs">
+                                          {formatDisplayDateTime(stage.startDate)}
+                                        </p>
+                                        {stage.endDate && (
+                                          <p className="font-mono text-[11px] text-slate-400 mt-0.5">
+                                            ถึง {formatDisplayDateTime(stage.endDate)}
+                                          </p>
+                                        )}
+                                        <div className="mt-1 flex items-center justify-start md:justify-end gap-1">
+                                          <span
+                                            className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+                                              isOverStandard
+                                                ? "text-red-600 font-semibold"
+                                                : "text-slate-500 dark:text-slate-400"
+                                            }`}
+                                          >
+                                            {isOverStandard && <AlertTriangle className="size-2.5 text-red-500" />}
+                                            <span>ใช้เวลา: {stageDuration.badgeText}</span>
+                                          </span>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <span className="text-[11px] text-slate-400 italic">ยังไม่ถึงขั้นนี้</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         )
                       })}
                     </div>
-                  )
-                })()}
-
-                {/* Vertical Timeline */}
-                <div className="relative pl-6 space-y-5 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
-                  {retroactiveStages.map((stage) => {
-                    const isCompleted = stage.status === "completed"
-                    const isActive = stage.status === "active"
-                    const isPending = stage.status === "pending"
-                    const isEditableStep = isCompleted || isActive
-                    const hasDateError = Boolean(dateValidationErrors[stage.stageNumber])
-                    const stageDuration = calculateStageDuration(stage)
-                    const isOverStandard = stageDuration.isOverStandard
-
-                    return (
-                      <div
-                        key={stage.stageNumber}
-                        className={`relative flex flex-col md:flex-row md:items-start justify-between gap-3 text-xs p-2.5 rounded-xl transition-all ${
-                          isRetroactiveEditing
-                            ? isOverStandard
-                              ? "bg-amber-50/40 border border-amber-200/70 shadow-2xs"
-                              : "bg-slate-50/60 border border-slate-200/70"
-                            : ""
-                        }`}
-                      >
-                        {/* Stage Icon Marker */}
-                        {isCompleted && (
-                          <span className="absolute -left-6 flex size-6 items-center justify-center rounded-full bg-[#ecfdf5] border border-emerald-300 text-[#16a34a] font-bold text-[10px]">
-                            ✓
-                          </span>
-                        )}
-                        {isActive && (
-                          <span className="absolute -left-6 flex size-6 items-center justify-center rounded-full bg-[#2563eb] text-white font-bold text-xs shadow-xs">
-                            {stage.stageNumber}
-                          </span>
-                        )}
-                        {isPending && (
-                          <span className="absolute -left-6 flex size-6 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-xs">
-                            {stage.stageNumber}
-                          </span>
-                        )}
-
-                        {/* Stage Info (Left Column) */}
-                        <div className="pl-3 flex-1 pr-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p
-                              className={`text-xs ${
-                                isActive
-                                  ? "font-bold text-slate-900"
-                                  : isCompleted
-                                  ? "font-semibold text-slate-900"
-                                  : "text-slate-600 font-medium"
-                              }`}
-                            >
-                              {stage.name}
-                            </p>
-                            {isActive && stage.hasVendorPenalty && (
-                              <span className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-[#fff7ed] px-2 py-0.5 text-[11px] font-medium text-[#d97706]">
-                                <Clock className="size-3" />
-                                <span>เริ่มนับบทปรับผู้ขาย</span>
-                              </span>
-                            )}
-                            {/* Conditional Step-Coverage Permit Badge */}
-                            {(() => {
-                              const activePermits =
-                                timelineItem.permits && timelineItem.permits.length > 0
-                                  ? timelineItem.permits
-                                  : timelineItem.permitInfo
-                                  ? [timelineItem.permitInfo]
-                                  : []
-
-                              const coveringPermit = activePermits.find(
-                                (p) => p.coveredSteps && p.coveredSteps.includes(stage.stageNumber)
-                              )
-
-                              if (!coveringPermit) return null
-
-                              const badgeInfo = formatPermitStepBadge(coveringPermit)
-
-                              return (
-                                <span
-                                  className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium transition-all ${
-                                    badgeInfo.isExpired
-                                      ? "border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300"
-                                      : badgeInfo.isExpiringSoon
-                                      ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse"
-                                      : "border-cyan-300/80 bg-cyan-50/80 text-cyan-800 dark:border-cyan-700/60 dark:bg-cyan-950/40 dark:text-cyan-300"
-                                  }`}
-                                  title={`ใบอนุญาต: ${coveringPermit.permitNo} (${coveringPermit.authority}) ออกเมื่อ ${coveringPermit.issueDate} หมดอายุ ${coveringPermit.expiryDate}`}
-                                >
-                                  <ShieldCheck className="size-3 shrink-0" />
-                                  <span>{badgeInfo.text}</span>
-                                </span>
-                              )
-                            })()}
-                            {isRetroactiveEditing && (
-                              <select
-                                value={stage.status}
-                                onChange={(e) =>
-                                  handleStageStatusChange(
-                                    stage.stageNumber,
-                                    e.target.value as "completed" | "active" | "pending"
-                                  )
-                                }
-                                className="h-6 text-[10px] rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] px-1.5 py-0 text-slate-700 dark:text-slate-200 font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
-                              >
-                                <option value="completed">เสร็จสิ้นแล้ว</option>
-                                <option value="active">กำลังดำเนินการ</option>
-                                <option value="pending">ยังไม่ถึงขั้นนี้</option>
-                              </select>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            มาตรฐาน {stage.standardDays} วัน
-                            {stage.notes && !isRetroactiveEditing ? ` · หมายเหตุ: ${stage.notes}` : ""}
-                          </p>
-                          {isRetroactiveEditing && (
-                            <input
-                              type="text"
-                              placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
-                              value={stage.notes || ""}
-                              onChange={(e) =>
-                                handleUpdateRetroactiveField(stage.stageNumber, "notes", e.target.value)
-                              }
-                              className="mt-1.5 h-6.5 w-full rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] px-2 text-[11px] text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
-                            />
-                          )}
-                        </div>
-
-                        {/* Stage Timestamps / Interactive Inputs (Right Column) */}
-                        <div className="pl-3 md:pl-0 text-left md:text-right text-xs shrink-0">
-                          {isRetroactiveEditing ? (
-                            /* Inline Date-Time Editing Mode */
-                            <div className="flex flex-col items-start md:items-end gap-1.5">
-                              {isEditableStep ? (
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  {/* Start Date-Time Picker Input */}
-                                  <div className="relative inline-flex items-center">
-                                    <input
-                                      type="datetime-local"
-                                      value={formatToInputDateTime(stage.startDate)}
-                                      onChange={(e) =>
-                                        handleStageDateChange(stage.stageNumber, "startDate", e.target.value)
-                                      }
-                                      onClick={(e) => {
-                                        try {
-                                          if (typeof e.currentTarget.showPicker === "function") {
-                                            e.currentTarget.showPicker()
-                                          }
-                                        } catch {}
-                                      }}
-                                      className={`h-7.5 rounded-md border bg-white dark:bg-[#0f172a] px-2 pr-7 text-[11px] font-mono text-slate-700 dark:text-slate-200 shadow-2xs transition-all hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer ${
-                                        hasDateError ? "border-red-400 ring-1 ring-red-400 bg-red-50/20" : "border-slate-200 dark:border-white/10"
-                                      }`}
-                                      title="เลือกวันและเวลาเริ่มต้น"
-                                    />
-                                    <button
-                                      type="button"
-                                      tabIndex={-1}
-                                      onClick={(e) => {
-                                        const input = e.currentTarget.parentElement?.querySelector("input")
-                                        if (input) {
-                                          try {
-                                            if (typeof input.showPicker === "function") {
-                                              input.showPicker()
-                                            } else {
-                                              input.focus()
-                                            }
-                                          } catch {
-                                            input.focus()
-                                          }
-                                        }
-                                      }}
-                                      className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-                                      title="เปิดปฏิทินเลือกวันและเวลาเริ่มต้น"
-                                      aria-label="เปิดปฏิทินเลือกวันและเวลาเริ่มต้น"
-                                    >
-                                      <Calendar className="size-3.5" />
-                                    </button>
-                                  </div>
-
-                                  <span className="text-slate-400 text-xs font-bold">→</span>
-
-                                  {/* End Date-Time Picker Input */}
-                                  <div className="relative inline-flex items-center">
-                                    <input
-                                      type="datetime-local"
-                                      value={formatToInputDateTime(stage.endDate)}
-                                      onChange={(e) =>
-                                        handleStageDateChange(stage.stageNumber, "endDate", e.target.value)
-                                      }
-                                      onClick={(e) => {
-                                        try {
-                                          if (typeof e.currentTarget.showPicker === "function") {
-                                            e.currentTarget.showPicker()
-                                          }
-                                        } catch {}
-                                      }}
-                                      className={`h-7.5 rounded-md border bg-white dark:bg-[#0f172a] px-2 pr-7 text-[11px] font-mono text-slate-700 dark:text-slate-200 shadow-2xs transition-all hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer ${
-                                        hasDateError ? "border-red-400 ring-1 ring-red-400 bg-red-50/20" : "border-slate-200 dark:border-white/10"
-                                      }`}
-                                      title="เลือกวันและเวลาสิ้นสุด"
-                                    />
-                                    <button
-                                      type="button"
-                                      tabIndex={-1}
-                                      onClick={(e) => {
-                                        const input = e.currentTarget.parentElement?.querySelector("input")
-                                        if (input) {
-                                          try {
-                                            if (typeof input.showPicker === "function") {
-                                              input.showPicker()
-                                            } else {
-                                              input.focus()
-                                            }
-                                          } catch {
-                                            input.focus()
-                                          }
-                                        }
-                                      }}
-                                      className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-                                      title="เปิดปฏิทินเลือกวันและเวลาสิ้นสุด"
-                                      aria-label="เปิดปฏิทินเลือกวันและเวลาสิ้นสุด"
-                                    >
-                                      <Calendar className="size-3.5" />
-                                    </button>
-                                  </div>
-
-                                  {/* Dynamic Duration Recalculation Badge */}
-                                  <span
-                                    className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold transition-all ${
-                                      isOverStandard
-                                        ? "bg-orange-100 text-[#ea580c] border border-orange-200"
-                                        : "bg-slate-100 text-slate-700 border border-slate-200"
-                                    }`}
-                                  >
-                                    {isOverStandard && (
-                                      <AlertTriangle className="size-3 mr-1 text-[#ea580c]" />
-                                    )}
-                                    {stageDuration.parenthesizedText}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-slate-400 italic">ยังไม่ถึงขั้นนี้</span>
-                              )}
-
-                              {/* Logical Validation Error Notice */}
-                              {hasDateError && (
-                                <div className="flex items-center gap-1 text-[10px] font-medium text-red-600 animate-in fade-in slide-in-from-top-1">
-                                  <AlertCircle className="size-3 shrink-0 text-red-500" />
-                                  <span>{dateValidationErrors[stage.stageNumber]}</span>
-                                </div>
-                              )}
-
-                              {/* Stage Standard / Penalty Warning Highlight */}
-                              {isOverStandard && !hasDateError && (
-                                <div className="flex items-center gap-1 text-[10px] font-medium text-[#ea580c] animate-in fade-in">
-                                  <span>เกินมาตรฐาน {stageDuration.overdueDays} วัน</span>
-                                  {stage.hasVendorPenalty && (
-                                    <span className="font-bold underline decoration-orange-400">· เข้าเกณฑ์คิดบทปรับ</span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            /* Non-Edit Static Timeline Display */
-                            <>
-                              {isCompleted && (
-                                <div>
-                                  <span className="text-slate-500">
-                                    {stage.startDate ? formatDisplayDate(stage.startDate) : ""}{" "}
-                                    → {stage.endDate ? formatDisplayDate(stage.endDate) : ""}{" "}
-                                  </span>
-                                  <span
-                                    className={
-                                      isOverStandard
-                                        ? "font-bold text-[#ea580c]"
-                                        : "text-slate-500"
-                                    }
-                                  >
-                                    {stageDuration.parenthesizedText}
-                                  </span>
-                                  {isOverStandard && (
-                                    <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#ea580c]">
-                                      <AlertTriangle className="size-2.5" />
-                                      <span>เกิน SLA +{stageDuration.overdueDays} วัน</span>
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                              {isActive && (
-                                <div>
-                                  <span className="text-slate-700 font-medium">
-                                    {stage.startDate ? formatDisplayDate(stage.startDate) : ""}{" "}
-                                  </span>
-                                  <span
-                                    className={
-                                      isOverStandard
-                                        ? "font-bold text-[#ea580c]"
-                                        : "text-slate-700 font-medium"
-                                    }
-                                  >
-                                    {stageDuration.parenthesizedText}
-                                  </span>
-                                  {isOverStandard && (
-                                    <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#ea580c]">
-                                      <AlertTriangle className="size-2.5" />
-                                      <span>เกิน SLA +{stageDuration.overdueDays} วัน</span>
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                              {isPending && (
-                                <div className="text-slate-400">ยังไม่ถึงขั้นนี้</div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                  </>
+                )}
               </div>
 
               {/* Modal Footer */}

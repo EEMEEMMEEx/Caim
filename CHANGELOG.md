@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.0] - 2026-10-01
+
+### Fixed & Enhanced
+- **Form Submission Persistence Pipeline & Visual Coverage Linkage (`OverseasView.tsx`, `/api/rma/permit/route.ts`, `database.ts`, `rmaDuration.ts`, `StageProgressBarCell.tsx`)**:
+  - **Audit & Fix Form Submission & Data Persistence Pipeline**:
+    - Fixed `/api/rma/permit/route.ts` payload processing to accept and persist all active fields (`permitNo`, normalized `permitType`, `authority`, `destinationCountry`, `rmaId`, `rmaNo`, `serialNo`, `issueDate`, `expiryDate`, `coveredSteps`, `coveredStages`, `remarks`).
+    - Added atomic persistence to local JSON file store (`data/rma.json`) and MongoDB with transaction logging and SSE cache invalidation (`RMA_CHANGED`).
+    - Fixed `handleCreateImportExportPermit` in `OverseasView.tsx` with error handling, active mutation via `applyRmaMutation("update", data.linkedRma)`, and cache invalidation via `invalidateRmaCache()`.
+    - Real-time toast feedback on save: success toast (`"บันทึกใบอนุญาตนำเข้า-ส่งออกสำเร็จ"`), modal auto-close, and descriptive error toasts on missing required fields or network failure.
+  - **Visual Coverage in Timeline & Stepper**:
+    - Highlighting of covered step nodes (Steps 1–5 or 5–8) with glowing cyan borders (`border-cyan-400`), cyan tint background (`bg-cyan-50/50 dark:bg-cyan-950/20`), and glowing step node ring (`ring-2 ring-cyan-400`).
+    - Rendered attached permit pill above covered step range: `[🛡️ ใบอนุญาต: EXP-2026-XXXX | คุ้มครองขั้นตอน 1-5 | เหลือ XX วัน]`.
+  - **Surface Saved Permits in RMA Table & Dedicated Detail Drawer**:
+    - Added explicit permit chip badges in the main RMA table row (`ใบอนุญาตส่งออก: EXP-2026-XXXX` / `ใบอนุญาตนำเข้า: IMP-2026-XXXX`) under the RMA number and in `StageProgressBarCell`.
+    - Added dedicated "ใบอนุญาตขนส่ง (Permits)" sub-panel and tab switcher inside the RMA detail drawer displaying complete permit records, 90-day SLA progress bar, permit details grid, and audit log.
+
 ## [0.33.0] - 2026-10-01
 
 ### Added

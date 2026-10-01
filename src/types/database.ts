@@ -100,10 +100,14 @@ export interface PermitTrackingInfo {
   permitNo: string
   permitType: "export_for_repair" | "import_after_repair" | "nbtc_permit" | "customs_clearance"
   authority: string
-  coveredSteps: number[] // [1, 2, 3, 4, 5] for export, [5, 6, 7, 8] for import
+  destinationCountry?: string
+  rmaId?: string
+  rmaNo?: string
+  serialNo?: string
   issueDate: string // YYYY-MM-DD
   expiryDate: string // YYYY-MM-DD
-  destinationCountry?: string
+  coveredSteps: number[] // [1, 2, 3, 4, 5] for export, [5, 6, 7, 8] for import
+  coveredStages?: number[] // alias for coveredSteps
   remarks?: string
   createdAt?: string
 }

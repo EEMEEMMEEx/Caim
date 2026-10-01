@@ -21,12 +21,25 @@ export async function POST(request: NextRequest) {
 
     if (!body) {
       return NextResponse.json(
-        { success: false, error: "Missing request body" },
+        { success: false, error: "Missing required permit submission payload" },
         { status: 400, headers: NO_CACHE_HEADERS }
       )
     }
 
-    const permitType = body.permitType || "export_for_repair"
+    // Normalize permit type
+    const rawType = String(body.permitType || "export_for_repair").trim()
+    let permitType: "export_for_repair" | "import_after_repair" | "nbtc_permit" | "customs_clearance" = "export_for_repair"
+
+    if (rawType === "นำเข้าหลังการซ่อมแซม" || rawType === "import_after_repair") {
+      permitType = "import_after_repair"
+    } else if (rawType === "ส่งออกเพื่อซ่อมแซม" || rawType === "export_for_repair") {
+      permitType = "export_for_repair"
+    } else if (rawType === "nbtc_permit" || rawType.includes("กสทช")) {
+      permitType = "nbtc_permit"
+    } else if (rawType === "customs_clearance" || rawType.includes("ศุลกากร")) {
+      permitType = "customs_clearance"
+    }
+
     const coveredSteps = getCoveredStepsByPermitType(permitType)
 
     const issueDate =
@@ -47,20 +60,8 @@ export async function POST(request: NextRequest) {
 
     const nowIso = new Date().toISOString()
 
-    const permitDoc: PermitTrackingInfo = {
-      permitNo,
-      permitType,
-      authority: body.authority || "กสทช. (NBTC)",
-      coveredSteps,
-      issueDate,
-      expiryDate,
-      destinationCountry: body.destinationCountry || "ฮ่องกง (Hong Kong)",
-      remarks: body.remarks || "",
-      createdAt: nowIso,
-    }
-
-    // Find and link to matching RMA record if provided
-    const targetRmaNo = (body.rmaNo || body.linkedRmaNo || "").trim()
+    // Find matching RMA record if provided
+    const targetRmaNo = (body.rmaNo || body.linkedRmaNo || body.rmaId || "").trim()
     const targetSerial = (body.selectedAssetSerial || body.serialNo || "").trim()
 
     const diskItems = getPersistentRma()
@@ -68,7 +69,9 @@ export async function POST(request: NextRequest) {
 
     if (targetRmaNo) {
       targetRma = diskItems.find(
-        (r) => r.rmaNo.toLowerCase() === targetRmaNo.toLowerCase() || r.id === targetRmaNo
+        (r) =>
+          r.rmaNo.toLowerCase() === targetRmaNo.toLowerCase() ||
+          r.id.toLowerCase() === targetRmaNo.toLowerCase()
       )
     }
 
@@ -81,6 +84,22 @@ export async function POST(request: NextRequest) {
     // If still not matched and there are active RMAs, bind to the most recent in-progress RMA
     if (!targetRma && diskItems.length > 0) {
       targetRma = diskItems[0]
+    }
+
+    const permitDoc: PermitTrackingInfo = {
+      permitNo,
+      permitType,
+      authority: body.authority || "กสทช. (NBTC)",
+      destinationCountry: body.destinationCountry || "ฮ่องกง (Hong Kong)",
+      rmaId: targetRma?.id || targetRmaNo || undefined,
+      rmaNo: targetRma?.rmaNo || targetRmaNo || undefined,
+      serialNo: targetRma?.serialNo || targetSerial || undefined,
+      issueDate,
+      expiryDate,
+      coveredSteps,
+      coveredStages: coveredSteps,
+      remarks: body.remarks || "",
+      createdAt: nowIso,
     }
 
     let savedToMongo = false
@@ -124,7 +143,13 @@ export async function POST(request: NextRequest) {
             details: {
               permitNo: permitDoc.permitNo,
               permitType: permitDoc.permitType,
+              authority: permitDoc.authority,
+              destinationCountry: permitDoc.destinationCountry,
+              rmaId: targetRma.id,
+              rmaNo: targetRma.rmaNo,
+              serialNo: targetRma.serialNo,
               coveredSteps: permitDoc.coveredSteps,
+              coveredStages: permitDoc.coveredStages,
               issueDate: permitDoc.issueDate,
               expiryDate: permitDoc.expiryDate,
               validityDays: 90,
@@ -144,13 +169,15 @@ export async function POST(request: NextRequest) {
         timestamp: nowIso,
       })
 
+      console.log(`[api/rma/permit] Successfully persisted permit ${permitDoc.permitNo} to RMA ${targetRma.rmaNo}`)
+
       return NextResponse.json(
         {
           success: true,
           permit: permitDoc,
           linkedRma: updatedRma,
           savedTo: savedToMongo ? "mongodb" : "persistent-disk",
-          message: `บันทึกใบอนุญาต ${permitDoc.permitNo} และผูกขั้นตอนไทม์ไลน์ (${permitType === "export_for_repair" ? "ขั้นตอน 1–5" : "ขั้นตอน 5–8"}) กรอบเวลา 90 วันเรียบร้อยแล้ว`,
+          message: "บันทึกใบอนุญาตนำเข้า-ส่งออกสำเร็จ",
         },
         { status: 200, headers: NO_CACHE_HEADERS }
       )
@@ -162,12 +189,13 @@ export async function POST(request: NextRequest) {
         success: true,
         permit: permitDoc,
         linkedRma: null,
-        message: `บันทึกใบอนุญาต ${permitDoc.permitNo} (กรอบเวลา 90 วัน) เรียบร้อยแล้ว`,
+        message: "บันทึกใบอนุญาตนำเข้า-ส่งออกสำเร็จ",
       },
       { status: 200, headers: NO_CACHE_HEADERS }
     )
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to process permit"
+    const message = error instanceof Error ? error.message : "Failed to process permit submission"
+    console.error("[api/rma/permit] Error:", error)
     return NextResponse.json(
       { success: false, error: message },
       { status: 500, headers: NO_CACHE_HEADERS }
