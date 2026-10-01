@@ -74,31 +74,33 @@ export function calculatePermitExpirationDate(issueDateStr?: string | null, vali
 }
 
 /**
- * Dynamically calculate elapsed days and remaining days within the 90-day permit SLA window
+ * Dynamically calculate elapsed days and remaining days within a flexible permit SLA window.
  *
  * Formula:
- * - expirationDate = addDays(new Date(issueDate), 90)
+ * - expirationDate = user-specified end date or addDays(issueDate, 90) by default
+ * - totalSlaDays = Math.max(1, differenceInCalendarDays(expirationDate, issueDate))
  * - elapsedDays = differenceInCalendarDays(currentDate, issueDate)
  * - remainingDays = Math.max(0, differenceInCalendarDays(expirationDate, currentDate))
- * - progressPct = Math.min(100, Math.max(0, (elapsedDays / 90) * 100))
+ * - progressPct = Math.min(100, Math.max(0, (elapsedDays / totalSlaDays) * 100))
+ * - subtext = 'กรอบเวลา SLA {totalSlaDays} วัน (ผ่านไป {elapsedDays} วัน)'
  */
 export function calculatePermitSla(
   issueDateStr?: string | null,
   expiryDateStr?: string | null,
   targetDate: Date | string = new Date()
 ): PermitSlaResult {
-  const TOTAL_SLA_DAYS = 90
-
   const issueDate = parseLocalDate(issueDateStr)
-  const calculatedExpiry = addDays(issueDate, TOTAL_SLA_DAYS)
+  const currentDate = parseLocalDate(targetDate)
 
-  // Use provided expiryDate if valid, otherwise strictly computed issueDate + 90 days
+  // Use provided expiryDate if valid, otherwise fallback to default 90 days from issueDate
   const expirationDate =
     expiryDateStr && !isNaN(Date.parse(expiryDateStr))
       ? parseLocalDate(expiryDateStr)
-      : calculatedExpiry
+      : addDays(issueDate, 90)
 
-  const currentDate = parseLocalDate(targetDate)
+  // totalSlaDays = differenceInCalendarDays(expirationDate, issueDate)
+  const calculatedTotalSlaDays = differenceInCalendarDays(expirationDate, issueDate)
+  const totalSlaDays = Math.max(1, calculatedTotalSlaDays)
 
   // elapsedDays = differenceInCalendarDays(currentDate, issueDate)
   const elapsedDays = Math.max(0, differenceInCalendarDays(currentDate, issueDate))
@@ -108,12 +110,12 @@ export function calculatePermitSla(
   const remainingDays = Math.max(0, rawRemaining)
 
   const isExpired = rawRemaining <= 0
-  const isExpiringSoon = !isExpired && remainingDays <= 15
+  const isExpiringSoon = !isExpired && remainingDays <= Math.min(15, Math.ceil(totalSlaDays * 0.2))
 
-  // progressPct = Math.min(100, Math.max(0, (elapsedDays / 90) * 100))
+  // progressPct = Math.min(100, Math.max(0, (elapsedDays / totalSlaDays) * 100))
   const progressPercent = Math.min(
     100,
-    Math.max(0, Math.round((elapsedDays / TOTAL_SLA_DAYS) * 100))
+    Math.max(0, Math.round((elapsedDays / totalSlaDays) * 100))
   )
 
   let status: "active" | "warning" | "expired" = "active"
@@ -131,11 +133,11 @@ export function calculatePermitSla(
     badgeText = `ใกล้หมดอายุ เหลืออีก ${remainingDays} วัน`
   }
 
-  // Subtext: 'กรอบเวลา SLA 90 วัน (ผ่านไป {elapsedDays} วัน)'
-  const subtext = `กรอบเวลา SLA 90 วัน (ผ่านไป ${elapsedDays} วัน)`
+  // Subtext: 'กรอบเวลา SLA {totalSlaDays} วัน (ผ่านไป {elapsedDays} วัน)'
+  const subtext = `กรอบเวลา SLA ${totalSlaDays} วัน (ผ่านไป ${elapsedDays} วัน)`
 
   return {
-    totalDays: TOTAL_SLA_DAYS,
+    totalDays: totalSlaDays,
     elapsedDays,
     remainingDays,
     isExpired,

@@ -656,6 +656,65 @@ export function OverseasView() {
     }))
   }
 
+  // Inline / modal date editing state for permit cards (in Drawer and Permits tab)
+  const [editingPermitNo, setEditingPermitNo] = React.useState<string | null>(null)
+  const [editingDates, setEditingDates] = React.useState<{
+    permitNo: string
+    issueDate: string
+    expiryDate: string
+    rmaNo?: string
+  }>({ permitNo: "", issueDate: "", expiryDate: "" })
+  const [isSavingPermitDate, setIsSavingPermitDate] = React.useState(false)
+
+  const handleStartEditPermit = (permit: { permitNo: string; issueDate: string; expiryDate: string; rmaNo?: string }, rmaNo?: string) => {
+    setEditingPermitNo(permit.permitNo)
+    setEditingDates({
+      permitNo: permit.permitNo,
+      issueDate: permit.issueDate || new Date().toISOString().slice(0, 10),
+      expiryDate: permit.expiryDate || calculatePermitExpirationDate(permit.issueDate, 90),
+      rmaNo: rmaNo || permit.rmaNo,
+    })
+  }
+
+  const handleCancelEditPermit = () => {
+    setEditingPermitNo(null)
+    setEditingDates({ permitNo: "", issueDate: "", expiryDate: "" })
+  }
+
+  const handleSavePermitDates = async (permitNo: string) => {
+    setIsSavingPermitDate(true)
+    try {
+      const res = await fetch("/api/rma/permit", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          permitNo,
+          issueDate: editingDates.issueDate,
+          expiryDate: editingDates.expiryDate,
+          rmaNo: editingDates.rmaNo || timelineItem?.rmaNo,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "เกิดข้อผิดพลาดในการบันทึกวันที่")
+      }
+
+      if (data.linkedRma) {
+        applyRmaMutation("update", data.linkedRma)
+        setTimelineItem(data.linkedRma)
+      }
+      await invalidateRmaCache()
+
+      showToast(`อัปเดตกรอบเวลาใบอนุญาต ${permitNo} เรียบร้อยแล้ว`)
+      setEditingPermitNo(null)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึกวันที่"
+      showToast(`บันทึกไม่สำเร็จ: ${msg}`)
+    } finally {
+      setIsSavingPermitDate(false)
+    }
+  }
+
   const handleCaseChange = (caseId: string) => {
     setNewRmaForm((prev) => {
       const updated = { ...prev, linkedCaseId: caseId }
@@ -1579,12 +1638,20 @@ export function OverseasView() {
                       return (
                         <div className="space-y-4">
                           {activePermits.map((permit, idx) => {
-                            const sla = calculatePermitSla(permit.issueDate, permit.expiryDate)
+                            const isEditing = editingPermitNo === permit.permitNo
                             const isExport = permit.permitType === "export_for_repair"
+                            const currentIssueDate = isEditing ? editingDates.issueDate : permit.issueDate
+                            const currentExpiryDate = isEditing ? editingDates.expiryDate : permit.expiryDate
+                            const sla = calculatePermitSla(currentIssueDate, currentExpiryDate)
+
                             return (
                               <div
                                 key={permit.permitNo || idx}
-                                className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#0f172a] p-5 shadow-xs space-y-4"
+                                className={`rounded-2xl border p-5 shadow-xs space-y-4 transition-all ${
+                                  isEditing
+                                    ? "border-cyan-500 bg-slate-900/90 shadow-lg ring-1 ring-cyan-500/30"
+                                    : "border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#0f172a]"
+                                }`}
                               >
                                 {/* Permit Header & Status Badge */}
                                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
@@ -1607,26 +1674,40 @@ export function OverseasView() {
                                     </div>
                                   </div>
 
-                                  <div className="text-right">
-                                    <span
-                                      className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${
-                                        sla.isExpired
-                                          ? "bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-300"
-                                          : sla.isExpiringSoon
-                                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300"
-                                          : "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/80 dark:text-cyan-300"
-                                      }`}
-                                    >
-                                      <Clock className="size-3" />
-                                      <span>{sla.badgeText}</span>
-                                    </span>
-                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-                                      {sla.subtext}
-                                    </p>
+                                  <div className="flex items-center gap-2">
+                                    {!isEditing && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartEditPermit(permit, timelineItem?.rmaNo)}
+                                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 shadow-2xs transition-colors cursor-pointer"
+                                        title="แก้ไขวันที่ใบอนุญาต (Issue & Expiry Date)"
+                                      >
+                                        <Pencil className="size-3 text-cyan-500" />
+                                        <span>แก้ไขวัน</span>
+                                      </button>
+                                    )}
+
+                                    <div className="text-right">
+                                      <span
+                                        className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${
+                                          sla.isExpired
+                                            ? "bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-300"
+                                            : sla.isExpiringSoon
+                                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300"
+                                            : "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/80 dark:text-cyan-300"
+                                        }`}
+                                      >
+                                        <Clock className="size-3" />
+                                        <span>{sla.badgeText}</span>
+                                      </span>
+                                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                                        {sla.subtext}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
 
-                                {/* 90-Day SLA Progress Bar */}
+                                {/* Dynamic SLA Progress Bar */}
                                 <div className="space-y-1.5">
                                   <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                                     <span>{sla.subtext}</span>
@@ -1636,7 +1717,7 @@ export function OverseasView() {
                                   </div>
                                   <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-white/5">
                                     <div
-                                      className={`h-full transition-all duration-500 ${
+                                      className={`h-full transition-all duration-300 ${
                                         sla.isExpired ? "bg-red-500" : sla.isExpiringSoon ? "bg-amber-500" : "bg-cyan-500"
                                       }`}
                                       style={{ width: `${sla.progressPercent}%` }}
@@ -1644,31 +1725,136 @@ export function OverseasView() {
                                   </div>
                                 </div>
 
-                                {/* Permit Details Grid */}
-                                <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50/70 dark:bg-slate-800/40 rounded-xl p-3 border border-slate-200/50 dark:border-white/5">
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-500 block text-[11px]">วันที่ออกใบอนุญาต</span>
-                                    <span className="font-medium text-slate-800 dark:text-slate-200">{permit.issueDate}</span>
+                                {/* Inline Date-Picker Editing Controls */}
+                                {isEditing ? (
+                                  <div className="rounded-xl border border-cyan-800/60 bg-slate-950/80 p-3.5 space-y-3 animate-in fade-in duration-200">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs font-semibold text-cyan-400 flex items-center gap-1.5">
+                                        <Pencil className="size-3.5" />
+                                        <span>แก้ไขวันที่ออก & วันหมดอายุ (กรอบเวลา SLA ปรับได้อิสระ)</span>
+                                      </span>
+                                      <span className="text-xs font-mono font-semibold text-cyan-300">
+                                        กรอบเวลา {sla.totalDays} วัน
+                                      </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="block text-xs font-medium text-slate-300 mb-1">
+                                          วันที่ออกใบอนุญาต (Issue Date)
+                                        </label>
+                                        <input
+                                          type="date"
+                                          value={editingDates.issueDate}
+                                          onChange={(e) =>
+                                            setEditingDates((prev) => ({
+                                              ...prev,
+                                              issueDate: e.target.value,
+                                            }))
+                                          }
+                                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100 focus:border-cyan-500 focus:outline-none [color-scheme:dark]"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <label className="block text-xs font-medium text-slate-300 mb-1">
+                                          วันหมดอายุ (Expiration Date)
+                                        </label>
+                                        <input
+                                          type="date"
+                                          value={editingDates.expiryDate}
+                                          onChange={(e) =>
+                                            setEditingDates((prev) => ({
+                                              ...prev,
+                                              expiryDate: e.target.value,
+                                            }))
+                                          }
+                                          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-100 focus:border-cyan-500 focus:outline-none [color-scheme:dark]"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Presets and Actions */}
+                                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800">
+                                      <div className="flex flex-wrap items-center gap-1 text-[11px]">
+                                        <span className="text-slate-400 text-[10px]">กรอบเวลาแนะนำ:</span>
+                                        {[
+                                          { label: "+30 วัน", days: 30 },
+                                          { label: "+60 วัน", days: 60 },
+                                          { label: "+90 วัน", days: 90 },
+                                          { label: "+120 วัน", days: 120 },
+                                          { label: "+180 วัน", days: 180 },
+                                        ].map((preset) => (
+                                          <button
+                                            key={preset.days}
+                                            type="button"
+                                            onClick={() => {
+                                              const newExp = calculatePermitExpirationDate(
+                                                editingDates.issueDate,
+                                                preset.days
+                                              )
+                                              setEditingDates((prev) => ({ ...prev, expiryDate: newExp }))
+                                            }}
+                                            className="rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700 px-2 py-0.5 transition-colors cursor-pointer text-[10px]"
+                                          >
+                                            {preset.label}
+                                          </button>
+                                        ))}
+                                      </div>
+
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          type="button"
+                                          disabled={isSavingPermitDate}
+                                          onClick={handleCancelEditPermit}
+                                          className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs text-slate-300 transition-colors cursor-pointer"
+                                        >
+                                          <X className="size-3.5" />
+                                          <span>ยกเลิก</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          disabled={isSavingPermitDate}
+                                          onClick={() => handleSavePermitDates(permit.permitNo)}
+                                          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                                        >
+                                          {isSavingPermitDate ? (
+                                            <Loader2 className="size-3.5 animate-spin" />
+                                          ) : (
+                                            <Check className="size-3.5" />
+                                          )}
+                                          <span>{isSavingPermitDate ? "กำลังบันทึก..." : "บันทึกวันที่"}</span>
+                                        </button>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-500 block text-[11px]">วันหมดอายุ (90 วัน)</span>
-                                    <span className="font-medium text-slate-800 dark:text-slate-200">{permit.expiryDate}</span>
+                                ) : (
+                                  /* Permit Details Grid */
+                                  <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50/70 dark:bg-slate-800/40 rounded-xl p-3 border border-slate-200/50 dark:border-white/5">
+                                    <div>
+                                      <span className="text-slate-400 dark:text-slate-500 block text-[11px]">วันที่ออกใบอนุญาต</span>
+                                      <span className="font-medium text-slate-800 dark:text-slate-200">{permit.issueDate}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400 dark:text-slate-500 block text-[11px]">วันหมดอายุ (กรอบเวลา {sla.totalDays} วัน)</span>
+                                      <span className="font-medium text-slate-800 dark:text-slate-200">{permit.expiryDate}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400 dark:text-slate-500 block text-[11px]">ขั้นตอนที่คุ้มครอง</span>
+                                      <span className="font-semibold text-cyan-700 dark:text-cyan-400">
+                                        {isExport ? "ขั้นตอนที่ 1 – 5" : "ขั้นตอนที่ 5 – 8"}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400 dark:text-slate-500 block text-[11px]">ประเทศปลายทาง / ต้นทาง</span>
+                                      <span className="font-medium text-slate-800 dark:text-slate-200">{permit.destinationCountry || "ฮ่องกง"}</span>
+                                    </div>
+                                    <div className="col-span-2 pt-1 border-t border-slate-200/50 dark:border-white/5">
+                                      <span className="text-slate-400 dark:text-slate-500 block text-[11px]">หมายเหตุ / ข้อมูลกำกับ</span>
+                                      <span className="text-slate-700 dark:text-slate-300">{permit.remarks || "ไม่มีหมายเหตุเพิ่มเติม"}</span>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-500 block text-[11px]">ขั้นตอนที่คุ้มครอง</span>
-                                    <span className="font-semibold text-cyan-700 dark:text-cyan-400">
-                                      {isExport ? "ขั้นตอนที่ 1 – 5" : "ขั้นตอนที่ 5 – 8"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-slate-400 dark:text-slate-500 block text-[11px]">ประเทศปลายทาง / ต้นทาง</span>
-                                    <span className="font-medium text-slate-800 dark:text-slate-200">{permit.destinationCountry || "ฮ่องกง"}</span>
-                                  </div>
-                                  <div className="col-span-2 pt-1 border-t border-slate-200/50 dark:border-white/5">
-                                    <span className="text-slate-400 dark:text-slate-500 block text-[11px]">หมายเหตุ / ข้อมูลกำกับ</span>
-                                    <span className="text-slate-700 dark:text-slate-300">{permit.remarks || "ไม่มีหมายเหตุเพิ่มเติม"}</span>
-                                  </div>
-                                </div>
+                                )}
 
                                 {/* Audit Log Details */}
                                 <div className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-between pt-1">
@@ -1723,15 +1909,21 @@ export function OverseasView() {
                       }
 
                       return (
-                        <div className="mb-4 space-y-2">
+                        <div className="mb-4 space-y-2.5">
                           {activePermits.map((permit) => {
-                            const sla = calculatePermitSla(permit.issueDate, permit.expiryDate)
+                            const isEditing = editingPermitNo === permit.permitNo
                             const isExport = permit.permitType === "export_for_repair"
+                            const currentIssueDate = isEditing ? editingDates.issueDate : permit.issueDate
+                            const currentExpiryDate = isEditing ? editingDates.expiryDate : permit.expiryDate
+                            const sla = calculatePermitSla(currentIssueDate, currentExpiryDate)
+
                             return (
                               <div
                                 key={permit.permitNo}
                                 className={`rounded-xl border p-3 text-xs transition-all ${
-                                  sla.isExpired
+                                  isEditing
+                                    ? "border-cyan-500 bg-slate-900/90 shadow-md ring-1 ring-cyan-500/30"
+                                    : sla.isExpired
                                     ? "border-red-300 bg-red-50/60 dark:border-red-900/60 dark:bg-red-950/30"
                                     : sla.isExpiringSoon
                                     ? "border-amber-300 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/30"
@@ -1753,34 +1945,48 @@ export function OverseasView() {
                                         </span>
                                       </div>
                                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                        หน่วยงาน: {permit.authority} · วันที่ออก {permit.issueDate} · หมดอายุ {permit.expiryDate}
+                                        หน่วยงาน: {permit.authority} · วันที่ออก {currentIssueDate} · หมดอายุ {currentExpiryDate} ({sla.totalDays} วัน)
                                       </p>
                                     </div>
                                   </div>
 
-                                  <div className="text-right">
-                                    <span
-                                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${
-                                        sla.isExpired
-                                          ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
-                                          : sla.isExpiringSoon
-                                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300"
-                                          : "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-300"
-                                      }`}
-                                    >
-                                      <Clock className="size-3" />
-                                      <span>{sla.badgeText}</span>
-                                    </span>
-                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                                      {sla.subtext}
-                                    </p>
+                                  <div className="flex items-center gap-2">
+                                    {!isEditing && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartEditPermit(permit, timelineItem?.rmaNo)}
+                                        className="inline-flex items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-200 shadow-2xs transition-colors cursor-pointer"
+                                        title="แก้ไขวันที่ใบอนุญาต (Issue & Expiry Date)"
+                                      >
+                                        <Pencil className="size-2.5 text-cyan-500" />
+                                        <span>แก้ไขวัน</span>
+                                      </button>
+                                    )}
+
+                                    <div className="text-right">
+                                      <span
+                                        className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${
+                                          sla.isExpired
+                                            ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
+                                            : sla.isExpiringSoon
+                                            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300"
+                                            : "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-300"
+                                        }`}
+                                      >
+                                        <Clock className="size-3" />
+                                        <span>{sla.badgeText}</span>
+                                      </span>
+                                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                        {sla.subtext}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
 
                                 {/* SLA Progress Bar */}
                                 <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                                   <div
-                                    className={`h-full transition-all duration-500 ${
+                                    className={`h-full transition-all duration-300 ${
                                       sla.isExpired
                                         ? "bg-red-500"
                                         : sla.isExpiringSoon
@@ -1790,6 +1996,111 @@ export function OverseasView() {
                                     style={{ width: `${sla.progressPercent}%` }}
                                   />
                                 </div>
+
+                                {/* Inline Date-Picker Editing Controls */}
+                                {isEditing && (
+                                  <div className="mt-3 pt-2.5 border-t border-slate-700/80 space-y-2.5 animate-in fade-in duration-200">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[11px] font-semibold text-cyan-400 flex items-center gap-1">
+                                        <Pencil className="size-3" />
+                                        <span>แก้ไขวันที่ออก & วันหมดอายุ (กรอบเวลา SLA ปรับได้อิสระ)</span>
+                                      </span>
+                                      <span className="text-[10px] font-mono text-cyan-300 font-semibold">
+                                        รวม {sla.totalDays} วัน
+                                      </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      <div>
+                                        <label className="block text-[10px] font-medium text-slate-300 mb-1">
+                                          วันที่ออกใบอนุญาต (Issue Date)
+                                        </label>
+                                        <input
+                                          type="date"
+                                          value={editingDates.issueDate}
+                                          onChange={(e) =>
+                                            setEditingDates((prev) => ({
+                                              ...prev,
+                                              issueDate: e.target.value,
+                                            }))
+                                          }
+                                          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs text-slate-100 focus:border-cyan-500 focus:outline-none [color-scheme:dark]"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <label className="block text-[10px] font-medium text-slate-300 mb-1">
+                                          วันหมดอายุ (Expiration Date)
+                                        </label>
+                                        <input
+                                          type="date"
+                                          value={editingDates.expiryDate}
+                                          onChange={(e) =>
+                                            setEditingDates((prev) => ({
+                                              ...prev,
+                                              expiryDate: e.target.value,
+                                            }))
+                                          }
+                                          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs text-slate-100 focus:border-cyan-500 focus:outline-none [color-scheme:dark]"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Presets and Actions */}
+                                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800">
+                                      <div className="flex flex-wrap items-center gap-1 text-[10px]">
+                                        <span className="text-slate-400">ปรับเร็ว:</span>
+                                        {[
+                                          { label: "+30 วัน", days: 30 },
+                                          { label: "+60 วัน", days: 60 },
+                                          { label: "+90 วัน", days: 90 },
+                                          { label: "+120 วัน", days: 120 },
+                                          { label: "+180 วัน", days: 180 },
+                                        ].map((preset) => (
+                                          <button
+                                            key={preset.days}
+                                            type="button"
+                                            onClick={() => {
+                                              const newExp = calculatePermitExpirationDate(
+                                                editingDates.issueDate,
+                                                preset.days
+                                              )
+                                              setEditingDates((prev) => ({ ...prev, expiryDate: newExp }))
+                                            }}
+                                            className="rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700 px-1.5 py-0.5 transition-colors cursor-pointer text-[10px]"
+                                          >
+                                            {preset.label}
+                                          </button>
+                                        ))}
+                                      </div>
+
+                                      <div className="flex items-center gap-1.5">
+                                        <button
+                                          type="button"
+                                          disabled={isSavingPermitDate}
+                                          onClick={handleCancelEditPermit}
+                                          className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2.5 py-1 text-xs text-slate-300 transition-colors cursor-pointer"
+                                        >
+                                          <X className="size-3" />
+                                          <span>ยกเลิก</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          disabled={isSavingPermitDate}
+                                          onClick={() => handleSavePermitDates(permit.permitNo)}
+                                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                                        >
+                                          {isSavingPermitDate ? (
+                                            <Loader2 className="size-3 animate-spin" />
+                                          ) : (
+                                            <Check className="size-3" />
+                                          )}
+                                          <span>{isSavingPermitDate ? "กำลังบันทึก..." : "บันทึกวันที่"}</span>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )
                           })}
@@ -2483,7 +2794,7 @@ export function OverseasView() {
 
                   <div>
                     <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      วันหมดอายุ (กรอบเวลา 90 วัน) <span className="text-red-500">*</span>
+                      วันหมดอายุ (ปรับได้อิสระ) <span className="text-red-500">*</span>
                     </label>
                     <Input
                       type="date"
@@ -2494,10 +2805,29 @@ export function OverseasView() {
                       className="h-9 text-xs rounded-lg border-slate-200/80 dark:border-white/10 dark:bg-[#0f172a] dark:text-slate-100 focus-visible:ring-1 focus-visible:ring-cyan-500"
                       required
                     />
-                    <p className="mt-1 text-[11px] text-cyan-600 dark:text-cyan-400 font-medium flex items-center gap-1">
-                      <ShieldCheck className="size-3 shrink-0" />
-                      <span>คำนวณวันหมดอายุอัตโนมัติ (issueDate + 90 วัน)</span>
-                    </p>
+                    {/* Quick presets buttons */}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[11px]">
+                      <span className="text-slate-400 dark:text-slate-500 text-[10px]">กรอบเวลาแนะนำ:</span>
+                      {[
+                        { label: "+30 วัน", days: 30 },
+                        { label: "+60 วัน", days: 60 },
+                        { label: "+90 วัน", days: 90 },
+                        { label: "+120 วัน", days: 120 },
+                        { label: "+180 วัน", days: 180 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.days}
+                          type="button"
+                          onClick={() => {
+                            const newExp = calculatePermitExpirationDate(importExportForm.issueDate, preset.days)
+                            setImportExportForm((prev) => ({ ...prev, expiryDate: newExp }))
+                          }}
+                          className="rounded bg-slate-100 dark:bg-slate-800 hover:bg-cyan-50 dark:hover:bg-cyan-950/50 text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-white/10 px-1.5 py-0.5 text-[10px] font-medium transition-colors cursor-pointer"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Real-time Dynamic SLA Preview */}
@@ -2512,7 +2842,7 @@ export function OverseasView() {
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="text-xs font-semibold text-cyan-900 dark:text-cyan-200 flex items-center gap-1.5">
                               <ShieldCheck className="size-4 text-cyan-600 dark:text-cyan-400" />
-                              <span>การประเมินกรอบเวลา SLA 90 วัน (Real-Time)</span>
+                              <span>การประเมินกรอบเวลา SLA แบบไดนามิก (Real-Time)</span>
                             </span>
                             <span
                               className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${

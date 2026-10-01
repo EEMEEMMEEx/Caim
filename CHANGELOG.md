@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.35.0] - 2026-10-01
+
+### Added & Enhanced
+- **Dynamic SLA Window Framework & Inline Date Editing for Permits (`OverseasView.tsx`, `permitSla.ts`, `/api/rma/permit/route.ts`, `/api/permits/[id]/route.ts`)**:
+  - **Inline & Drawer Date Editing Controls**: Added an edit trigger button (Pencil icon) on each permit card in both the Overseas Drawer view and the Permits Tab, unlocking inline date pickers styled for the dark theme canvas.
+  - **Dynamic SLA Window (Unbound from Hardcoded 90 Days)**: Removed hardcoded 90-day assumptions, dynamically deriving `totalSlaDays = differenceInCalendarDays(expirationDate, issueDate)`. The SLA subtext dynamically adjusts to `กรอบเวลา SLA {totalSlaDays} วัน (ผ่านไป {elapsedDays} วัน)` with progress bar fill proportional to `(elapsedDays / totalSlaDays) * 100`.
+  - **Real-Time Recalculation & Quick Presets**: Integrated real-time recalculation of SLA metrics and added quick preset pills (`+30 วัน`, `+60 วัน`, `+90 วัน`, `+120 วัน`, `+180 วัน`) for instant validity adjustments.
+  - **REST PATCH Persistence & Optimistic Sync**: Added `PATCH /api/rma/permit` and `PATCH /api/permits/:id` endpoints, persisting new dates, total SLA days, and status to MongoDB and disk storage, while optimistically updating cache and timeline views without page reload.
+
 ## [0.34.3] - 2026-10-01
 
 ### Fixed & Enhanced
