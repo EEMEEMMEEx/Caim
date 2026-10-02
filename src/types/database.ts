@@ -73,6 +73,8 @@ export interface TicketDocument {
   deadlineDateIso?: string
   reporter?: string
   assignee?: string
+  reporterName?: string
+  assigneeName?: string
   stationId?: string // Foreign Key -> StationDocument.id
   station?: string // Station name
   province?: string

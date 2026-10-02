@@ -190,6 +190,11 @@ export async function POST(request: NextRequest) {
           province,
           district,
           subdistrict,
+          reporter: body.reporter || body.reporterName || undefined,
+          assignee: body.assignee || body.assigneeName || undefined,
+          reporterName: body.reporterName || body.reporter || undefined,
+          assigneeName: body.assigneeName || body.assignee || undefined,
+          remarks: body.remarks || undefined,
           createdAt: nowIso,
           updatedAt: nowIso,
         }
@@ -208,6 +213,9 @@ export async function POST(request: NextRequest) {
             stationId: newTicketDoc.stationId,
             station: newTicketDoc.station,
             status: newTicketDoc.status,
+            reporter: newTicketDoc.reporter,
+            assignee: newTicketDoc.assignee,
+            remarks: newTicketDoc.remarks,
           },
           timestamp: nowIso,
         })
@@ -270,6 +278,11 @@ export async function POST(request: NextRequest) {
       province,
       district,
       subdistrict,
+      reporter: body.reporter || body.reporterName || undefined,
+      assignee: body.assignee || body.assigneeName || undefined,
+      reporterName: body.reporterName || body.reporter || undefined,
+      assigneeName: body.assigneeName || body.assignee || undefined,
+      remarks: body.remarks || undefined,
       createdAt: nowIso,
       updatedAt: nowIso,
     }
@@ -364,6 +377,18 @@ export async function PUT(request: NextRequest) {
     }
     if (finalStatusCode !== undefined) {
       setFields.statusCode = finalStatusCode
+    }
+    if (updates.reporterName !== undefined && updates.reporter === undefined) {
+      setFields.reporter = updates.reporterName
+    }
+    if (updates.assigneeName !== undefined && updates.assignee === undefined) {
+      setFields.assignee = updates.assigneeName
+    }
+    if (updates.reporter !== undefined && updates.reporterName === undefined) {
+      setFields.reporterName = updates.reporter
+    }
+    if (updates.assignee !== undefined && updates.assigneeName === undefined) {
+      setFields.assigneeName = updates.assignee
     }
 
     // Determine current record from disk or mongo to preserve and calculate duration

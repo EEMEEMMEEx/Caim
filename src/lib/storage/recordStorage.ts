@@ -27,6 +27,11 @@ export interface StoredTicket {
   province?: string
   district?: string
   subdistrict?: string
+  reporter?: string
+  assignee?: string
+  reporterName?: string
+  assigneeName?: string
+  remarks?: string
 }
 
 export interface StoredAsset {

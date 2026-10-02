@@ -30,6 +30,8 @@ import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useEquipmentsQuery } from "@/hooks/useEquipmentsQuery"
 import { invalidateTicketsCache } from "@/hooks/useTicketsQuery"
 import { calculateCaseDuration } from "@/lib/utils/caseDuration"
+import { ClaimStakeholdersSection } from "@/components/claims/ClaimStakeholdersSection"
+import { claimFormSchema } from "@/lib/validations/claimSchema"
 
 export function NewTicketView() {
   const router = useRouter()
@@ -55,6 +57,20 @@ export function NewTicketView() {
   const [dueDate, setDueDate] = React.useState<string>("2026-11-21")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [isSaved, setIsSaved] = React.useState(false)
+
+  // Stakeholders & Personnel States
+  const [reporterName, setReporterName] = React.useState<string>("")
+  const [assigneeName, setAssigneeName] = React.useState<string>("")
+  const [remarks, setRemarks] = React.useState<string>("")
+  const [formErrors, setFormErrors] = React.useState<Record<string, string>>({})
+  const clearError = React.useCallback((field: string) => {
+    setFormErrors((prev) => {
+      if (!prev[field]) return prev
+      const next = { ...prev }
+      delete next[field]
+      return next
+    })
+  }, [])
 
   // Cascading Location & Station States
   const [selectedProvince, setSelectedProvince] = React.useState<string>("")
@@ -239,7 +255,36 @@ export function NewTicketView() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!ticketTitle.trim() || !problemDesc.trim()) return
+
+    // Form Validation with Zod Schema
+    const validationResult = claimFormSchema.safeParse({
+      ticketTitle,
+      selectedSerial,
+      receivedDate,
+      warranty,
+      problemDesc,
+      serviceCenter,
+      dueDate,
+      selectedProvince,
+      selectedDistrict,
+      selectedStationId,
+      reporterName,
+      assigneeName,
+      remarks,
+    })
+
+    if (!validationResult.success) {
+      const fieldErrors: Record<string, string> = {}
+      for (const issue of validationResult.error.issues) {
+        const key = issue.path[0] as string
+        if (key && !fieldErrors[key]) {
+          fieldErrors[key] = issue.message
+        }
+      }
+      setFormErrors(fieldErrors)
+      return
+    }
+    setFormErrors({})
 
     setIsSubmitting(true)
 
@@ -273,11 +318,16 @@ export function NewTicketView() {
       province: selectedStation?.province || selectedProvince || "",
       district: selectedStation?.district || selectedDistrict || "",
       subdistrict: selectedStation?.subdistrict || "",
+      reporter: reporterName.trim() || undefined,
+      assignee: assigneeName.trim() || undefined,
+      reporterName: reporterName.trim() || undefined,
+      assigneeName: assigneeName.trim() || undefined,
+      remarks: remarks.trim() || undefined,
     }
 
-    // 1. Dispatch to Backend API / MongoDB (with transaction logging & equipment status update)
+    // 1. Dispatch to Backend API / MongoDB via POST /api/claims (with fallback to /api/tickets)
     try {
-      const res = await fetch("/api/tickets", {
+      const res = await fetch("/api/claims", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -667,13 +717,42 @@ export function NewTicketView() {
                   required
                   rows={3}
                   value={problemDesc}
-                  onChange={(e) => setProblemDesc(e.target.value)}
+                  onChange={(e) => {
+                    setProblemDesc(e.target.value)
+                    clearError("problemDesc")
+                  }}
                   placeholder="ระบุอาการผิดปกติหรือสาเหตุที่ต้องการส่งเคลมอย่างละเอียด..."
                   className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 />
+                {formErrors.problemDesc && (
+                  <span className="text-[11px] text-destructive">
+                    {formErrors.problemDesc}
+                  </span>
+                )}
               </div>
             </div>
           </div>
+
+          {/* Section: ผู้เกี่ยวข้อง (Stakeholders & Personnel) */}
+          <ClaimStakeholdersSection
+            reporterName={reporterName}
+            setReporterName={(val) => {
+              setReporterName(val)
+              clearError("reporterName")
+            }}
+            assigneeName={assigneeName}
+            setAssigneeName={(val) => {
+              setAssigneeName(val)
+              clearError("assigneeName")
+            }}
+            remarks={remarks}
+            setRemarks={(val) => {
+              setRemarks(val)
+              clearError("remarks")
+            }}
+            disabled={isSubmitting}
+            errors={formErrors}
+          />
 
           {/* Section 4: กำหนดการและศูนย์บริการ */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-xs flex flex-col gap-4">

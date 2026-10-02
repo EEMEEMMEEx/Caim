@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.0] - 2026-10-02
+
+### Added & Enhanced
+- **New 'ผู้เกี่ยวข้อง' (Stakeholders & Personnel) Form Section & Dark Glassmorphism Integration (`NewTicketView.tsx`, `ClaimStakeholdersSection.tsx`, `claimSchema.ts`, `/api/claims/route.ts`, `database.ts`, `recordStorage.ts`)**:
+  - **Adapted Glassmorphism UI Component (`ClaimStakeholdersSection.tsx`)**: Created a dedicated form section card with `bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 shadow-xl` matching the portal's high-tech dark theme.
+  - **Responsive Layout & Visual Tokens**:
+    - **Top Row (2 Columns)**:
+      - 'ผู้แจ้ง / เจ้าของเครื่อง' (`reporterName`): Text input with autocomplete suggestions (`<datalist>`) for station heads and field staff.
+      - 'ผู้รับผิดชอบเคส' (`assigneeName`): Dropdown with quick-select options for support tiers and repair specialists, with one-click switch to custom entry mode.
+    - **Bottom Row (Full Width)**:
+      - 'หมายเหตุ' (`remarks`): Multi-line textarea (`rows={3}`) for handover details, special repair precautions, and emergency contact notes.
+    - **Aesthetic Compliance**: Clean inputs styled with `bg-slate-950/60 border border-slate-700/60 text-slate-100 placeholder-slate-500 focus:ring-blue-500/40 focus:border-blue-500`, prefixed with Lucide `Users` multi-user icon.
+  - **Zod Validation Schema (`claimSchema.ts`)**: Implemented `claimFormSchema` and `claimPayloadSchema` for client-side form validation and server-side request verification.
+  - **REST API Route & Payload Dispatch (`/api/claims`)**: Created dedicated REST endpoint `POST /api/claims` (along with `GET`, `PUT`, `DELETE`) with Zod payload validation and dual persistence (MongoDB + local disk store).
+  - **Form State Integration (`NewTicketView.tsx`)**: Bound all three fields to state, integrated Zod validation before submission, and dispatched the full payload to `POST /api/claims`.
+
 ## [0.35.0] - 2026-10-01
 
 ### Added & Enhanced
