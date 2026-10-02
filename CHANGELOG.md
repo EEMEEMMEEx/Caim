@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.1] - 2026-10-02
+
+### Changed & Refactored
+- **Free-Text Input Transition for 'ผู้เกี่ยวข้อง' Section (`ClaimStakeholdersSection.tsx`)**:
+  - Converted 'ผู้แจ้ง / เจ้าของเครื่อง' (`reporterName`) and 'ผู้รับผิดชอบเคส' (`assigneeName`) to standard free-form text inputs (`<input type="text" />`).
+  - Removed `<select>` dropdown controls, chevron indicator arrows, and hardcoded mock choice lists (`PRESET_ASSIGNEES`, `REPORTER_SUGGESTIONS`, `<datalist>`), allowing full manual name entry.
+  - Configured clear placeholder text:
+    - Reporter: `"ระบุชื่อผู้แจ้ง หรือเจ้าของเครื่อง..."`
+    - Assignee: `"ระบุชื่อผู้รับผิดชอบเคส หรือทีมช่าง..."`
+  - Preserved dark glassmorphism input styling (`w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/60 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 text-sm`) and reactive string state bindings.
+
 ## [0.36.0] - 2026-10-02
 
 ### Added & Enhanced
