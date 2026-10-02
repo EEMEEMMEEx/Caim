@@ -164,7 +164,7 @@ export function AppShell({ children }: AppShellProps) {
       {/* Sidebar - Desktop, Tablet Icon-Only and Mobile Drawer */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 border-r border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#0f172a] backdrop-blur-xl transition-all duration-300 ease-in-out ${
-          mobileMenuOpen ? "translate-x-0 w-64 shadow-2xl" : "-translate-x-full md:translate-x-0"
+          mobileMenuOpen ? "translate-x-0 w-72 shadow-2xl" : "-translate-x-full md:translate-x-0"
         } ${sidebarOpen ? "md:w-64" : "md:w-16"}`}
       >
         <div className="flex h-full flex-col">
@@ -173,7 +173,7 @@ export function AppShell({ children }: AppShellProps) {
             <Link
               href="/dashboard"
               className={`flex items-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
-                !sidebarOpen ? "md:justify-center md:w-full" : ""
+                !sidebarOpen && !mobileMenuOpen ? "md:justify-center md:w-full" : ""
               }`}
               aria-label="Process Claim Home"
             >
@@ -199,11 +199,13 @@ export function AppShell({ children }: AppShellProps) {
           >
             {navSections.map((sec, sIdx) => (
               <div key={sIdx} className="flex flex-col gap-1">
-                {sidebarOpen && (
-                  <p className="px-3 pb-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase">
-                    {sec.title}
-                  </p>
-                )}
+                <p
+                  className={`px-3 pb-1 text-[11px] font-semibold text-slate-400 dark:text-slate-500 tracking-wider uppercase ${
+                    sidebarOpen ? "block" : "block md:hidden"
+                  }`}
+                >
+                  {sec.title}
+                </p>
                 {sec.items.map((item) => {
                   const Icon = item.icon
                   const active = isItemActive(item.href)
@@ -212,20 +214,28 @@ export function AppShell({ children }: AppShellProps) {
                       key={item.href}
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`group flex items-center rounded-xl text-sm font-medium transition-all duration-150 h-10 gap-2.5 px-3 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none ${
+                      className={`group flex items-center rounded-xl text-sm font-medium transition-all duration-150 gap-3 px-3 py-2.5 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none ${
                         active
-                          ? "bg-blue-50/90 text-blue-700 font-semibold ring-1 ring-blue-600/15 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-500/25 shadow-2xs"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 hover:translate-x-0.5 active:scale-[0.98]"
-                      }`}
-                      title={!sidebarOpen ? item.label : undefined}
+                          ? "bg-blue-50/90 text-blue-700 font-semibold ring-1 ring-blue-600/15 dark:bg-blue-950/60 dark:text-blue-300 dark:ring-blue-500/25 shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/60"
+                      } ${!sidebarOpen && !mobileMenuOpen ? "md:justify-center md:px-0" : ""}`}
+                      title={!sidebarOpen && !mobileMenuOpen ? item.label : undefined}
                     >
                       <Icon
-                        className={`size-4.5 shrink-0 transition-colors ${
-                          active ? "text-blue-600 dark:text-blue-400" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
+                        className={`size-5 shrink-0 transition-colors ${
+                          active
+                            ? "text-blue-600 dark:text-blue-400"
+                            : "text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-white"
                         }`}
                         aria-hidden="true"
                       />
-                      {sidebarOpen && <span className="truncate">{item.label}</span>}
+                      <span
+                        className={`truncate text-sm ${
+                          sidebarOpen ? "inline" : "inline md:hidden"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
                     </Link>
                   )
                 })}
@@ -238,15 +248,28 @@ export function AppShell({ children }: AppShellProps) {
             <Link
               href="/manual"
               onClick={() => setMobileMenuOpen(false)}
-              className={`group flex items-center rounded-xl text-sm font-medium transition-all duration-150 h-10 gap-2.5 px-3 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none ${
+              className={`group flex items-center rounded-xl text-sm font-medium transition-all duration-150 gap-3 px-3 py-2.5 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none ${
                 pathname === "/manual"
                   ? "bg-blue-50/90 text-blue-700 font-semibold ring-1 ring-blue-600/15 dark:bg-blue-950/60 dark:text-sky-300 dark:ring-sky-500/30 shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60 hover:translate-x-0.5 active:scale-[0.98]"
-              }`}
-              title={!sidebarOpen ? t("nav.manual", "คู่มือระบบ") : undefined}
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/60"
+              } ${!sidebarOpen && !mobileMenuOpen ? "md:justify-center md:px-0" : ""}`}
+              title={!sidebarOpen && !mobileMenuOpen ? t("nav.manual", "คู่มือการใช้งาน") : undefined}
             >
-              <BookOpen className="size-4.5 shrink-0 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300" aria-hidden="true" />
-              {sidebarOpen && <span className="truncate">{t("nav.manual", "คู่มือระบบ")}</span>}
+              <BookOpen
+                className={`size-5 shrink-0 transition-colors ${
+                  pathname === "/manual"
+                    ? "text-blue-600 dark:text-sky-400"
+                    : "text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-white"
+                }`}
+                aria-hidden="true"
+              />
+              <span
+                className={`truncate text-sm ${
+                  sidebarOpen ? "inline" : "inline md:hidden"
+                }`}
+              >
+                {t("nav.manual", "คู่มือการใช้งาน")}
+              </span>
             </Link>
           </div>
 
@@ -256,22 +279,30 @@ export function AppShell({ children }: AppShellProps) {
               <button
                 type="button"
                 onClick={() => setUserDropdownOpen((v) => !v)}
-                className="flex items-center gap-2.5 rounded-xl p-1.5 text-left w-full hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border border-slate-200/60 dark:border-white/10 bg-slate-50/60 dark:bg-[#0f172a]/90 transition-all duration-150 active:scale-[0.98]"
+                className={`flex items-center gap-3 rounded-xl p-2 text-left w-full hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border border-slate-200/60 dark:border-white/10 bg-slate-50/60 dark:bg-[#0f172a]/90 transition-all duration-150 active:scale-[0.98] cursor-pointer ${
+                  !sidebarOpen && !mobileMenuOpen ? "md:justify-center md:p-1.5" : ""
+                }`}
               >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs font-bold text-white ring-1 ring-white/10 shadow-xs">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs font-bold text-white ring-1 ring-white/10 shadow-xs">
                   PC
                 </span>
-                {sidebarOpen && (
-                  <div className="flex min-w-0 flex-col leading-tight">
-                    <span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
-                      {session.name || session.username}
+                <div
+                  className={`flex min-w-0 flex-1 flex-col leading-tight ${
+                    sidebarOpen ? "flex" : "flex md:hidden"
+                  }`}
+                >
+                  <span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+                    {session.name || "เจ้าหน้าที่ปฏิบัติการ"}
+                  </span>
+                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-0.5 gap-2">
+                    <span className="truncate">
+                      {session.role || "เจ้าหน้าที่บริหารงานเคลม"}
                     </span>
-                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      <span>{session.role}</span>
-                      <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">v{packageInfo.version}</span>
-                    </div>
+                    <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500 shrink-0">
+                      v{packageInfo.version}
+                    </span>
                   </div>
-                )}
+                </div>
               </button>
             </div>
 
@@ -279,8 +310,12 @@ export function AppShell({ children }: AppShellProps) {
             {userDropdownOpen && (
               <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0f172a] p-1.5 shadow-xl animate-in fade-in zoom-in-95">
                 <div className="px-3 py-2 text-xs border-b border-slate-100 dark:border-white/10">
-                  <p className="font-semibold text-slate-800 dark:text-slate-200">{session.name || session.username}</p>
-                  <p className="text-slate-500 dark:text-slate-400 mt-0.5">{session.role} · {session.department}</p>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">
+                    {session.name || session.username || "เจ้าหน้าที่ปฏิบัติการ"}
+                  </p>
+                  <p className="text-slate-500 dark:text-slate-400 mt-0.5">
+                    {session.role || "เจ้าหน้าที่บริหารงานเคลม"} · {session.department}
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -346,7 +381,7 @@ export function AppShell({ children }: AppShellProps) {
                 : pathname === "/repairs/overseas"
                 ? t("nav.context.overseas", "ส่งเคลมต่างประเทศ")
                 : pathname === "/manual"
-                ? t("nav.context.manual", "คู่มือระบบ")
+                ? t("nav.context.manual", "คู่มือการใช้งาน")
                 : t("nav.context.default", "ระบบจัดการงานเคลม")}
             </span>
             <span>·</span>

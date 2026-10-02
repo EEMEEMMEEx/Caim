@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.1] - 2026-10-02
+
+### Fixed
+- **Mobile Sidebar Drawer Navigation Labels & User Profile Restoration (`AppShell.tsx`)**:
+  - Restored menu item text labels and user profile details inside the mobile drawer viewport (< 768px).
+  - Resolved responsive class conflicts where desktop collapsed mode (`sidebarOpen === false`) was hiding labels and titles on mobile drawer opens (`mobileMenuOpen === true`).
+  - Switched from conditional DOM unmounting to responsive CSS utilities (`inline md:hidden`, `block md:hidden`, `flex md:hidden`), ensuring full text labels render side-by-side with icons in mobile drawer mode (`w-72` / 280px) while maintaining compact icon-only mode (`md:w-16`) on desktop.
+  - Standardized navigation row layout and styling to `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors`.
+  - Restored footer user profile card displaying the 'PC' avatar badge, user name fallback (`เจ้าหน้าที่ปฏิบัติการ`), and operational role (`เจ้าหน้าที่บริหารงานเคลม`).
+  - Synchronized documentation label to 'คู่มือการใช้งาน' (`BookOpen` icon) and updated context header title.
+
 ## [0.37.0] - 2026-10-02
 
 ### Purged & Cleaned (Production Transition)
