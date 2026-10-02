@@ -47,3 +47,11 @@ next-env.d.ts
 
 # Local temp files
 temp/
+temp_xlsx/
+*.xlsx
+scraped/
+cloned/
+raw-assets/
+dump/
+*.mp4.tmp
+gemini_generated_*.mp4

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.0] - 2026-10-02
+
+### Purged & Cleaned (Production Transition)
+- **Repository Purge & Cloner Tooling Elimination**:
+  - Permanently deleted web scraping tools, asset downloaders, and cloner scripts (`scripts/download-assets-equipment-claims-3ec6aa15-root-8a5edab2.mjs`, `scripts/test_insert.mjs`).
+  - Purged `.agents/skills/clone-website/` workflow and `.claude/commands/clone-website.md` cloner bridge.
+  - Purged raw inspection output, scraped HTML/topology dumps, and design comparison snapshots (`docs/research/`, `docs/design-references/`, `docs/assets/`).
+  - Purged raw unreferenced cloned images and dumps from `public/sites/` (5.36MB `IMG_8154_enhanced_2x.png`), `public/images/`, and root temporary video/excel files (`gemini_generated_video_d9f63be0.mp4`, `20260907-add-total.xlsx`, `บัญชีรายชื่อ.xlsx`).
+  - Updated `.gitignore` to prevent tracking of scraping caches, raw XLSX dumps, and cloner staging directories.
+  - Updated `package.json` and `AGENTS.md` to establish official production identity as **CAIM - Telecommunication Equipment Claims & RMA Tracking System for Forth Corporation**.
+
 ## [0.36.1] - 2026-10-02
 
 ### Changed & Refactored

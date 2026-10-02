@@ -8,17 +8,18 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Website Reverse-Engineer Template
+# CAIM — Equipment Claims & RMA Management System
 
 ## What This Is
-A reusable template for reverse-engineering any website into a clean, modern Next.js codebase using AI coding agents. The Next.js + shadcn/ui + Tailwind v4 base is pre-scaffolded — just run `/clone-website <url1> [<url2> ...]`.
+Production web portal for Forth Corporation's Telecommunication Equipment Claims & Overseas RMA Tracking System. Built on Next.js 16 App Router, Tailwind CSS v4, shadcn/ui, MongoDB, and local JSON persistence.
 
 ## Tech Stack
 - **Framework:** Next.js 16 (App Router, React 19, TypeScript strict)
 - **UI:** shadcn/ui (Radix primitives, Tailwind CSS v4, `cn()` utility)
-- **Icons:** Lucide React (default — will be replaced/supplemented by extracted SVGs)
-- **Styling:** Tailwind CSS v4 with oklch design tokens
-- **Deployment:** Vercel
+- **Icons:** Lucide React (scalable SVGs, no emojis as icons)
+- **Styling:** Tailwind CSS v4 with dark theme glassmorphism design tokens
+- **Database:** MongoDB with dual-layer persistent disk store fallback
+- **Real-Time:** Server-Sent Events (SSE) via `/api/realtime/stream`
 
 ## Commands
 - `npm run dev` — Start dev server
@@ -34,39 +35,24 @@ A reusable template for reverse-engineering any website into a clean, modern Nex
 - 2-space indentation
 - Responsive: mobile-first
 
-## Design Principles
-- **Pixel-perfect emulation** — match the target's spacing, colors, typography exactly
-- **No personal aesthetic changes during emulation phase** — match 1:1 first, customize later
-- **Real content** — use actual text and assets from the target site, not placeholders
-- **Beauty-first** — every pixel matters
-
 ## Project Structure
 ```
 src/
-  app/              # Next.js routes
-  components/       # React components
+  app/              # Next.js routes & API handlers (/api/claims, /api/tickets, /api/rma, etc.)
+  components/       # React components (Dashboard, Tickets, Stations, Overseas RMA, etc.)
+    claims/         # Claims modular components (ClaimStakeholdersSection)
     ui/             # shadcn/ui primitives
-    icons.tsx       # Extracted SVG icons as React components
   lib/
-    utils.ts        # cn() utility (shadcn)
-  types/            # TypeScript interfaces
-  hooks/            # Custom React hooks
+    constants/      # System constants & HTTP headers
+    events/         # Real-time event emitter
+    storage/        # Persistent server storage & disk stores
+    utils/          # Duration, SLA, and date calculations
+    validations/    # Zod schemas (claimSchema)
+  types/            # Database documents & interfaces (database.ts)
+  hooks/            # Custom SWR & query hooks
 public/
-  images/           # Downloaded images from target site
-  videos/           # Downloaded videos from target site
-  seo/              # Favicons, OG images, webmanifest
-docs/
-  research/         # Inspection output (design tokens, components, layout)
-  design-references/ # Screenshots and visual references
-scripts/            # Asset download scripts
-.agents/
-  skills/
-    clone-website/  # Canonical cross-agent cloning workflow
-.claude/
-  commands/
-    clone-website.md # Thin Claude Code invocation bridge
+  assets/           # Active media assets & posters
+  videos/           # Portal background video
+  seo/              # Favicons and web manifests
+scripts/            # Database migration, seed, and data generation utilities
 ```
-
-## Agent Workflow
-- Edit `.agents/skills/clone-website/` for cloning-workflow changes. It is the canonical skill used by Codex, Cursor, and OpenCode.
-- Keep `.claude/commands/clone-website.md` as a thin Claude Code bridge to the canonical skill; do not duplicate the workflow there.
