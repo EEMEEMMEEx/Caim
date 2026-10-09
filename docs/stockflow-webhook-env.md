@@ -61,7 +61,7 @@ node -e "fetch('https://stockflowth.online/api/caim-webhook',{method:'POST',head
 2. ไปที่ **Settings** → **Environment Variables**
 3. กด **Add Environment Variable** (หรือ **Create New**)
 4. กรอกช่อง **Type**: เลือก **Secret** (ค่าจะถูกซ่อนหลัง Save — ห้ามเลือก Config)
-5. กรอกช่อง **Key**: `CAIM_WEBHOOK_SECRET` '9072f12f32a3aae5e1488c83fbf065d38e8ed35fcfb71d949cca967765ff1cb6'
+5. กรอกช่อง **Key**: `CAIM_WEBHOOK_SECRET`
 6. กรอกช่อง **Value**: วางค่า hex 64 ตัวจากข้อ 2 (ระวังอย่าให้ติดขึ้นบรรทัดใหม่/ช่องว่าง/เครื่องหมายคำพูด)
 7. กรอกช่อง **Note (Optional)**: `HMAC secret สำหรับ POST /api/caim-webhook — ต้องตรงกับโปรเจกต์ stock-flow`
 8. เลือกช่อง **Environments**: **Production** (ถ้าต้องทดสอบบน Preview ให้เลือก Preview เพิ่ม หรือสร้างตัวแปรซ้ำสำหรับ Preview)
@@ -81,8 +81,8 @@ node -e "fetch('https://stockflowth.online/api/caim-webhook',{method:'POST',head
 
 | โปรเจกต์ | Key | ค่า | Environment | Redeploy แล้ว |
 |---|---|---|---|---|
-| stock-flow | `CAIM_WEBHOOK_SECRET` | ค่าเดียวกัน | Production | ☐ |'9072f12f32a3aae5e1488c83fbf065d38e8ed35fcfb71d949cca967765ff1cb6'
-| Caim | `CAIM_WEBHOOK_SECRET` | ค่าเดียวกัน | Production | ☐ |'9072f12f32a3aae5e1488c83fbf065d38e8ed35fcfb71d949cca967765ff1cb6'
+| stock-flow | `CAIM_WEBHOOK_SECRET` | ค่าเดียวกัน | Production | ☐ |
+| Caim | `CAIM_WEBHOOK_SECRET` | ค่าเดียวกัน | Production | ☐ |
 | Caim | `STOCKFLOW_WEBHOOK_URL` (ไม่บังคับ) | `https://stockflowth.online/api/caim-webhook` | Production / Preview | ☐ |
 
 ---

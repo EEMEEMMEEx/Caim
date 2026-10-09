@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.3] - 2026-10-09
+
+### Security
+- **Live Webhook Secret Redacted from the Vercel Setup Guide (`docs/stockflow-webhook-env.md`)**:
+  - The real `CAIM_WEBHOOK_SECRET` value had been pasted into three places in the guide (step 5 and both rows of the setup checklist) and was committed to this public repository in `f1b9a05`. Those occurrences are removed; the guide now only refers to the key name.
+  - The secret itself has been rotated. The new value is stored only in local `.env` files (never in the repository) and must be set as `CAIM_WEBHOOK_SECRET` in both Vercel projects (Caim and Stock-Flow) followed by a redeploy.
+  - The same redaction was applied to the Stock-Flow copy of the guide (`docs/caim-webhook-caim-env-setup.md`, local-only) to keep the two copies in sync.
 ## [0.38.2] - 2026-10-09
 
 ### Changed
