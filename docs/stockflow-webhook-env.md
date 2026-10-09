@@ -13,13 +13,16 @@
 |---|---|---|---|
 | `CAIM_WEBHOOK_SECRET` | ต้องมี | เซ็น HMAC-SHA256 ของ body เป็น header `x-caim-signature` | shared secret ค่าเดียวกับ Stock-Flow |
 | `STOCKFLOW_WEBHOOK_URL` | ไม่บังคับ | override ปลายทางของ webhook | default ในโค้ดคือ `https://stockflowth.online/api/caim-webhook` |
+| `CAIM_API_KEY` | ต้องมี | ตรวจ header `Authorization: Bearer` ของคำขอที่เข้ามาที่ `POST /api/tickets` (ทิศทาง Stock-Flow → CAIM) | shared secret ค่าเดียวกับ Stock-Flow |
 
 อ่านค่าที่:
 - `src/lib/webhooks/stockFlowWebhook.ts:154` → `process.env.CAIM_WEBHOOK_SECRET`
 - `src/lib/webhooks/stockFlowWebhook.ts:168` → `process.env.STOCKFLOW_WEBHOOK_URL` (ถ้าไม่ตั้งจะใช้ค่าคงที่บรรทัดที่ 17)
 - ฝั่งรับ Stock-Flow: `api/caim-webhook.js:172` → `process.env.CAIM_WEBHOOK_SECRET` (ต้องเป็นค่าเดียวกัน ไม่งั้นตอบ 401)
+- `src/lib/auth/apiKeyAuth.ts:41` → `process.env.CAIM_API_KEY` (ทิศทาง Stock-Flow → CAIM)
 
 > `CAIM_WEBHOOK_SECRET` ไม่ได้มาจากที่ไหน — **สร้างเอง** ด้วย CSPRNG แล้วใช้ค่าเดียวกันทั้ง 2 โปรเจกต์
+> `CAIM_API_KEY` ก็สร้างเองด้วยวิธีเดียวกัน — **ห้ามใช้ค่าเดียวกับ `CAIM_WEBHOOK_SECRET`**
 
 ---
 
@@ -77,12 +80,31 @@ node -e "fetch('https://stockflowth.online/api/caim-webhook',{method:'POST',head
 
 ---
 
+### 4.1 ตั้งค่า `CAIM_API_KEY` (ทิศทาง Stock-Flow → CAIM)
+
+ฝั่ง Stock-Flow แนบ header `Authorization: Bearer <CAIM_API_KEY>` มาตอน `POST /api/tickets` และฝั่ง CAIM ตรวจที่ `src/lib/auth/apiKeyAuth.ts`
+
+1. สร้างค่าด้วยคำสั่งในข้อ 2 (hex 64 ตัว) — **ห้ามใช้ค่าเดียวกับ `CAIM_WEBHOOK_SECRET`**
+2. Vercel → โปรเจกต์ **Caim** → Environment Variables → Key: `CAIM_API_KEY` → Type: **Secret** → Environments: **Production** → Save
+3. Vercel → โปรเจกต์ **Stock-Flow** → เพิ่ม `CAIM_API_KEY` **ค่าเดียวกันเป๊ะ** → Save
+4. **Redeploy ทั้ง 2 โปรเจกต์**
+
+| ฝั่งที่ยังไม่ตั้ง | ผลลัพธ์ |
+|---|---|
+| Caim | `POST /api/tickets` ตอบ **503** ทุกครั้ง (พอร์ทัล `POST /api/claims` ยังใช้งานได้ปกติ) |
+| Stock-Flow | ฝั่งนั้นไม่แนบ header → ตอบ **401** |
+| ตั้งแล้วแต่ค่าไม่ตรงกัน | ตอบ **401** |
+
+---
+
 ## 5. Checklist
 
 | โปรเจกต์ | Key | ค่า | Environment | Redeploy แล้ว |
 |---|---|---|---|---|
 | stock-flow | `CAIM_WEBHOOK_SECRET` | ค่าเดียวกัน | Production | ☐ |
 | Caim | `CAIM_WEBHOOK_SECRET` | ค่าเดียวกัน | Production | ☐ |
+| Caim | `CAIM_API_KEY` | ค่าเดียวกัน | Production | ☐ |
+| stock-flow | `CAIM_API_KEY` | ค่าเดียวกัน | Production | ☐ |
 | Caim | `STOCKFLOW_WEBHOOK_URL` (ไม่บังคับ) | `https://stockflowth.online/api/caim-webhook` | Production / Preview | ☐ |
 
 ---
@@ -104,6 +126,10 @@ LIMIT 10;
    - `unrepairable` → มีแถวใน `public.scrap_disposal_items` และ **สต็อกไม่ขยับ**
    - `repaired` / `replaced_new` → มีเอกสารรับเข้าใน `stock_in_orders` + `stock_in_items` (+1) และมี `stock_transactions` ประเภท `stock_in` (`reference_type = 'claim_return'`)
 4. ตรวจว่า `checkout_return_logs` ของเคสนั้นมี `caim_repair_result`, `caim_inbound_processed_at` และ `caim_stock_in_order_id` หรือ `caim_scrap_disposal_id` ถูกบันทึก
+5. ทดสอบ API key ของเส้นทางขาไป (Stock-Flow → CAIM) ด้วย `POST /api/tickets`:
+   - ไม่แนบ header → ต้องได้ **401**
+   - แนบ `Authorization: Bearer <CAIM_API_KEY>` พร้อม body `{}` → ต้องได้ **400 `Missing required ticket information`** (แปลว่าผ่านด่าน auth แล้ว)
+   - ถ้าได้ **400 ทั้ง 2 กรณี** = โค้ดที่บังคับใช้ API key ยังไม่ถูก deploy
 
 ### อาการที่พบบ่อย
 
@@ -116,6 +142,8 @@ LIMIT 10;
 | CAIM log `failed <eventId> after 2 attempts` | เครือข่าย/Stock-Flow ไม่ตอบ | ตรวจว่า Stock-Flow ออนไลน์ แล้วปิดเคสซ้ำ (eventId เดิมจะถูก dedupe) |
 | Stock-Flow: `caim_webhook_logs.status = 'unmatched'` | ไม่พบ `checkout_return_logs` ที่มี `caim_ticket_id` ตรงกัน (Ticket ไม่ได้มาจาก Stock-Flow) | ตรวจว่าสร้าง Ticket ผ่าน `/api/sync-to-caim` จาก Stock-Flow |
 | Stock-Flow: `status = 'failed'` | RPC ทำงานไม่สำเร็จ ดูคอลัมน์ `message` (เช่น project/item ของ return log หาย) | แก้ข้อมูลต้นทางแล้วส่ง event ซ้ำ |
+| Stock-Flow: `Failed to create ticket in CAIM` (**401**) | ค่า `CAIM_API_KEY` 2 ฝั่งไม่ตรงกัน หรือฝั่ง Caim ยังไม่ Redeploy หลังตั้งค่า | เทียบค่าใหม่ทั้ง 2 ฝั่ง + Redeploy ทั้งคู่ |
+| Stock-Flow: `Failed to create ticket in CAIM` (**503**) | ฝั่ง Caim ยังไม่ได้ตั้ง `CAIM_API_KEY` | ตั้ง env ที่โปรเจกต์ Caim + Redeploy |
 
 ---
 
@@ -123,11 +151,14 @@ LIMIT 10;
 
 1. สร้างค่าใหม่ (ข้อ 2)
 2. อัปเดตที่ **stock-flow** และ **Caim** ให้เป็นค่าใหม่ **พร้อมกัน** แล้ว Redeploy ทั้งคู่
+   - ใช้กับทั้ง `CAIM_WEBHOOK_SECRET` และ `CAIM_API_KEY` — คนละค่า คนละทิศทาง ห้ามใช้ค่าซ้ำกัน และต้องอัปเดตทั้ง 2 โปรเจกต์เสมอ
 3. ช่วงที่ค่ายังไม่ตรงกัน webhook จะถูกปฏิเสธด้วย 401 และ CAIM จะลองซ้ำ 1 ครั้ง — event ที่หลุดสามารถปิดเคสซ้ำได้ เนื่องจาก Stock-Flow ใช้ `eventId` เป็น idempotency key (ไม่เพิ่มสต็อกซ้ำ)
 
 ## 8. ยกเลิก/ปิดการยิงชั่วคราว
 
 ลบ `CAIM_WEBHOOK_SECRET` ออกจากโปรเจกต์ Caim แล้ว Redeploy → การปิดเคสยังทำงานครบ แต่จะไม่มีการยิง webhook และมี log `skipped: CAIM_WEBHOOK_SECRET is not configured`
+
+ลบ `CAIM_API_KEY` ออกจากโปรเจกต์ Caim แล้ว Redeploy → `POST /api/tickets` จะตอบ **503** (การสร้าง ticket อัตโนมัติจาก Stock-Flow หยุดลง ส่วนพอร์ทัลยังใช้งานได้)
 
 ---
 

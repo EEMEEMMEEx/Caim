@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.4] - 2026-10-09
+
+### Fixed
+- **CI Workflow Never Executed (`.github/workflows/ci.yml`)**: both triggers targeted a `master` branch that does not exist in this repository (`origin` and `upstream` default to `main`), so the quality gate (`npm ci` + lint + typecheck + build) had never run — zero workflow runs in the repository history and no checks on any pull request. Both triggers now target `main`.
+
+### Documentation
+- **`CAIM_API_KEY` Added to the Vercel Setup Guide (`docs/stockflow-webhook-env.md`, mirrored in the Stock-Flow copy)**: the guide now covers the inbound direction (Stock-Flow -> CAIM) — where the value is read (`src/lib/auth/apiKeyAuth.ts`), how it is generated, that it must be identical in the Caim and Stock-Flow Vercel projects, and what happens when it is missing on either side (`503` from Caim, `401` from Stock-Flow). Verification, troubleshooting and rotation sections were extended accordingly.
 ## [0.38.3] - 2026-10-09
 
 ### Security
