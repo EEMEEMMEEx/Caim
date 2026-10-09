@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.1] - 2026-10-09
+
+### Security
+- **API Key Authentication for the External Ticket Endpoint (Integration Plan Section 5.1) (`src/lib/auth/apiKeyAuth.ts`, `src/lib/tickets/createTicketRecord.ts`, `src/app/api/tickets/route.ts`, `src/app/api/claims/route.ts`, `.env.example`)**:
+  - `POST /api/tickets` now requires `Authorization: Bearer <CAIM_API_KEY>`; a missing or mismatched key is rejected with HTTP 401 and the comparison is constant-time (SHA-256 digest + `crypto.timingSafeEqual`) so neither the key value, its length, nor timing leaks.
+  - Fails closed: while `CAIM_API_KEY` is unset the endpoint answers HTTP 503 instead of silently accepting anonymous ticket creation (the client sees a configuration error, not a created case).
+  - Claim-creation logic moved out of the route file into `src/lib/tickets/createTicketRecord.ts` and is now shared by `POST /api/tickets` (guarded) and `POST /api/claims` (portal form, still open) — Next.js route modules only accept HTTP-method exports, so the shared handler could not remain in `route.ts`.
+  - Documented `CAIM_API_KEY` in `.env.example`; the value must match the `CAIM_API_KEY` already sent by Stock-Flow `api/sync-to-caim.js`.
 ## [0.38.0] - 2026-10-09
 
 ### Added
