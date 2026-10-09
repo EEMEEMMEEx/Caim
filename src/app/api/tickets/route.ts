@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse, after } from "next/server"
 import { getDb, isMongoConfigured } from "@/lib/mongodb"
 import { realtimeEmitter, REALTIME_EVENTS } from "@/lib/events/realtimeEmitter"
 import { TicketDocument, EquipmentDocument, StationDocument } from "@/types/database"
@@ -10,6 +10,7 @@ import {
   getPersistentDeletedTicketIds,
 } from "@/lib/storage/serverTicketStorage"
 import { calculateCaseDuration, calculateDueDate } from "@/lib/utils/caseDuration"
+import { dispatchStockFlowWebhook } from "@/lib/webhooks/stockFlowWebhook"
 
 function enrichTicket(ticket: TicketDocument): TicketDocument {
   const duration = calculateCaseDuration(ticket)
@@ -413,12 +414,22 @@ export async function PUT(request: NextRequest) {
       setFields.deadlineDate = calculateDueDate(dateToCalculate, 60).dueDateStr
     }
 
+    // Phase 2: a close transition (statusCode 5 "ปิดเคส") notifies Stock-Flow via webhook.
+    // "previousTicket" is read before the update so a case that is already closed does not re-fire,
+    // and the record is also available when it only exists in MongoDB.
+    const isClosedNow = finalStatusCode === 5 || finalStatus === "ปิดเคส"
+    let previousTicket: TicketDocument | null = currentTicket || null
+
     let updatedTicketDoc: TicketDocument | null = null
 
     if (isMongoConfigured()) {
       try {
         const db = await getDb()
         if (db) {
+          if (isClosedNow) {
+            previousTicket = (await db.collection<TicketDocument>("tickets").findOne({ id })) || previousTicket
+          }
+
           await db.collection("tickets").updateOne({ id }, { $set: setFields })
 
           // If status changed to closed ("ปิดเคส" / 5) or rejected ("ปฏิเสธเคลม" / 6), release equipment
@@ -487,6 +498,24 @@ export async function PUT(request: NextRequest) {
       data: {},
       timestamp: nowIso,
     })
+
+    // Phase 2: notify Stock-Flow after the response is sent ("after" keeps the serverless invocation
+    // alive) so a Stock-Flow outage can never break or delay a CAIM case update.
+    const wasClosedBefore = previousTicket?.statusCode === 5 || previousTicket?.status === "ปิดเคส"
+    const repairResultChanged =
+      (setFields.repairOutcome !== undefined && setFields.repairOutcome !== previousTicket?.repairOutcome) ||
+      (setFields.repairResult !== undefined && setFields.repairResult !== previousTicket?.repairResult)
+
+    if (isClosedNow && (!wasClosedBefore || repairResultChanged)) {
+      const webhookTicket: TicketDocument = { ...finalEnrichedTicket, closedAt: nowIso }
+      after(async () => {
+        try {
+          await dispatchStockFlowWebhook(webhookTicket, { closedAt: nowIso })
+        } catch (webhookErr) {
+          console.warn("[StockFlow Webhook] dispatch error:", webhookErr)
+        }
+      })
+    }
 
     return NextResponse.json(
       {

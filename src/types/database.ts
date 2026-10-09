@@ -1,6 +1,9 @@
 // Centralized Database Schema Definitions for CAIM System
 // Supports Equipments, Stations, Tickets (Claims), RMA Records, and Transaction Logs
 
+// Closed-case repair outcome contract shared with Stock-Flow (integration plan section 3.2)
+export type CaimRepairOutcome = "unrepairable" | "repaired" | "replaced_new"
+
 export interface StationDocument {
   id: string // e.g. "st-60-1", "st-rep-1", or custom string ID
   code: string // e.g. "GOV-03"
@@ -57,6 +60,16 @@ export interface TicketDocument {
   isOverdue?: boolean
   overdueText?: string
   repairResult?: string
+  // Structured repair outcome for the Stock-Flow webhook; when unset the free-text repairResult is keyword-mapped
+  repairOutcome?: CaimRepairOutcome
+  // New S/N supplied by the vendor when repairOutcome is "replaced_new"
+  replacedNewSerialNo?: string
+  // Disposal channel sent to Stock-Flow when repairOutcome is "unrepairable"
+  disposalMethod?: string
+  // Timestamp of the close transition, echoed to Stock-Flow as payload.closedAt
+  closedAt?: string
+  // Operator who closed the case, echoed to Stock-Flow as payload.closedBy
+  closedBy?: string
   remarks?: string
   category?: string
   deviceType?: string

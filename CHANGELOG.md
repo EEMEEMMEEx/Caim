@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.0] - 2026-10-09
+
+### Added
+- **Stock-Flow Outbound Webhook on Claim Close (Integration Plan Phase 2) (`src/lib/webhooks/stockFlowWebhook.ts`, `src/app/api/tickets/route.ts`, `TicketDetailView.tsx`, `database.ts`, `useTicketsQuery.ts`)**:
+  - New server-side dispatcher `dispatchStockFlowWebhook` posts `claim.closed` events to `STOCKFLOW_WEBHOOK_URL` (default `https://stockflowth.online/api/caim-webhook`) with an HMAC-SHA256 signature header `x-caim-signature: sha256=<hex of the raw JSON body + `CAIM_WEBHOOK_SECRET`>`, `x-caim-timestamp` (unix seconds) and `x-caim-event-id` (deterministic idempotency key `<ticketId>:<repairResult>:<serial>`).
+  - Dispatch runs from Next.js `after()` so a Stock-Flow outage can never block or fail a CAIM case update; 8s timeout with 1 retry on transient failure (5xx/429/network), failures logged with the event id.
+  - Trigger fires exactly on the close transition (`statusCode === 5` / `"ปิดเคส"`), and also when an already-closed case has its repair result changed; the previous record is read before the update so repeated saves do not re-send the same stock movement.
+  - New structured `repairOutcome` field (`unrepairable` | `repaired` | `replaced_new`) plus `replacedNewSerialNo`, `disposalMethod`, `closedAt`, `closedBy` on the ticket document. When `repairOutcome` is absent the free-text `repairResult` is keyword-mapped (unrepairable is matched first so stock is never inflated); ambiguous text is skipped and logged instead of guessed.
+  - Close-status modal now requires the repair outcome (and the new S/N when `replaced_new` is selected) before the case can be closed, and the result is persisted through `PUT /api/tickets`.
+  - `.env.example` documents `CAIM_WEBHOOK_SECRET` and `STOCKFLOW_WEBHOOK_URL`.
+
 ## [0.37.1] - 2026-10-02
 
 ### Fixed

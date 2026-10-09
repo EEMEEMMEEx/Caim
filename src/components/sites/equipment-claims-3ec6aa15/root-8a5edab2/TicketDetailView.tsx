@@ -29,12 +29,15 @@ import {
   toISODateString,
 } from "@/lib/utils/caseDuration"
 import { useTicketsQuery, invalidateTicketsCache } from "@/hooks/useTicketsQuery"
+import type { CaimRepairOutcome } from "@/types/database"
 
 export interface TicketDetailData {
   id: string
   title: string
   problemDesc: string
   repairResult: string
+  repairOutcome?: CaimRepairOutcome
+  replacedNewSerialNo?: string
   remarks: string
   vendor: string
   model: string
@@ -103,6 +106,12 @@ const DEFAULT_TICKET_DATA: TicketDetailData = {
   otherCases: [],
 }
 
+const REPAIR_OUTCOMES: { value: CaimRepairOutcome; label: string }[] = [
+  { value: "unrepairable", label: "ซ่อมไม่ได้ / แทงจำหน่ายเป็นของเสีย" },
+  { value: "repaired", label: "ซ่อมสำเร็จ ใช้ S/N เดิม" },
+  { value: "replaced_new", label: "ศูนย์เปลี่ยนของใหม่ (S/N ใหม่)" },
+]
+
 const STAGES = [
   { step: 1, label: "รับแจ้ง" },
   { step: 2, label: "ส่งศูนย์" },
@@ -126,6 +135,8 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
   const [editForm, setEditForm] = React.useState(DEFAULT_TICKET_DATA)
   const [newStatusStage, setNewStatusStage] = React.useState(data.currentStage)
   const [statusRemark, setStatusRemark] = React.useState("")
+  const [newRepairOutcome, setNewRepairOutcome] = React.useState<CaimRepairOutcome | "">("")
+  const [newReplacedSerialNo, setNewReplacedSerialNo] = React.useState("")
   const [bannerMessage, setBannerMessage] = React.useState<string | null>(null)
 
   // Direct sync function from Authoritative Tickets API
@@ -145,6 +156,9 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
           title: t.title || prev.title,
           problemDesc: t.problemDesc || prev.problemDesc,
           repairResult: t.repairResult !== undefined ? t.repairResult : prev.repairResult,
+          repairOutcome: t.repairOutcome !== undefined ? t.repairOutcome : prev.repairOutcome,
+          replacedNewSerialNo:
+            t.replacedNewSerialNo !== undefined ? t.replacedNewSerialNo : prev.replacedNewSerialNo,
           remarks: t.remarks !== undefined ? t.remarks : prev.remarks,
           vendor: t.vendor || prev.vendor,
           model: t.model || prev.model,
@@ -183,6 +197,9 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
         title: found.title,
         problemDesc: found.problemDesc,
         repairResult: found.repairResult !== undefined ? found.repairResult : prev.repairResult,
+        repairOutcome: found.repairOutcome !== undefined ? found.repairOutcome : prev.repairOutcome,
+        replacedNewSerialNo:
+          found.replacedNewSerialNo !== undefined ? found.replacedNewSerialNo : prev.replacedNewSerialNo,
         remarks: found.remarks !== undefined ? found.remarks : prev.remarks,
         vendor: found.vendor,
         model: found.model,
@@ -350,6 +367,14 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
   async function handleSaveStatus(e: React.FormEvent) {
     e.preventDefault()
     if (isSaving) return
+    if (newStatusStage === 5 && !newRepairOutcome) {
+      showBanner("กรุณาระบุผลการซ่อมก่อนปิดเคส")
+      return
+    }
+    if (newStatusStage === 5 && newRepairOutcome === "replaced_new" && !newReplacedSerialNo.trim()) {
+      showBanner("กรุณาระบุ S/N ใหม่จากศูนย์บริการ")
+      return
+    }
 
     setIsSaving(true)
     const stageNames: Record<number, string> = {
@@ -391,6 +416,14 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
         id: data.id,
         statusCode: newStatusStage,
         status: stageNames[newStatusStage] || "รับแจ้ง",
+        ...(newStatusStage === 5
+          ? {
+              repairOutcome: newRepairOutcome || undefined,
+              replacedNewSerialNo:
+                newRepairOutcome === "replaced_new" ? newReplacedSerialNo.trim() : undefined,
+              closedBy: data.assignee || data.reporter || undefined,
+            }
+          : {}),
       })
       await invalidateTicketsCache()
       if (typeof window !== "undefined") {
@@ -401,6 +434,8 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
       showBanner("อัปเดตสถานะงานเคลมเรียบร้อยแล้ว")
     } finally {
       setIsSaving(false)
+      setNewRepairOutcome("")
+      setNewReplacedSerialNo("")
     }
   }
 
@@ -519,6 +554,8 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                 size="sm"
                 onClick={() => {
                   setNewStatusStage(data.currentStage)
+                  setNewRepairOutcome(data.repairOutcome || "")
+                  setNewReplacedSerialNo(data.replacedNewSerialNo || "")
                   setIsStatusModalOpen(true)
                 }}
                 className="gap-1.5 bg-foreground text-background hover:bg-foreground/90 dark:bg-primary dark:text-primary-foreground text-xs font-medium cursor-pointer shadow-xs"
@@ -1245,6 +1282,53 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                 </div>
               </div>
 
+              {newStatusStage === 5 && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-medium text-foreground">
+                    ผลการซ่อม (ส่งกลับ Stock-Flow อัตโนมัติ)
+                  </label>
+                  <div className="flex flex-col gap-1.5">
+                    {REPAIR_OUTCOMES.map((option) => (
+                      <label
+                        key={option.value}
+                        className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                          newRepairOutcome === option.value
+                            ? "border-brand bg-brand/5 text-brand font-semibold"
+                            : "border-border hover:bg-muted/40 text-foreground"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="repairOutcome"
+                          checked={newRepairOutcome === option.value}
+                          onChange={() => setNewRepairOutcome(option.value)}
+                          className="text-brand focus:ring-brand"
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {newRepairOutcome === "replaced_new" && (
+                    <div className="flex flex-col gap-1 pt-1">
+                      <label className="font-medium text-foreground">Serial No. ใหม่จากศูนย์บริการ</label>
+                      <Input
+                        value={newReplacedSerialNo}
+                        onChange={(e) => setNewReplacedSerialNo(e.target.value)}
+                        placeholder="ระบุ S/N ของเครื่องที่เปลี่ยนใหม่"
+                        className="h-8 font-mono text-xs"
+                      />
+                    </div>
+                  )}
+
+                  {!newRepairOutcome && (
+                    <p className="text-[11px] text-muted-foreground">
+                      ต้องระบุผลการซ่อมก่อนปิดเคส เพื่อให้ Stock-Flow บันทึกตัดจำหน่ายหรือรับเข้าคลังได้ถูกต้อง
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="flex flex-col gap-1">
                 <label className="font-medium text-foreground">บันทึกช่วยจำ / หมายเหตุขั้นตอน</label>
                 <Input
@@ -1267,7 +1351,11 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={
+                    isSaving ||
+                    (newStatusStage === 5 && !newRepairOutcome) ||
+                    (newStatusStage === 5 && newRepairOutcome === "replaced_new" && !newReplacedSerialNo.trim())
+                  }
                   size="sm"
                   className="gap-1.5 bg-brand text-white hover:bg-brand-dark disabled:opacity-60 cursor-pointer"
                 >
