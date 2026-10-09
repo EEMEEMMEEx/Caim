@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.2] - 2026-10-09
+
+### Changed
+- **Environment Template Rewrite (`.env.example`)**:
+  - Grouped every variable that the application actually reads (`MONGODB_URI`, `CAIM_API_KEY`, `CAIM_WEBHOOK_SECRET`, `STOCKFLOW_WEBHOOK_URL`) and mapped each one to the module that consumes it, so operators can see at a glance what still has to be filled in.
+  - Each secret now documents how it is created (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`), which Vercel project must hold the identical value, and what happens while it is empty (`CAIM_API_KEY` -> HTTP 503 on `POST /api/tickets`; `CAIM_WEBHOOK_SECRET` -> dispatch skipped and logged, closing a case still succeeds).
+  - Removed the live MongoDB Atlas password that was still present in the template; `MONGODB_URI` is now a pure placeholder (`<db_username>:<db_password>@<cluster-host>`) with a note never to commit real values.
 ## [0.38.1] - 2026-10-09
 
 ### Security
