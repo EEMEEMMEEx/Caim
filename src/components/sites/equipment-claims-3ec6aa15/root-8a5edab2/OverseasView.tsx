@@ -3237,7 +3237,7 @@ export function OverseasView() {
                       disabled
                       readOnly
                       tabIndex={-1}
-                      value={editingItem.ticketId || editingItem.caseName || "CLM-2026-XXX (สร้างอัตโนมัติ)"}
+                      value={editingItem.ticketId ?? editingItem.caseName ?? "CLM-2026-XXX (สร้างอัตโนมัติ)"}
                       placeholder="CLM-2026-XXX (สร้างอัตโนมัติ)"
                       className="h-9 text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-not-allowed border-dashed opacity-90 pr-8"
                     />

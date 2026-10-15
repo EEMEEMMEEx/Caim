@@ -9,9 +9,11 @@ export interface RmaItem {
   id: string
   rmaNo: string
   caseName: string
+  ticketId?: string
   serialNo: string
   vendor: string
   model: string
+  destination?: string
   currentStageNumber: number
   totalStages: number
   currentStageName: string
@@ -19,6 +21,11 @@ export interface RmaItem {
   currentStageStartedAt?: string
   currentStageCompletedAt?: string
   openDate: string
+  sentDate?: string
+  trackNo?: string
+  carrier?: string
+  notes?: string
+  remarks?: string
   totalDays: string
   statusBadge: "in_progress" | "returned"
   statusBadgeText: string
@@ -28,6 +35,8 @@ export interface RmaItem {
   stageHistory?: StageHistoryRecord[]
   permitInfo?: PermitTrackingInfo
   permits?: PermitTrackingInfo[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 // Global Singleton Query Cache Store for RMA
