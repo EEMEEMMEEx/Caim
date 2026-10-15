@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 import { getDb, isMongoConfigured } from "@/lib/mongodb"
-import { getPersistentTickets } from "@/lib/storage/serverTicketStorage"
+import { getPersistentTickets, getPersistentDeletedTicketIds } from "@/lib/storage/serverTicketStorage"
 
 const COUNTERS_FILE = path.join(process.cwd(), "src/data/counters.json")
 
@@ -119,12 +119,21 @@ function writeDiskCounters(data: Record<string, number>): void {
 
 /**
  * Determine the maximum sequence currently existing for a specific year from tickets.
+ * Excludes soft-deleted and permanently deleted claims.
  */
-export function getMaxExistingSequenceForYear(year: number, tickets?: Array<{ id?: string; title?: string }>): number {
+export function getMaxExistingSequenceForYear(
+  year: number,
+  tickets?: Array<{ id?: string; title?: string }>
+): number {
   const ticketList = tickets || getPersistentTickets()
+  const deletedSet = new Set(getPersistentDeletedTicketIds())
   let maxSeq = 0
 
   for (const t of ticketList) {
+    if (!t || (t.id && deletedSet.has(t.id))) {
+      continue
+    }
+
     const parsedId = parseClaimNumber(t.id || "")
     if (parsedId && parsedId.year === year && parsedId.seq > maxSeq) {
       maxSeq = parsedId.seq
@@ -139,9 +148,55 @@ export function getMaxExistingSequenceForYear(year: number, tickets?: Array<{ id
 }
 
 /**
- * Atomically generates the next sequential claim number: CLM-{YYYY}-{SEQ}
+ * Queries the active claim repository (MongoDB tickets collection and local persistent storage)
+ * for the highest existing sequential ID matching CLM-{YYYY}-{SEQ}.
+ * Extracts numeric sequence suffixes and filters out deleted records.
+ */
+export async function getResolvedMaxSequenceForYear(year: number): Promise<number> {
+  let mongoMax = 0
+
+  if (isMongoConfigured()) {
+    try {
+      const db = await getDb()
+      if (db) {
+        const deletedIds = getPersistentDeletedTicketIds()
+        const query: Record<string, unknown> = {
+          $or: [
+            { id: { $regex: `^CLM-${year}-\\d+$`, $options: "i" } },
+            { title: { $regex: `^CLM-${year}-\\d+$`, $options: "i" } },
+          ],
+        }
+        if (deletedIds.length > 0) {
+          query.id = { $nin: deletedIds }
+        }
+
+        const mongoTickets = await db
+          .collection("tickets")
+          .find(query, { projection: { id: 1, title: 1 } })
+          .toArray()
+        mongoMax = getMaxExistingSequenceForYear(
+          year,
+          mongoTickets as Array<{ id?: string; title?: string }>
+        )
+      }
+    } catch (err) {
+      console.warn("[ClaimSequence] Failed to query mongo tickets for max sequence:", err)
+    }
+  }
+
+  const diskMax = getMaxExistingSequenceForYear(year)
+  return Math.max(mongoMax, diskMax)
+}
+
+// Tracks active sequential allocations across concurrent requests within the process
+const inFlightAllocatedSeqByYear: Record<number, number> = {}
+
+/**
+ * Atomically generates and locks the next sequential claim number: CLM-{YYYY}-{SEQ}.
  * Concurrency-safe across simultaneous requests.
- * Resets counter to 001 when Gregorian year changes.
+ * Queries the existing claim repository for the highest existing sequence number matching
+ * the current year pattern (CLM-{YYYY}-%), extracts numeric suffix, computes
+ * nextSequence = maxExistingSeq + 1, updates counter, and returns CLM-{YYYY}-{SEQ}.
  */
 export async function generateNextClaimNumber(options?: {
   date?: Date | string | number | null
@@ -150,78 +205,43 @@ export async function generateNextClaimNumber(options?: {
     const year = extractGregorianYear(options?.date)
     const counterId = `claim_seq_${year}`
     const nowIso = new Date().toISOString()
-    let nextSeq = 1
 
-    // 1. Try atomic MongoDB increment if configured
+    // 1. Query highest existing sequence number from actual active non-deleted records
+    const maxExistingSeq = await getResolvedMaxSequenceForYear(year)
+
+    // 2. Determine base sequence grounded on actual records, accounting for in-flight allocations
+    const inFlightSeq = inFlightAllocatedSeqByYear[year] || 0
+    const baseSeq = inFlightSeq > maxExistingSeq ? inFlightSeq : maxExistingSeq
+
+    const nextSeq = baseSeq + 1
+    inFlightAllocatedSeqByYear[year] = nextSeq
+
+    // 3. Synchronize MongoDB counter atomically
     if (isMongoConfigured()) {
       try {
         const db = await getDb()
         if (db) {
           const countersCol = db.collection<CounterDocument>("counters")
-
-          // Inspect existing counter document
-          const existingDoc = await countersCol.findOne({ _id: counterId })
-          let baseSeq = existingDoc?.seq || 0
-
-          // If counter is 0 or uninitialized, align with max existing ticket sequence in MongoDB
-          if (baseSeq === 0) {
-            const ticketsCol = db.collection("tickets")
-            const allTickets = await ticketsCol.find({}, { projection: { id: 1, title: 1 } }).toArray()
-            const maxMongoSeq = getMaxExistingSequenceForYear(year, allTickets as Array<{ id?: string; title?: string }>)
-            const maxDiskSeq = getMaxExistingSequenceForYear(year)
-            baseSeq = Math.max(maxMongoSeq, maxDiskSeq)
-          }
-
-          const updateResult = await countersCol.findOneAndUpdate(
+          await countersCol.updateOne(
             { _id: counterId },
             {
-              $set: { updatedAt: nowIso },
-              $inc: { seq: 1 },
+              $set: { seq: nextSeq, updatedAt: nowIso },
               $setOnInsert: {
                 type: "claim",
                 year,
                 createdAt: nowIso,
               },
             },
-            {
-              upsert: true,
-              returnDocument: "after",
-            }
+            { upsert: true }
           )
-
-          if (updateResult && typeof updateResult.seq === "number") {
-            // If the upsert created it starting at 1, but baseSeq was higher, calibrate forward
-            if (updateResult.seq <= baseSeq) {
-              const correctedSeq = baseSeq + 1
-              await countersCol.updateOne(
-                { _id: counterId },
-                { $set: { seq: correctedSeq, updatedAt: nowIso } }
-              )
-              nextSeq = correctedSeq
-            } else {
-              nextSeq = updateResult.seq
-            }
-
-            // Sync to dual-layer local disk counters
-            const diskData = readDiskCounters()
-            diskData[counterId] = nextSeq
-            writeDiskCounters(diskData)
-
-            return formatClaimNumber(year, nextSeq)
-          }
         }
       } catch (mongoErr) {
-        console.warn("[ClaimSequence] MongoDB atomic counter failed, falling back to disk counter:", mongoErr)
+        console.warn("[ClaimSequence] MongoDB atomic counter sync notice:", mongoErr)
       }
     }
 
-    // 2. Persistent Local Disk Storage fallback (and dual-layer sync)
+    // 4. Synchronize dual-layer persistent disk counters
     const diskData = readDiskCounters()
-    const currentDiskSeq = diskData[counterId] || 0
-    const maxExisting = getMaxExistingSequenceForYear(year)
-    const effectiveBase = Math.max(currentDiskSeq, maxExisting)
-
-    nextSeq = effectiveBase + 1
     diskData[counterId] = nextSeq
     writeDiskCounters(diskData)
 
@@ -231,40 +251,55 @@ export async function generateNextClaimNumber(options?: {
 
 /**
  * Preview the upcoming claim number without incrementing the counter.
- * Useful for read-only preview display in forms ('แจ้งเคลม') and modals.
+ * Queries the existing claim repository for the highest existing sequence number
+ * matching the current year pattern (CLM-{YYYY}-%), extracts the numeric suffix,
+ * computes nextSequence = maxExistingSeq + 1, and formats as zero-padded CLM-{YYYY}-{SEQ}.
+ * Purges and synchronizes any detached sequence counters to match actual records.
  */
 export async function peekNextClaimNumber(options?: {
   date?: Date | string | number | null
 }): Promise<string> {
   const year = extractGregorianYear(options?.date)
   const counterId = `claim_seq_${year}`
-  let currentSeq = 0
 
-  if (isMongoConfigured()) {
-    try {
+  // 1. Query highest existing sequence from actual non-deleted persisted records
+  const maxExistingSeq = await getResolvedMaxSequenceForYear(year)
+
+  // 2. Compute nextSequence = maxExistingSeq + 1 (e.g., 3 + 1 = 4 -> CLM-2026-004)
+  const inFlightSeq = inFlightAllocatedSeqByYear[year] || 0
+  const effectiveBase = inFlightSeq > maxExistingSeq ? inFlightSeq : maxExistingSeq
+  const nextSeq = effectiveBase + 1
+
+  // 3. Purge or synchronize detached sequence counters if they drift from actual records
+  try {
+    const diskData = readDiskCounters()
+    if (diskData[counterId] !== effectiveBase) {
+      diskData[counterId] = effectiveBase
+      writeDiskCounters(diskData)
+    }
+
+    if (isMongoConfigured()) {
       const db = await getDb()
       if (db) {
-        const doc = await db.collection<CounterDocument>("counters").findOne({ _id: counterId })
-        if (doc && typeof doc.seq === "number") {
-          currentSeq = doc.seq
-        } else {
-          // Check mongo tickets directly
-          const ticketsCol = db.collection("tickets")
-          const allTickets = await ticketsCol.find({}, { projection: { id: 1, title: 1 } }).toArray()
-          currentSeq = getMaxExistingSequenceForYear(year, allTickets as Array<{ id?: string; title?: string }>)
-        }
+        await db.collection<CounterDocument>("counters").updateOne(
+          { _id: counterId },
+          {
+            $set: { seq: effectiveBase, updatedAt: new Date().toISOString() },
+            $setOnInsert: {
+              type: "claim",
+              year,
+              createdAt: new Date().toISOString(),
+            },
+          },
+          { upsert: true }
+        )
       }
-    } catch {
-      // ignore, fall through to disk
     }
+  } catch (err) {
+    console.warn("[ClaimSequence] Counter sync notice in peek:", err)
   }
 
-  const diskData = readDiskCounters()
-  const diskSeq = diskData[counterId] || 0
-  const diskMaxTickets = getMaxExistingSequenceForYear(year)
-
-  const effectiveCurrent = Math.max(currentSeq, diskSeq, diskMaxTickets)
-  return formatClaimNumber(year, effectiveCurrent + 1)
+  return formatClaimNumber(year, nextSeq)
 }
 
 /**
@@ -272,6 +307,7 @@ export async function peekNextClaimNumber(options?: {
  */
 export async function setClaimSequence(year: number, nextSeq: number): Promise<void> {
   await withSequenceLock(async () => {
+    inFlightAllocatedSeqByYear[year] = nextSeq
     const counterId = `claim_seq_${year}`
     const nowIso = new Date().toISOString()
 

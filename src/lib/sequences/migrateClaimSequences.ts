@@ -7,6 +7,7 @@ import {
   setClaimSequence,
 } from "./claimSequence"
 import { TicketDocument, RmaDocument, EquipmentDocument } from "@/types/database"
+import { getPersistentDeletedTicketIds } from "@/lib/storage/serverTicketStorage"
 
 const TICKETS_FILE = path.join(process.cwd(), "src/data/tickets.json")
 const RMA_FILE = path.join(process.cwd(), "src/data/rma.json")
@@ -96,13 +97,14 @@ export async function migrateClaimSequences(): Promise<MigrationResult> {
     }
   }
 
-  // Combine unique tickets by ID, prioritizing mongo records if present
+  // Combine unique tickets by ID, prioritizing mongo records if present, excluding deleted tickets
+  const deletedSet = new Set(getPersistentDeletedTicketIds())
   const ticketMap = new Map<string, TicketDocument>()
   for (const t of diskTickets) {
-    if (t.id) ticketMap.set(t.id, t)
+    if (t.id && !deletedSet.has(t.id)) ticketMap.set(t.id, t)
   }
   for (const t of mongoTickets) {
-    if (t.id) ticketMap.set(t.id, t)
+    if (t.id && !deletedSet.has(t.id)) ticketMap.set(t.id, t)
   }
 
   const allTickets = Array.from(ticketMap.values())

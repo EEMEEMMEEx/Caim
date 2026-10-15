@@ -2,8 +2,8 @@
   {
     "id": "1",
     "rmaNo": "TEST20",
-    "ticketId": "CLM-2026-006",
-    "caseName": "CLM-2026-006: ทดสอบระบบ",
+    "ticketId": "CLM-2026-001",
+    "caseName": "CLM-2026-001: หัวข้อเลขที่เคลม",
     "serialNo": "200426",
     "vendor": "Hytera",
     "model": "DIB-R5 outdoor",

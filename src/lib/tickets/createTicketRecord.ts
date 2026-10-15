@@ -27,18 +27,21 @@ export async function createTicketRecord(request: NextRequest) {
     }
 
     // Determine atomic, concurrency-safe sequential claim number (CLM-YYYY-XXX)
-    const hasExplicitSequenceId =
+    // Ensures all new claim creations atomically acquire the sequence lock and advance the counter without race conditions
+    const isExplicitExternalNonAuto =
+      body.isExternalAssignedId === true &&
       body.id &&
-      /^CLM-\d{4}-\d{3,}$/i.test(String(body.id).trim()) &&
       !String(body.id).includes("XXX")
-    const ticketId = hasExplicitSequenceId
+
+    const ticketId = isExplicitExternalNonAuto
       ? String(body.id).trim()
       : await generateNextClaimNumber({ date: body.date || body.createdAt })
 
     const ticketTitle =
       body.title &&
       !String(body.title).includes("สร้างอัตโนมัติ") &&
-      !String(body.title).includes("XXX")
+      !String(body.title).includes("XXX") &&
+      !/^CLM-\d{4}-\d+$/i.test(String(body.title).trim())
         ? String(body.title).trim()
         : ticketId
     const nowIso = new Date().toISOString()

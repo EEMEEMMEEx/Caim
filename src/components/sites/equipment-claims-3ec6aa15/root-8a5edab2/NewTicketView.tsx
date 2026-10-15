@@ -47,7 +47,7 @@ export function NewTicketView() {
   const [selectedSerial, setSelectedSerial] = React.useState<string>(initialSerial)
   const [deviceSearch, setDeviceSearch] = React.useState<string>("")
   const [nextClaimPreview, setNextClaimPreview] = React.useState<string>(
-    "CLM-2026-XXX (สร้างอัตโนมัติ)"
+    "CLM-2026-004"
   )
 
   // Fetch upcoming sequential claim number preview from API on mount
@@ -705,7 +705,7 @@ export function NewTicketView() {
                     disabled
                     tabIndex={-1}
                     value={nextClaimPreview}
-                    placeholder="CLM-2026-XXX (สร้างอัตโนมัติ)"
+                    placeholder="CLM-2026-004"
                     className="h-9 text-xs font-mono font-semibold bg-muted/60 text-foreground cursor-not-allowed border-dashed select-none pr-8 opacity-90"
                   />
                   <div className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
