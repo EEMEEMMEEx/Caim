@@ -12,11 +12,30 @@ export const dynamic = "force-dynamic"
 export const revalidate = 0
 export const fetchCache = "force-no-store"
 
+import { peekNextClaimNumber } from "@/lib/sequences/claimSequence"
+
 /**
  * GET /api/claims
- * Returns list of claims or single claim by ?id=
+ * Returns list of claims, single claim by ?id=, or next auto-sequence preview with ?action=next-sequence
  */
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  if (
+    searchParams.get("action") === "next-sequence" ||
+    searchParams.get("action") === "next-number" ||
+    searchParams.get("peek") === "true"
+  ) {
+    const nextClaimNumber = await peekNextClaimNumber()
+    return NextResponse.json(
+      {
+        success: true,
+        nextClaimNumber,
+        format: "CLM-{YYYY}-{SEQ}",
+      },
+      { headers: NO_CACHE_HEADERS }
+    )
+  }
+
   return handleTicketsGet(request)
 }
 

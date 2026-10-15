@@ -30,10 +30,10 @@
     "reporter": "ทดสอบผู้แจ้ง",
     "assignee": "ทดสอบขอบเคส",
     "createdAt": "2026-06-13T08:00:00.000Z",
-    "updatedAt": "2026-06-13T08:00:00.000Z"
+    "updatedAt": "2026-10-15T08:00:00.000Z"
   },
   {
-    "id": "1",
+    "id": "CLM-2026-002",
     "title": "หัวข้อเลขที่เคลม",
     "problemDesc": "หัวข้ออาการเสีย ปัญหาที่พบ",
     "vendor": "Huawei",
@@ -63,29 +63,29 @@
     "reporter": "ทดสอบผู้แจ้ง",
     "assignee": "ทดสอบขอบเคส",
     "createdAt": "2026-06-13T08:00:00.000Z",
-    "updatedAt": "2026-06-13T08:00:00.000Z"
+    "updatedAt": "2026-10-15T08:00:00.000Z"
   },
   {
-    "id": "2",
-    "title": "ทดสอบระบบ",
-    "problemDesc": "ทดสอบระบบทดสอบระบบ",
+    "id": "CLM-2026-003",
+    "title": "test",
+    "problemDesc": "testtest",
     "vendor": "Huawei",
-    "model": "OMXD30000",
-    "serialNo": "1000167600350",
-    "status": "ปิดเคส",
-    "statusCode": 5,
-    "date": "10 ก.ย. 2569",
-    "ageDays": "19 วัน",
+    "model": "PAC80S12-CN",
+    "serialNo": "2102131835USR8305867",
+    "status": "ปฏิเสธเคลม",
+    "statusCode": 6,
+    "date": "8 ก.ย. 2569",
+    "ageDays": "15 วัน",
     "isOverdue": false,
-    "station": "ที่ว่าการอำเภอคลองลาน",
-    "province": "กำแพงเพชร",
-    "district": "คลองลาน",
-    "subdistrict": "คลองน้ำไหล",
-    "createdAt": "2026-09-10T08:00:00.000Z",
-    "updatedAt": "2026-09-10T08:00:00.000Z"
+    "station": "อบต.ปากช่อง",
+    "province": "นครราชสีมา",
+    "district": "ปากช่อง",
+    "subdistrict": "ปากช่อง",
+    "createdAt": "2026-09-08T08:00:00.000Z",
+    "updatedAt": "2026-10-15T08:00:00.000Z"
   },
   {
-    "id": "3",
+    "id": "CLM-2026-004",
     "title": "test2",
     "problemDesc": "testtest",
     "vendor": "Huawei",
@@ -101,10 +101,10 @@
     "district": "เขาสวนกวาง",
     "subdistrict": "เขาสวนกวาง",
     "createdAt": "2026-09-09T08:00:00.000Z",
-    "updatedAt": "2026-09-09T08:00:00.000Z"
+    "updatedAt": "2026-10-15T08:00:00.000Z"
   },
   {
-    "id": "4",
+    "id": "CLM-2026-005",
     "title": "FORTH-2026-002",
     "problemDesc": "บอร์ดเสีย",
     "vendor": "Huawei",
@@ -121,25 +121,25 @@
     "district": "ปากช่อง",
     "subdistrict": "หมูสี",
     "createdAt": "2026-09-09T09:00:00.000Z",
-    "updatedAt": "2026-09-09T09:00:00.000Z"
+    "updatedAt": "2026-10-15T08:00:00.000Z"
   },
   {
-    "id": "5",
-    "title": "test",
-    "problemDesc": "testtest",
+    "id": "CLM-2026-006",
+    "title": "ทดสอบระบบ",
+    "problemDesc": "ทดสอบระบบทดสอบระบบ",
     "vendor": "Huawei",
-    "model": "PAC80S12-CN",
-    "serialNo": "2102131835USR8305867",
-    "status": "ปฏิเสธเคลม",
-    "statusCode": 6,
-    "date": "8 ก.ย. 2569",
-    "ageDays": "15 วัน",
+    "model": "OMXD30000",
+    "serialNo": "1000167600350",
+    "status": "ปิดเคส",
+    "statusCode": 5,
+    "date": "10 ก.ย. 2569",
+    "ageDays": "19 วัน",
     "isOverdue": false,
-    "station": "อบต.ปากช่อง",
-    "province": "นครราชสีมา",
-    "district": "ปากช่อง",
-    "subdistrict": "ปากช่อง",
-    "createdAt": "2026-09-08T08:00:00.000Z",
-    "updatedAt": "2026-09-08T08:00:00.000Z"
+    "station": "ที่ว่าการอำเภอคลองลาน",
+    "province": "กำแพงเพชร",
+    "district": "คลองลาน",
+    "subdistrict": "คลองน้ำไหล",
+    "createdAt": "2026-09-10T08:00:00.000Z",
+    "updatedAt": "2026-10-15T08:00:00.000Z"
   }
 ]

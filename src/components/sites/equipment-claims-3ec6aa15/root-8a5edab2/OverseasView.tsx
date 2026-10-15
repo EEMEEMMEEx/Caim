@@ -24,7 +24,8 @@ import {
   Undo2,
   Loader2,
   ArrowLeftRight,
-  ShieldCheck
+  ShieldCheck,
+  Lock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -3057,6 +3058,38 @@ export function OverseasView() {
                   </p>
                 </div>
 
+                {/* เลขที่เคสแจ้งเคลม (Read-Only Preview Field) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-medium text-slate-700 dark:text-slate-300">
+                      เลขที่เคสแจ้งเคลม (สร้างอัตโนมัติ / อ้างอิงระบบ)
+                    </label>
+                    <span className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                      CLM-YYYY-XXX
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      disabled
+                      readOnly
+                      tabIndex={-1}
+                      value={
+                        newRmaForm.linkedCaseId && newRmaForm.linkedCaseId !== "none"
+                          ? availableCases.find((c) => c.id === newRmaForm.linkedCaseId)?.caseNo || newRmaForm.linkedCaseId
+                          : "CLM-2026-XXX (สร้างอัตโนมัติ)"
+                      }
+                      placeholder="CLM-2026-XXX (สร้างอัตโนมัติ)"
+                      className="h-9 text-xs font-mono font-medium rounded-lg border-dashed border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 cursor-not-allowed select-none pr-8 opacity-90"
+                    />
+                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
+                      <Lock className="size-3.5" />
+                    </div>
+                  </div>
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    แสดงเลขที่เคลมตามลำดับฐานข้อมูลกลาง ไม่อนุญาตให้แก้ไขด้วยตนเอง
+                  </p>
+                </div>
+
                 {/* Row 4: ศูนย์บริการ / ผู้รับเคลม & ปลายทาง */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -3192,6 +3225,26 @@ export function OverseasView() {
                     }
                     className="mt-1 h-9 text-xs"
                   />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="font-medium text-slate-700">เลขที่เคสแจ้งเคลม (CLM-YYYY-XXX)</label>
+                    <span className="text-[10px] text-slate-500 font-mono">สร้างอัตโนมัติ</span>
+                  </div>
+                  <div className="relative mt-1">
+                    <Input
+                      disabled
+                      readOnly
+                      tabIndex={-1}
+                      value={editingItem.ticketId || editingItem.caseName || "CLM-2026-XXX (สร้างอัตโนมัติ)"}
+                      placeholder="CLM-2026-XXX (สร้างอัตโนมัติ)"
+                      className="h-9 text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-not-allowed border-dashed opacity-90 pr-8"
+                    />
+                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">
+                      <Lock className="size-3.5" />
+                    </div>
+                  </div>
                 </div>
 
                 <div>

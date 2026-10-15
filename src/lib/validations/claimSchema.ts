@@ -8,7 +8,7 @@ export const claimFormSchema = z.object({
   ticketTitle: z
     .string()
     .trim()
-    .min(1, "กรุณาระบุเลขที่เคลม"),
+    .optional(),
   selectedSerial: z
     .string()
     .trim()
@@ -67,7 +67,7 @@ export type ClaimFormData = z.infer<typeof claimFormSchema>
  */
 export const claimPayloadSchema = z.object({
   id: z.string().optional(),
-  title: z.string().min(1, "Missing required ticket title"),
+  title: z.string().optional().default(""),
   problemDesc: z.string().default(""),
   vendor: z.string().default("Other"),
   model: z.string().default("-"),

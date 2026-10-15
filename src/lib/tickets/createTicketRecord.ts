@@ -5,6 +5,7 @@ import { TicketDocument, EquipmentDocument, StationDocument } from "@/types/data
 import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 import { savePersistentTicket } from "@/lib/storage/serverTicketStorage"
 import { calculateCaseDuration, calculateDueDate } from "@/lib/utils/caseDuration"
+import { generateNextClaimNumber } from "@/lib/sequences/claimSequence"
 
 /**
  * Claim/ticket creation shared by the portal endpoint (POST /api/claims) and the
@@ -18,14 +19,28 @@ export async function createTicketRecord(request: NextRequest) {
   try {
     const body = await request.json()
 
-    if (!body || !body.title) {
+    if (!body || (!body.title && !body.problemDesc && !body.serialNo)) {
       return NextResponse.json(
         { success: false, error: "Missing required ticket information" },
         { status: 400 }
       )
     }
 
-    const ticketId = body.id || `CLM-${Date.now().toString().slice(-4)}`
+    // Determine atomic, concurrency-safe sequential claim number (CLM-YYYY-XXX)
+    const hasExplicitSequenceId =
+      body.id &&
+      /^CLM-\d{4}-\d{3,}$/i.test(String(body.id).trim()) &&
+      !String(body.id).includes("XXX")
+    const ticketId = hasExplicitSequenceId
+      ? String(body.id).trim()
+      : await generateNextClaimNumber({ date: body.date || body.createdAt })
+
+    const ticketTitle =
+      body.title &&
+      !String(body.title).includes("สร้างอัตโนมัติ") &&
+      !String(body.title).includes("XXX")
+        ? String(body.title).trim()
+        : ticketId
     const nowIso = new Date().toISOString()
     const serialNo = String(body.serialNo || "").trim()
 
@@ -93,7 +108,7 @@ export async function createTicketRecord(request: NextRequest) {
         // 3. Insert Ticket Document
         const newTicketDoc: TicketDocument = {
           id: ticketId,
-          title: body.title,
+          title: ticketTitle,
           problemDesc: body.problemDesc || "",
           vendor: body.vendor || "Other",
           model: body.model || "-",
@@ -182,7 +197,7 @@ export async function createTicketRecord(request: NextRequest) {
     // Fallback store
     const fallbackDoc: TicketDocument = {
       id: ticketId,
-      title: body.title,
+      title: ticketTitle,
       problemDesc: body.problemDesc || "",
       vendor: body.vendor || "Other",
       model: body.model || "-",

@@ -19,7 +19,8 @@ import {
   ExternalLink,
   X,
   ChevronLeft,
-  RotateCcw
+  RotateCcw,
+  Lock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,9 +46,27 @@ export function NewTicketView() {
 
   const [selectedSerial, setSelectedSerial] = React.useState<string>(initialSerial)
   const [deviceSearch, setDeviceSearch] = React.useState<string>("")
-  const [ticketTitle, setTicketTitle] = React.useState<string>(
-    () => `CLM-2026-${String(Math.floor(Math.random() * 9000 + 1000))}`
+  const [nextClaimPreview, setNextClaimPreview] = React.useState<string>(
+    "CLM-2026-XXX (สร้างอัตโนมัติ)"
   )
+
+  // Fetch upcoming sequential claim number preview from API on mount
+  React.useEffect(() => {
+    let active = true
+    fetch("/api/claims?action=next-sequence")
+      .then((res) => res.json())
+      .then((data) => {
+        if (active && data?.success && data?.nextClaimNumber) {
+          setNextClaimPreview(data.nextClaimNumber)
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not fetch sequence preview:", err)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
   const [receivedDate, setReceivedDate] = React.useState<string>(
     new Date().toISOString().split("T")[0]
   )
@@ -258,7 +277,7 @@ export function NewTicketView() {
 
     // Form Validation with Zod Schema
     const validationResult = claimFormSchema.safeParse({
-      ticketTitle,
+      ticketTitle: nextClaimPreview,
       selectedSerial,
       receivedDate,
       warranty,
@@ -300,9 +319,10 @@ export function NewTicketView() {
       statusCode: 1,
     })
 
+    const resolvedId = nextClaimPreview.includes("XXX") ? "" : nextClaimPreview.trim()
     const newTicket: StoredTicket = {
-      id: ticketTitle.trim(),
-      title: ticketTitle.trim(),
+      id: resolvedId,
+      title: resolvedId || problemDesc.trim().slice(0, 40),
       problemDesc: problemDesc.trim(),
       vendor: selectedAsset?.vendor || serviceCenter,
       model: selectedAsset?.model || "-",
@@ -671,18 +691,29 @@ export function NewTicketView() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-xs">
               <div className="flex flex-col gap-1.5">
-                <label className="font-medium text-foreground">
-                  เลขที่เคลม <span className="text-destructive">*</span>
-                </label>
-                <Input
-                  required
-                  placeholder="เช่น CLM-2026-0043"
-                  value={ticketTitle}
-                  onChange={(e) => setTicketTitle(e.target.value)}
-                  className="h-9 text-xs"
-                />
+                <div className="flex items-center justify-between">
+                  <label className="font-medium text-foreground flex items-center gap-1.5">
+                    <span>เลขที่เคลม</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 dark:bg-blue-500/20 px-2 py-0.5 text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                      สร้างอัตโนมัติ (CLM-YYYY-XXX)
+                    </span>
+                  </label>
+                </div>
+                <div className="relative">
+                  <Input
+                    readOnly
+                    disabled
+                    tabIndex={-1}
+                    value={nextClaimPreview}
+                    placeholder="CLM-2026-XXX (สร้างอัตโนมัติ)"
+                    className="h-9 text-xs font-mono font-semibold bg-muted/60 text-foreground cursor-not-allowed border-dashed select-none pr-8 opacity-90"
+                  />
+                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+                    <Lock className="size-3.5" />
+                  </div>
+                </div>
                 <p className="text-[11px] text-muted-foreground">
-                  กำหนดเลขอ้างอิงเคส ห้ามซ้ำกับเคสที่มีอยู่แล้ว
+                  ระบบออกเลขที่เคลมให้อัตโนมัติตามลำดับปี พ.ศ./ค.ศ. (Concurrency-safe) ป้องกันการกรอกซ้ำ
                 </p>
               </div>
 
