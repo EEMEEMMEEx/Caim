@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import {
   GET as handleTicketsGet,
-  POST as handleTicketsPost,
   PUT as handleTicketsPut,
   DELETE as handleTicketsDelete,
 } from "@/app/api/tickets/route"
 import { claimPayloadSchema } from "@/lib/validations/claimSchema"
+import { createTicketRecord } from "@/lib/tickets/createTicketRecord"
 import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 
 export const dynamic = "force-dynamic"
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     console.warn("[Claims API] Payload pre-validation notice:", err)
   }
 
-  return handleTicketsPost(request)
+  return createTicketRecord(request)
 }
 
 /**

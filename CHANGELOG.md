@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.5] - 2026-10-09
+
+### Changed
+- **CI Can Be Started Manually (`.github/workflows/ci.yml`)**: added the `workflow_dispatch` trigger and enabled Actions on the fork so the quality gate (lint + typecheck + build) can be run on demand without pushing a commit. The first run of the fixed workflow completed successfully (`npm ci` -> lint -> typecheck -> `next build`).
+
+## [0.38.4] - 2026-10-09
+
+### Fixed
+- **CI Workflow Never Executed (`.github/workflows/ci.yml`)**: both triggers targeted a `master` branch that does not exist in this repository (`origin` and `upstream` default to `main`), so the quality gate (`npm ci` + lint + typecheck + build) had never run — zero workflow runs in the repository history and no checks on any pull request. Both triggers now target `main`.
+
+### Documentation
+- **`CAIM_API_KEY` Added to the Vercel Setup Guide (`docs/stockflow-webhook-env.md`, mirrored in the Stock-Flow copy)**: the guide now covers the inbound direction (Stock-Flow -> CAIM) — where the value is read (`src/lib/auth/apiKeyAuth.ts`), how it is generated, that it must be identical in the Caim and Stock-Flow Vercel projects, and what happens when it is missing on either side (`503` from Caim, `401` from Stock-Flow). Verification, troubleshooting and rotation sections were extended accordingly.
+## [0.38.3] - 2026-10-09
+
+### Security
+- **Live Webhook Secret Redacted from the Vercel Setup Guide (`docs/stockflow-webhook-env.md`)**:
+  - The real `CAIM_WEBHOOK_SECRET` value had been pasted into three places in the guide (step 5 and both rows of the setup checklist) and was committed to this public repository in `f1b9a05`. Those occurrences are removed; the guide now only refers to the key name.
+  - The secret itself has been rotated. The new value is stored only in local `.env` files (never in the repository) and must be set as `CAIM_WEBHOOK_SECRET` in both Vercel projects (Caim and Stock-Flow) followed by a redeploy.
+  - The same redaction was applied to the Stock-Flow copy of the guide (`docs/caim-webhook-caim-env-setup.md`, local-only) to keep the two copies in sync.
+## [0.38.2] - 2026-10-09
+
+### Changed
+- **Environment Template Rewrite (`.env.example`)**:
+  - Grouped every variable that the application actually reads (`MONGODB_URI`, `CAIM_API_KEY`, `CAIM_WEBHOOK_SECRET`, `STOCKFLOW_WEBHOOK_URL`) and mapped each one to the module that consumes it, so operators can see at a glance what still has to be filled in.
+  - Each secret now documents how it is created (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`), which Vercel project must hold the identical value, and what happens while it is empty (`CAIM_API_KEY` -> HTTP 503 on `POST /api/tickets`; `CAIM_WEBHOOK_SECRET` -> dispatch skipped and logged, closing a case still succeeds).
+  - Removed the live MongoDB Atlas password that was still present in the template; `MONGODB_URI` is now a pure placeholder (`<db_username>:<db_password>@<cluster-host>`) with a note never to commit real values.
+## [0.38.1] - 2026-10-09
+
+### Security
+- **API Key Authentication for the External Ticket Endpoint (Integration Plan Section 5.1) (`src/lib/auth/apiKeyAuth.ts`, `src/lib/tickets/createTicketRecord.ts`, `src/app/api/tickets/route.ts`, `src/app/api/claims/route.ts`, `.env.example`)**:
+  - `POST /api/tickets` now requires `Authorization: Bearer <CAIM_API_KEY>`; a missing or mismatched key is rejected with HTTP 401 and the comparison is constant-time (SHA-256 digest + `crypto.timingSafeEqual`) so neither the key value, its length, nor timing leaks.
+  - Fails closed: while `CAIM_API_KEY` is unset the endpoint answers HTTP 503 instead of silently accepting anonymous ticket creation (the client sees a configuration error, not a created case).
+  - Claim-creation logic moved out of the route file into `src/lib/tickets/createTicketRecord.ts` and is now shared by `POST /api/tickets` (guarded) and `POST /api/claims` (portal form, still open) — Next.js route modules only accept HTTP-method exports, so the shared handler could not remain in `route.ts`.
+  - Documented `CAIM_API_KEY` in `.env.example`; the value must match the `CAIM_API_KEY` already sent by Stock-Flow `api/sync-to-caim.js`.
+## [0.38.0] - 2026-10-09
+
+### Added
+- **Stock-Flow Outbound Webhook on Claim Close (Integration Plan Phase 2) (`src/lib/webhooks/stockFlowWebhook.ts`, `src/app/api/tickets/route.ts`, `TicketDetailView.tsx`, `database.ts`, `useTicketsQuery.ts`)**:
+  - New server-side dispatcher `dispatchStockFlowWebhook` posts `claim.closed` events to `STOCKFLOW_WEBHOOK_URL` (default `https://stockflowth.online/api/caim-webhook`) with an HMAC-SHA256 signature header `x-caim-signature: sha256=<hex of the raw JSON body + `CAIM_WEBHOOK_SECRET`>`, `x-caim-timestamp` (unix seconds) and `x-caim-event-id` (deterministic idempotency key `<ticketId>:<repairResult>:<serial>`).
+  - Dispatch runs from Next.js `after()` so a Stock-Flow outage can never block or fail a CAIM case update; 8s timeout with 1 retry on transient failure (5xx/429/network), failures logged with the event id.
+  - Trigger fires exactly on the close transition (`statusCode === 5` / `"ปิดเคส"`), and also when an already-closed case has its repair result changed; the previous record is read before the update so repeated saves do not re-send the same stock movement.
+  - New structured `repairOutcome` field (`unrepairable` | `repaired` | `replaced_new`) plus `replacedNewSerialNo`, `disposalMethod`, `closedAt`, `closedBy` on the ticket document. When `repairOutcome` is absent the free-text `repairResult` is keyword-mapped (unrepairable is matched first so stock is never inflated); ambiguous text is skipped and logged instead of guessed.
+  - Close-status modal now requires the repair outcome (and the new S/N when `replaced_new` is selected) before the case can be closed, and the result is persisted through `PUT /api/tickets`.
+  - `.env.example` documents `CAIM_WEBHOOK_SECRET` and `STOCKFLOW_WEBHOOK_URL`.
+
 ## [0.37.1] - 2026-10-02
 
 ### Fixed

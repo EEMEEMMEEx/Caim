@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import type { CaimRepairOutcome } from "@/types/database"
 
 export const TICKETS_QUERY_KEY = ["tickets"] as const
 
@@ -20,6 +21,11 @@ export interface Ticket {
   isOverdue?: boolean
   overdueText?: string
   repairResult?: string
+  repairOutcome?: CaimRepairOutcome
+  replacedNewSerialNo?: string
+  disposalMethod?: string
+  closedAt?: string
+  closedBy?: string
   remarks?: string
   category?: string
   deviceType?: string
