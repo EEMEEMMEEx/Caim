@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getPrecomputedDashboardMetrics } from "@/lib/dashboard/dashboardStatsService"
+import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
+export const fetchCache = "force-no-store"
 
 export async function GET(request: NextRequest) {
   const startTime = performance.now()
   try {
     const { searchParams } = new URL(request.url)
-    const forceRefresh = searchParams.get("refresh") === "true"
+    const forceRefresh =
+      searchParams.get("refresh") === "true" || searchParams.get("force") === "true"
 
     const metrics = await getPrecomputedDashboardMetrics({ forceRefresh })
     const responseTimeMs = Math.round((performance.now() - startTime) * 100) / 100
@@ -23,9 +26,7 @@ export async function GET(request: NextRequest) {
       },
       {
         headers: {
-          "Cache-Control": "public, max-age=0, s-maxage=5, stale-while-revalidate=30",
-          "CDN-Cache-Control": "max-age=5, stale-while-revalidate=30",
-          "Vercel-CDN-Cache-Control": "max-age=5, stale-while-revalidate=30",
+          ...NO_CACHE_HEADERS,
           "X-Response-Time": `${responseTimeMs}ms`,
         },
       }
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
       error instanceof Error ? error.message : "Failed to compute dashboard metrics"
     return NextResponse.json(
       { success: false, error: message },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     )
   }
 }

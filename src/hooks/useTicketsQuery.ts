@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import type { CaimRepairOutcome } from "@/types/database"
+import { invalidateGlobalDashboardCache } from "@/hooks/useRealtimeDashboard"
 
 export const TICKETS_QUERY_KEY = ["tickets"] as const
 
@@ -144,6 +145,7 @@ export async function fetchTicketsFromApi(force = false): Promise<Ticket[]> {
  */
 export async function invalidateTicketsCache(): Promise<Ticket[]> {
   globalLastUpdated = 0
+  invalidateGlobalDashboardCache().catch(() => {})
   return fetchTicketsFromApi(true)
 }
 
@@ -271,6 +273,7 @@ export function useTicketsQuery() {
         // 4. Invalidate query cache immediately so background re-fetches or real-time sync
         // do not restore deleted records from stale cache
         await invalidateTicketsCache()
+        await invalidateGlobalDashboardCache()
 
         return {
           success: true,
@@ -336,6 +339,7 @@ export function useTicketsQuery() {
 
         // 3. Immediately invalidate and refetch parent query cache to sync server-calculated fields
         await invalidateTicketsCache()
+        await invalidateGlobalDashboardCache()
 
         return {
           success: true,

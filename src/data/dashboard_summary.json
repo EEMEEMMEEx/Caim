@@ -1,18 +1,18 @@
 {
   "summary": {
-    "total": 1,
-    "inProgress": 1,
-    "inProgressPct": 100,
+    "total": 3,
+    "inProgress": 2,
+    "inProgressPct": 67,
     "closed": 0,
     "closedPct": 0,
-    "rejected": 0,
-    "rejectedPct": 0
+    "rejected": 1,
+    "rejectedPct": 33
   },
   "kpi": {
-    "pendingMedianDays": 0,
-    "pendingCount": 1,
-    "overdueCount": 0,
-    "overduePct": 0,
+    "pendingMedianDays": 107,
+    "pendingCount": 2,
+    "overdueCount": 2,
+    "overduePct": 100,
     "closedOnTimeText": "ยังไม่มีเคสในประเทศที่ปิดแล้ว",
     "closedMedianDays": 0,
     "closedCount": 0
@@ -22,8 +22,8 @@
       "code": 1,
       "name": "รับแจ้ง/รอตรวจสภาพ",
       "color": "#0d9488",
-      "count": 1,
-      "pct": 100
+      "count": 2,
+      "pct": 67
     },
     {
       "code": 2,
@@ -58,47 +58,26 @@
       "code": 6,
       "name": "ปฏิเสธเคลม (นอกเงื่อนไข)",
       "color": "#db2777",
-      "count": 0,
-      "pct": 0,
+      "count": 1,
+      "pct": 33,
       "isClosedGroup": true
     }
   ],
   "weekly": {
-    "thisWeekCount": 1,
+    "thisWeekCount": 0,
     "lastWeekCount": 0,
-    "trendPct": 100,
+    "trendPct": 0,
     "isPositiveTrend": true,
     "daysBreakdown": [
-      {
-        "day": "อ.",
-        "count": 0
-      },
-      {
-        "day": "พ.",
-        "count": 0
-      },
-      {
-        "day": "พฤ.",
-        "count": 0
-      },
-      {
-        "day": "ศ.",
-        "count": 0
-      },
-      {
-        "day": "ส.",
-        "count": 0
-      },
-      {
-        "day": "อา.",
-        "count": 0
-      },
-      {
-        "day": "จ.",
-        "count": 0
-      }
+      { "day": "อ.", "count": 0 },
+      { "day": "พ.", "count": 0 },
+      { "day": "พฤ.", "count": 0 },
+      { "day": "ศ.", "count": 0 },
+      { "day": "ส.", "count": 0 },
+      { "day": "อา.", "count": 0 },
+      { "day": "จ.", "count": 0 }
     ],
-    "boxReceived": 1,
+    "boxReceived": 0,
     "boxRepaired": 0,
     "boxClosed": 0
   },
@@ -107,18 +86,18 @@
       "code": 1,
       "name": "รับแจ้ง/รอตรวจสภาพ",
       "color": "#0d9488",
-      "completedText": "1 วัน n=0",
-      "completedDays": 1,
-      "pendingCount": 1,
-      "pendingDays": 0,
-      "maxDays": 0
+      "completedText": "0 วัน n=0",
+      "completedDays": 0,
+      "pendingCount": 2,
+      "pendingDays": 107,
+      "maxDays": 107
     },
     {
       "code": 2,
       "name": "ส่งศูนย์บริการแล้ว",
       "color": "#7c3aed",
-      "completedText": "1 วัน n=0",
-      "completedDays": 1,
+      "completedText": "0 วัน n=0",
+      "completedDays": 0,
       "pendingCount": 0,
       "pendingDays": 0,
       "maxDays": 0
@@ -147,7 +126,7 @@
   "serviceCenters": [
     {
       "vendor": "Huawei",
-      "totalCases": 0,
+      "totalCases": 3,
       "atCenterNow": 0,
       "avgDaysText": "— ยังไม่เคยเข้าขั้นส่งศูนย์",
       "maxDaysText": "—",
@@ -155,12 +134,12 @@
     },
     {
       "vendor": "Hytera",
-      "totalCases": 1,
+      "totalCases": 0,
       "atCenterNow": 0,
       "avgDaysText": "— ยังไม่เคยเข้าขั้นส่งศูนย์",
       "maxDaysText": "—",
       "overdueCount": 0
     }
   ],
-  "lastCalculated": "2026-09-28T02:16:22.086Z"
+  "lastCalculated": "2026-10-16T04:52:00.000Z"
 }

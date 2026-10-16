@@ -30,6 +30,7 @@ import { StoredTicket } from "@/lib/storage/recordStorage"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useEquipmentsQuery } from "@/hooks/useEquipmentsQuery"
 import { invalidateTicketsCache } from "@/hooks/useTicketsQuery"
+import { invalidateGlobalDashboardCache } from "@/hooks/useRealtimeDashboard"
 import { calculateCaseDuration } from "@/lib/utils/caseDuration"
 import { ClaimStakeholdersSection } from "@/components/claims/ClaimStakeholdersSection"
 import { claimFormSchema } from "@/lib/validations/claimSchema"
@@ -360,6 +361,7 @@ export function NewTicketView() {
         console.warn("Backend API returned status", res.status)
       } else {
         await invalidateTicketsCache()
+        await invalidateGlobalDashboardCache()
       }
     } catch (err) {
       console.warn("Backend API offline or unreachable:", err)

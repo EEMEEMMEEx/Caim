@@ -13,6 +13,7 @@ import { calculateCaseDuration, calculateDueDate } from "@/lib/utils/caseDuratio
 import { dispatchStockFlowWebhook } from "@/lib/webhooks/stockFlowWebhook"
 import { requireCaimApiKey } from "@/lib/auth/apiKeyAuth"
 import { createTicketRecord } from "@/lib/tickets/createTicketRecord"
+import { invalidateDashboardMetrics } from "@/lib/dashboard/dashboardStatsService"
 
 function enrichTicket(ticket: TicketDocument): TicketDocument {
   const duration = calculateCaseDuration(ticket)
@@ -291,12 +292,9 @@ export async function PUT(request: NextRequest) {
       data: finalEnrichedTicket,
       timestamp: nowIso,
     })
-    realtimeEmitter.emit(REALTIME_EVENTS.METRICS_CHANGED, {
-      type: "metrics",
-      action: "update",
-      data: {},
-      timestamp: nowIso,
-    })
+
+    // Instantly invalidate dashboard cache and broadcast fresh metrics
+    await invalidateDashboardMetrics(true)
 
     // Phase 2: notify Stock-Flow after the response is sent ("after" keeps the serverless invocation
     // alive) so a Stock-Flow outage can never break or delay a CAIM case update.
@@ -394,12 +392,9 @@ export async function DELETE(request: NextRequest) {
       data: { id },
       timestamp: nowIso,
     })
-    realtimeEmitter.emit(REALTIME_EVENTS.METRICS_CHANGED, {
-      type: "metrics",
-      action: "update",
-      data: {},
-      timestamp: nowIso,
-    })
+
+    // Instantly invalidate dashboard cache and broadcast fresh metrics
+    await invalidateDashboardMetrics(true)
 
     return NextResponse.json(
       {

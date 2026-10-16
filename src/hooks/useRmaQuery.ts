@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import type { StageHistoryRecord, PermitTrackingInfo } from "@/types/database"
+import { invalidateGlobalDashboardCache } from "@/hooks/useRealtimeDashboard"
 
 export const RMA_QUERY_KEY = ["rma"] as const
 
@@ -133,6 +134,7 @@ export async function fetchRmaFromApi(force = false): Promise<RmaItem[]> {
  */
 export async function invalidateRmaCache(): Promise<RmaItem[]> {
   globalLastUpdated = 0
+  invalidateGlobalDashboardCache().catch(() => {})
   return fetchRmaFromApi(true)
 }
 
@@ -242,6 +244,7 @@ export function useRmaQuery() {
         }
 
         await invalidateRmaCache()
+        await invalidateGlobalDashboardCache()
 
         return {
           success: true,
@@ -279,9 +282,11 @@ export function useRmaQuery() {
         }
 
         await invalidateRmaCache()
+        await invalidateGlobalDashboardCache()
         return { success: true, message: data.message }
       } catch (err: unknown) {
         await invalidateRmaCache()
+        await invalidateGlobalDashboardCache()
         const message = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการอัปเดตใบส่งซ่อม"
         return { success: false, error: message }
       }

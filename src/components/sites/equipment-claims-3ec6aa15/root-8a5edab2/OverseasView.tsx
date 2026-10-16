@@ -33,6 +33,7 @@ import { type Asset } from "./assetsData"
 import { saveRmaApi } from "@/lib/storage/recordStorage"
 import { useRealtimeSync } from "@/hooks/useRealtimeSync"
 import { useRmaQuery, applyRmaMutation, invalidateRmaCache, type RmaItem } from "@/hooks/useRmaQuery"
+import { invalidateGlobalDashboardCache } from "@/hooks/useRealtimeDashboard"
 import {
   calculateRmaMetrics,
   calculateStageDuration,
@@ -705,6 +706,7 @@ export function OverseasView() {
         setTimelineItem(data.linkedRma)
       }
       await invalidateRmaCache()
+      await invalidateGlobalDashboardCache()
 
       showToast(`อัปเดตกรอบเวลาใบอนุญาต ${permitNo} เรียบร้อยแล้ว`)
       setEditingPermitNo(null)
@@ -1030,6 +1032,7 @@ export function OverseasView() {
         setTimelineItem(data.linkedRma)
       }
       await invalidateRmaCache()
+      await invalidateGlobalDashboardCache()
 
       setIsImportExportModalOpen(false)
       showToast("บันทึกใบอนุญาตนำเข้า-ส่งออกสำเร็จ")

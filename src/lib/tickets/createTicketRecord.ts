@@ -6,6 +6,7 @@ import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 import { savePersistentTicket } from "@/lib/storage/serverTicketStorage"
 import { calculateCaseDuration, calculateDueDate } from "@/lib/utils/caseDuration"
 import { generateNextClaimNumber } from "@/lib/sequences/claimSequence"
+import { invalidateDashboardMetrics } from "@/lib/dashboard/dashboardStatsService"
 
 /**
  * Claim/ticket creation shared by the portal endpoint (POST /api/claims) and the
@@ -175,6 +176,9 @@ export async function createTicketRecord(request: NextRequest) {
         // Save to persistent disk store as dual-layer backup
         savePersistentTicket(newTicketDoc)
 
+        // Instantly invalidate dashboard cache and broadcast fresh metrics
+        await invalidateDashboardMetrics(true)
+
         return NextResponse.json(
           {
             success: true,
@@ -233,6 +237,9 @@ export async function createTicketRecord(request: NextRequest) {
       timestamp: nowIso,
     })
 
+    // Instantly invalidate dashboard cache and broadcast fresh metrics
+    await invalidateDashboardMetrics(true)
+
     return NextResponse.json(
       {
         success: true,
@@ -244,6 +251,6 @@ export async function createTicketRecord(request: NextRequest) {
     )
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to create ticket"
-    return NextResponse.json({ success: false, error: message }, { status: 500 })
+    return NextResponse.json({ success: false, error: message }, { status: 500, headers: NO_CACHE_HEADERS })
   }
 }

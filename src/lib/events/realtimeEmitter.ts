@@ -10,9 +10,8 @@ declare global {
 export const realtimeEmitter: RealtimeEventEmitter =
   global._realtimeEventEmitter || new RealtimeEventEmitter()
 
-if (process.env.NODE_ENV !== "production") {
-  global._realtimeEventEmitter = realtimeEmitter
-}
+// Unconditionally preserve singleton across all environments and Next.js route closures
+global._realtimeEventEmitter = realtimeEmitter
 
 export const REALTIME_EVENTS = {
   STATIONS_CHANGED: "stations_changed",

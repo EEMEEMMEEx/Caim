@@ -9,6 +9,7 @@ import {
   calculatePermitSla,
   getCoveredStepsByPermitType,
 } from "@/lib/utils/permitSla"
+import { invalidateDashboardMetrics } from "@/lib/dashboard/dashboardStatsService"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -206,6 +207,9 @@ export async function POST(request: NextRequest) {
         data: updatedRma,
         timestamp: nowIso,
       })
+
+      // Instantly invalidate dashboard cache and broadcast fresh metrics
+      await invalidateDashboardMetrics(true)
 
       console.log(`[api/rma/permit] Successfully persisted permit ${permitDoc.permitNo} to RMA ${targetRma.rmaNo}`)
 
@@ -415,6 +419,9 @@ export async function PATCH(request: NextRequest) {
       data: updatedRma,
       timestamp: nowIso,
     })
+
+    // Instantly invalidate dashboard cache and broadcast fresh metrics
+    await invalidateDashboardMetrics(true)
 
     console.log(`[api/rma/permit] PATCH successfully updated permit ${permitNo}: issueDate ${issueDate}, expiryDate ${expiryDate}, totalSla ${sla.totalDays}d`)
 

@@ -10,6 +10,7 @@ import {
   getPersistentDeletedRmaIds,
 } from "@/lib/storage/serverRmaStorage"
 import { calculateRmaMetrics, calculateCurrentStageDuration } from "@/lib/utils/rmaDuration"
+import { invalidateDashboardMetrics } from "@/lib/dashboard/dashboardStatsService"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -213,6 +214,9 @@ export async function POST(request: NextRequest) {
       timestamp: nowIso,
     })
 
+    // Instantly invalidate dashboard cache and broadcast fresh metrics
+    await invalidateDashboardMetrics(true)
+
     return NextResponse.json(
       {
         success: true,
@@ -287,6 +291,9 @@ export async function PUT(request: NextRequest) {
       timestamp: nowIso,
     })
 
+    // Instantly invalidate dashboard cache and broadcast fresh metrics
+    await invalidateDashboardMetrics(true)
+
     return NextResponse.json(
       {
         success: true,
@@ -354,6 +361,9 @@ export async function DELETE(request: NextRequest) {
       data: { id },
       timestamp: nowIso,
     })
+
+    // Instantly invalidate dashboard cache and broadcast fresh metrics
+    await invalidateDashboardMetrics(true)
 
     return NextResponse.json(
       {

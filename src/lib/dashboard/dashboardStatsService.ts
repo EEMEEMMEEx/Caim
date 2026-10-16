@@ -6,18 +6,24 @@ import {
   calculateDashboardMetrics,
   TicketItem,
 } from "./calculateMetrics"
-import { getPersistentTickets } from "@/lib/storage/serverTicketStorage"
+import {
+  getPersistentTickets,
+  getPersistentDeletedTicketIds,
+} from "@/lib/storage/serverTicketStorage"
 import { realtimeEmitter, REALTIME_EVENTS } from "@/lib/events/realtimeEmitter"
 
 const SUMMARY_FILE = path.join(process.cwd(), "src/data/dashboard_summary.json")
-const CACHE_TTL_MS = 30000 // 30 seconds TTL for background freshness
+const CACHE_TTL_MS = 2000 // 2 seconds micro-cache window to deduplicate burst requests while ensuring real-time freshness
 
-// In-Memory Fast Cache
-let inMemoryMetrics: DashboardMetrics | null = null
-let inMemoryTimestamp = 0
-let isCacheDirty = false
+// Global In-Memory Fast Cache attached to globalThis across all route handler closures
+declare global {
+  var _dashboardInMemoryMetrics: DashboardMetrics | null | undefined
+  var _dashboardInMemoryTimestamp: number | undefined
+  var _dashboardIsCacheDirty: boolean | undefined
+  var _dashboardActivePromise: Promise<DashboardMetrics> | null | undefined
+}
+
 let indexEnsured = false
-let activeRecomputePromise: Promise<DashboardMetrics> | null = null
 
 /**
  * Ensure MongoDB has the optimal compound indexes to prevent slow ad-hoc COLLSCAN (table scans).
@@ -38,26 +44,6 @@ export async function ensureDashboardIndexes(): Promise<void> {
   } catch (err) {
     console.warn("[DashboardService] Failed to ensure compound index on tickets:", err)
   }
-}
-
-/**
- * Load cached pre-computed summary from disk for instantaneous server cold-starts
- */
-function loadDiskSummary(): DashboardMetrics | null {
-  try {
-    if (fs.existsSync(SUMMARY_FILE)) {
-      const content = fs.readFileSync(SUMMARY_FILE, "utf-8")
-      if (content) {
-        const parsed = JSON.parse(content)
-        if (parsed && parsed.summary && parsed.kpi) {
-          return parsed as DashboardMetrics
-        }
-      }
-    }
-  } catch (err) {
-    console.warn("[DashboardService] Failed to read disk summary:", err)
-  }
-  return null
 }
 
 /**
@@ -135,12 +121,16 @@ async function computeMetrics(): Promise<DashboardMetrics> {
     tickets = getPersistentTickets() as unknown as TicketItem[]
   }
 
-  const freshMetrics = calculateDashboardMetrics(tickets)
+  // Strictly filter out any permanently deleted tickets to avoid re-populating removed counters
+  const persistentDeleted = new Set(getPersistentDeletedTicketIds())
+  const activeTickets = tickets.filter((t) => !persistentDeleted.has(t.id))
+
+  const freshMetrics = calculateDashboardMetrics(activeTickets)
 
   // Update in-memory cache and persistent stores
-  inMemoryMetrics = freshMetrics
-  inMemoryTimestamp = Date.now()
-  isCacheDirty = false
+  global._dashboardInMemoryMetrics = freshMetrics
+  global._dashboardInMemoryTimestamp = Date.now()
+  global._dashboardIsCacheDirty = false
 
   persistSummary(freshMetrics)
 
@@ -149,48 +139,39 @@ async function computeMetrics(): Promise<DashboardMetrics> {
 
 /**
  * Main High-Performance Accessor: Returns pre-aggregated dashboard metrics in single-digit ms.
- * Handles instant memory cache hits, disk cache fallbacks, and non-blocking revalidation.
+ * Guarantees zero stale data latency by calculating fresh metrics on cold starts and mutations.
  */
 export async function getPrecomputedDashboardMetrics(
   options: { forceRefresh?: boolean } = {}
 ): Promise<DashboardMetrics> {
   const now = Date.now()
+  const cached = global._dashboardInMemoryMetrics
+  const timestamp = global._dashboardInMemoryTimestamp || 0
+  const isDirty = global._dashboardIsCacheDirty || false
 
-  // 1. Fast Path: Return hot in-memory cache if fresh (< 30s) and not marked dirty
-  if (!options.forceRefresh && inMemoryMetrics && !isCacheDirty && now - inMemoryTimestamp < CACHE_TTL_MS) {
-    return inMemoryMetrics
+  // 1. Fast Path: Return hot in-memory cache if within 2s micro-window and not marked dirty
+  if (!options.forceRefresh && cached && !isDirty && now - timestamp < CACHE_TTL_MS) {
+    return cached
   }
 
-  // 2. Cold-start fallback: Load pre-aggregated summary from disk immediately if in-memory is empty
-  if (!inMemoryMetrics && !options.forceRefresh) {
-    const diskSummary = loadDiskSummary()
-    if (diskSummary) {
-      inMemoryMetrics = diskSummary
-      inMemoryTimestamp = now
-      // Recompute in background to refresh if needed
-      computeMetrics().catch((err) => console.error("[DashboardService] BG compute error:", err))
-      return diskSummary
-    }
+  // 2. Deduplicate simultaneous compute calls to protect CPU & database
+  if (global._dashboardActivePromise) {
+    return global._dashboardActivePromise
   }
 
-  // 3. Deduplicate simultaneous compute calls
-  if (activeRecomputePromise) {
-    return activeRecomputePromise
-  }
-
-  activeRecomputePromise = computeMetrics().finally(() => {
-    activeRecomputePromise = null
+  global._dashboardActivePromise = computeMetrics().finally(() => {
+    global._dashboardActivePromise = null
   })
 
-  return activeRecomputePromise
+  return global._dashboardActivePromise
 }
 
 /**
- * Invalidate cached metrics and trigger background re-aggregation & SSE broadcast.
- * Called automatically when tickets or RMA claims are added/modified/deleted.
+ * Invalidate cached metrics and trigger instant re-aggregation & SSE broadcast.
+ * Called automatically when tickets, permits, or RMA claims are added/modified/deleted.
  */
 export async function invalidateDashboardMetrics(broadcast = true): Promise<DashboardMetrics> {
-  isCacheDirty = true
+  global._dashboardIsCacheDirty = true
   const freshMetrics = await computeMetrics()
 
   if (broadcast) {
@@ -198,6 +179,9 @@ export async function invalidateDashboardMetrics(broadcast = true): Promise<Dash
       type: "metrics",
       action: "update",
       metrics: freshMetrics,
+      summary: freshMetrics.summary,
+      kpi: freshMetrics.kpi,
+      workStatus: freshMetrics.workStatus,
       timestamp: new Date().toISOString(),
     })
   }
