@@ -132,7 +132,6 @@ export function DatePickerInput({
         value={isoValue}
         onChange={handleNativeChange}
         disabled={disabled}
-        required={required && !hasValue}
         min={min}
         max={max}
         tabIndex={-1}

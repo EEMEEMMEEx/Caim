@@ -16,7 +16,8 @@ import {
   Check,
   X,
   Save,
-  Loader2
+  Loader2,
+  AlertCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -138,6 +139,13 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
   const [newRepairOutcome, setNewRepairOutcome] = React.useState<CaimRepairOutcome | "">("")
   const [newReplacedSerialNo, setNewReplacedSerialNo] = React.useState("")
   const [bannerMessage, setBannerMessage] = React.useState<string | null>(null)
+  const [toastMessage, setToastMessage] = React.useState<string | null>(null)
+  const [formError, setFormError] = React.useState<string | null>(null)
+
+  const showToast = React.useCallback((msg: string) => {
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(null), 3500)
+  }, [])
 
   // Direct sync function from Authoritative Tickets API
   const syncTicketFromRemote = React.useCallback(async (targetId: string) => {
@@ -295,14 +303,33 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
   }
 
   function handleOpenEdit() {
-    const autoDue = calculateDueDate(data.reportedDate, 60).dueDateStr
+    const autoDue = calculateDueDate(data.reportedDate || "", 60).dueDateStr
     setEditForm({
       ...data,
+      title: data.title || "",
+      problemDesc: data.problemDesc || "",
+      repairResult: data.repairResult || "",
+      remarks: data.remarks || "",
+      vendor: data.vendor || "",
+      model: data.model || "",
+      serialNo: data.serialNo || "",
+      category: data.category || "",
+      deviceType: data.deviceType || "",
+      location: data.location || "",
+      warrantyStatus: data.warrantyStatus || "อยู่ในประกัน",
+      serviceCenter: data.serviceCenter || "Huawei",
+      reportedDate: data.reportedDate || "",
+      sentDate: data.sentDate || "—",
+      lastTrackDate: data.lastTrackDate || "—",
+      returnDate: data.returnDate || "—",
+      reporter: data.reporter || "",
+      assignee: data.assignee || "",
       deadlineDate:
         data.deadlineDate && !data.deadlineDate.includes("12 พ.ย. 2569")
           ? data.deadlineDate
           : autoDue,
     })
+    setFormError(null)
     setIsEditModalOpen(true)
   }
 
@@ -310,55 +337,124 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
     e.preventDefault()
     if (isSaving) return
 
+    // 1. Client-side Form Validation
+    const title = (editForm.title || "").trim()
+    const problemDesc = (editForm.problemDesc || "").trim()
+    const serialNo = (editForm.serialNo || "").trim()
+    const reportedDate = (editForm.reportedDate || "").trim()
+
+    if (!title) {
+      setFormError("กรุณาระบุหัวข้อเลขที่เคลม")
+      return
+    }
+    if (!problemDesc) {
+      setFormError("กรุณาระบุอาการเสีย / ปัญหาที่พบ")
+      return
+    }
+    if (!serialNo) {
+      setFormError("กรุณาระบุหมายเลขเครื่อง (S/N)")
+      return
+    }
+    if (!reportedDate) {
+      setFormError("กรุณาระบุวันที่รับแจ้ง")
+      return
+    }
+
+    setFormError(null)
     setIsSaving(true)
-    const autoDeadline = calculateDueDate(editForm.reportedDate, 60).dueDateStr
+
+    const autoDeadline = calculateDueDate(reportedDate, 60).dueDateStr
     const effectiveDeadline =
       editForm.deadlineDate && !editForm.deadlineDate.includes("12 พ.ย. 2569")
         ? editForm.deadlineDate
         : autoDeadline
 
-    const updatedData = { ...editForm, deadlineDate: effectiveDeadline, id: data.id }
-    setData(updatedData)
-    setIsEditModalOpen(false)
+    const payload = {
+      id: data.id,
+      title,
+      problemDesc,
+      description: problemDesc,
+      symptoms: problemDesc,
+      repairResult: (editForm.repairResult || "").trim(),
+      remarks: (editForm.remarks || "").trim(),
+      vendor: (editForm.vendor || "").trim(),
+      brand: (editForm.vendor || "").trim(),
+      model: (editForm.model || "").trim(),
+      serialNo,
+      serialNumber: serialNo,
+      category: (editForm.category || "").trim(),
+      deviceType: (editForm.deviceType || "").trim(),
+      group: (editForm.deviceType || "").trim(),
+      location: (editForm.location || "").trim(),
+      warrantyStatus: (editForm.warrantyStatus || "อยู่ในประกัน").trim(),
+      serviceCenter: (editForm.serviceCenter || "Huawei").trim(),
+      date: reportedDate,
+      reportedDate,
+      sentDate: (editForm.sentDate || "—").trim(),
+      deadlineDate: effectiveDeadline,
+      slaExpiry: effectiveDeadline,
+      lastTrackDate: (editForm.lastTrackDate || "—").trim(),
+      returnDate: (editForm.returnDate || "—").trim(),
+      reporter: (editForm.reporter || "").trim(),
+      reporterName: (editForm.reporter || "").trim(),
+      assignee: (editForm.assignee || "").trim(),
+      assigneeName: (editForm.assignee || "").trim(),
+      reportedDateIso: toISODateString(reportedDate),
+      sentDateIso: toISODateString(editForm.sentDate),
+      deadlineDateIso: toISODateString(effectiveDeadline),
+      lastTrackDateIso: toISODateString(editForm.lastTrackDate),
+      returnDateIso: toISODateString(editForm.returnDate),
+    }
 
     try {
-      await updateTicket({
+      const res = await updateTicket(payload)
+      if (!res.success) {
+        throw new Error(res.error || "บันทึกการแก้ไขไม่สำเร็จ")
+      }
+
+      // Close modal automatically upon successful persistence
+      setIsEditModalOpen(false)
+
+      // Instantly update active view state with modified fields
+      const updatedData: TicketDetailData = {
+        ...data,
+        ...editForm,
         id: data.id,
-        title: editForm.title.trim(),
-        problemDesc: editForm.problemDesc.trim(),
-        description: editForm.problemDesc.trim(),
-        repairResult: editForm.repairResult.trim(),
-        remarks: editForm.remarks.trim(),
-        vendor: editForm.vendor.trim(),
-        model: editForm.model.trim(),
-        serialNo: editForm.serialNo.trim(),
-        serialNumber: editForm.serialNo.trim(),
-        category: editForm.category.trim(),
-        deviceType: editForm.deviceType.trim(),
-        location: editForm.location.trim(),
-        warrantyStatus: editForm.warrantyStatus.trim(),
-        serviceCenter: editForm.serviceCenter.trim(),
-        date: editForm.reportedDate,
-        reportedDate: editForm.reportedDate,
-        sentDate: editForm.sentDate.trim(),
+        title,
+        problemDesc,
+        vendor: payload.vendor,
+        model: payload.model,
+        serialNo,
+        category: payload.category,
+        deviceType: payload.deviceType,
+        location: payload.location,
+        warrantyStatus: payload.warrantyStatus,
+        serviceCenter: payload.serviceCenter,
+        repairResult: payload.repairResult,
+        remarks: payload.remarks,
+        reportedDate,
+        sentDate: payload.sentDate,
         deadlineDate: effectiveDeadline,
-        lastTrackDate: editForm.lastTrackDate.trim(),
-        returnDate: editForm.returnDate.trim(),
-        reporter: editForm.reporter.trim(),
-        assignee: editForm.assignee.trim(),
-        reportedDateIso: toISODateString(editForm.reportedDate),
-        sentDateIso: toISODateString(editForm.sentDate),
-        deadlineDateIso: toISODateString(effectiveDeadline),
-        lastTrackDateIso: toISODateString(editForm.lastTrackDate),
-        returnDateIso: toISODateString(editForm.returnDate),
-      })
+        lastTrackDate: payload.lastTrackDate,
+        returnDate: payload.returnDate,
+        reporter: payload.reporter,
+        assignee: payload.assignee,
+      }
+      setData(updatedData)
+
+      // Trigger cache invalidation so table list and overview counters refresh immediately
       await invalidateTicketsCache()
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("caim:tickets:invalidated"))
       }
-      showBanner("บันทึกการแก้ไขข้อมูลเรียบร้อยแล้ว")
-    } catch {
-      showBanner("บันทึกการแก้ไขข้อมูลเรียบร้อยแล้ว")
+
+      showBanner("บันทึกการแก้ไขข้อมูลสำเร็จ")
+      showToast("บันทึกการแก้ไขข้อมูลสำเร็จ")
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึกข้อมูล"
+      console.error("[TicketDetailView] Save edit failed:", message)
+      setFormError(message)
+      showBanner(`บันทึกไม่สำเร็จ: ${message}`)
     } finally {
       setIsSaving(false)
     }
@@ -926,7 +1022,14 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="flex flex-col flex-1 overflow-hidden pt-4">
+            <form onSubmit={handleSaveEdit} noValidate className="flex flex-col flex-1 overflow-hidden pt-4">
+              {formError && (
+                <div className="mb-3 mx-1 flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 animate-in fade-in">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
               <div className="overflow-y-auto pr-2 space-y-5 flex-1 max-h-[calc(90vh-140px)]">
                 {/* กลุ่มที่ 1: ข้อมูลพื้นฐานงานเคลม */}
                 <div className="space-y-3">
@@ -935,29 +1038,33 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     <span>ข้อมูลงานเคลม</span>
                   </h4>
                   <div className="flex flex-col gap-1">
-                    <label className="font-medium text-foreground">หัวข้อเลขที่เคลม</label>
+                    <label className="font-medium text-foreground">
+                      หัวข้อเลขที่เคลม <span className="text-red-500">*</span>
+                    </label>
                     <Input
-                      value={editForm.title}
+                      value={editForm.title || ""}
                       onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                       className="h-8 text-xs"
-                      required
+                      placeholder="เช่น CLM-2026-003 หรือ หัวข้อแจ้งเคลม"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font-medium text-foreground">อาการเสีย / ปัญหาที่พบ</label>
+                    <label className="font-medium text-foreground">
+                      อาการเสีย / ปัญหาที่พบ <span className="text-red-500">*</span>
+                    </label>
                     <textarea
-                      value={editForm.problemDesc}
+                      value={editForm.problemDesc || ""}
                       onChange={(e) => setEditForm({ ...editForm, problemDesc: e.target.value })}
                       rows={2}
                       className="rounded-md border border-input bg-background p-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      required
+                      placeholder="ระบุอาการเสีย หรือปัญหาที่พบ"
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col gap-1">
                       <label className="font-medium text-foreground">ผลการซ่อม / การแก้ไข</label>
                       <Input
-                        value={editForm.repairResult}
+                        value={editForm.repairResult || ""}
                         onChange={(e) => setEditForm({ ...editForm, repairResult: e.target.value })}
                         className="h-8 text-xs"
                         placeholder="เช่น ยังไม่มีผลการซ่อม, เปลี่ยนโมดูลใหม่"
@@ -966,7 +1073,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     <div className="flex flex-col gap-1">
                       <label className="font-medium text-foreground">หมายเหตุ</label>
                       <Input
-                        value={editForm.remarks}
+                        value={editForm.remarks || ""}
                         onChange={(e) => setEditForm({ ...editForm, remarks: e.target.value })}
                         className="h-8 text-xs"
                         placeholder="หมายเหตุเพิ่มเติม"
@@ -983,19 +1090,20 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="flex flex-col gap-1 sm:col-span-1">
-                      <label className="font-medium text-foreground">Serial No. (S/N)</label>
+                      <label className="font-medium text-foreground">
+                        Serial No. (S/N) <span className="text-red-500">*</span>
+                      </label>
                       <Input
-                        value={editForm.serialNo}
+                        value={editForm.serialNo || ""}
                         onChange={(e) => setEditForm({ ...editForm, serialNo: e.target.value })}
                         className="h-8 font-mono text-xs"
                         placeholder="หมายเลขเครื่อง"
-                        required
                       />
                     </div>
                     <div className="flex flex-col gap-1">
                       <label className="font-medium text-foreground">ยี่ห้อ (Brand / Vendor)</label>
                       <Input
-                        value={editForm.vendor}
+                        value={editForm.vendor || ""}
                         onChange={(e) => setEditForm({ ...editForm, vendor: e.target.value })}
                         className="h-8 text-xs"
                         placeholder="เช่น Huawei, Forth, Hytera"
@@ -1004,7 +1112,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     <div className="flex flex-col gap-1">
                       <label className="font-medium text-foreground">รุ่น (Model)</label>
                       <Input
-                        value={editForm.model}
+                        value={editForm.model || ""}
                         onChange={(e) => setEditForm({ ...editForm, model: e.target.value })}
                         className="h-8 text-xs"
                         placeholder="เช่น OMXD30000"
@@ -1016,7 +1124,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     <div className="flex flex-col gap-1">
                       <label className="font-medium text-foreground">หมวดหมู่อุปกรณ์ (Category)</label>
                       <Input
-                        value={editForm.category}
+                        value={editForm.category || ""}
                         onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                         className="h-8 text-xs"
                         placeholder="เช่น ระบบบริหารจัดการ Software-Defined WAN"
@@ -1025,7 +1133,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     <div className="flex flex-col gap-1">
                       <label className="font-medium text-foreground">ประเภท / กลุ่ม (Group / Device Type)</label>
                       <Input
-                        value={editForm.deviceType}
+                        value={editForm.deviceType || ""}
                         onChange={(e) => setEditForm({ ...editForm, deviceType: e.target.value })}
                         className="h-8 text-xs"
                         placeholder="เช่น Optical Transceiver, Router"
@@ -1036,7 +1144,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                   <div className="flex flex-col gap-1">
                     <label className="font-medium text-foreground">สถานที่ติดตั้ง (Installation Location)</label>
                     <Input
-                      value={editForm.location}
+                      value={editForm.location || ""}
                       onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
                       className="h-8 text-xs"
                       placeholder="เช่น ที่ว่าการอำเภอเลาขวัญ จ.กาญจนบุรี"
@@ -1055,7 +1163,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     <div className="flex flex-col gap-1">
                       <label className="font-medium text-foreground">สถานะประกัน (Warranty Status)</label>
                       <select
-                        value={editForm.warrantyStatus}
+                        value={editForm.warrantyStatus || "อยู่ในประกัน"}
                         onChange={(e) => setEditForm({ ...editForm, warrantyStatus: e.target.value })}
                         className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       >
@@ -1067,7 +1175,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     <div className="flex flex-col gap-1">
                       <label className="font-medium text-foreground">ศูนย์บริการ (Service Center)</label>
                       <select
-                        value={editForm.serviceCenter}
+                        value={editForm.serviceCenter || "Huawei"}
                         onChange={(e) => setEditForm({ ...editForm, serviceCenter: e.target.value })}
                         className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                       >
@@ -1087,7 +1195,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                         วันที่รับแจ้ง (Reported Date) <span className="text-red-500">*</span>
                       </label>
                       <DatePickerInput
-                        value={editForm.reportedDate}
+                        value={editForm.reportedDate || ""}
                         onChange={(thaiStr, isoStr) => {
                           const autoDue = calculateDueDate(isoStr || thaiStr, 60).dueDateStr
                           setEditForm((prev) => ({
@@ -1097,7 +1205,6 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                           }))
                         }}
                         placeholder="เลือกวันที่รับแจ้ง"
-                        required
                       />
                     </div>
                     <div className="flex flex-col gap-1">
@@ -1105,7 +1212,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                         กำหนดแล้วเสร็จ (SLA 60 วัน)
                       </label>
                       <DatePickerInput
-                        value={editForm.deadlineDate}
+                        value={editForm.deadlineDate || ""}
                         onChange={(thaiStr) =>
                           setEditForm((prev) => ({
                             ...prev,
@@ -1123,7 +1230,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                         วันที่ส่งศูนย์บริการ
                       </label>
                       <DatePickerInput
-                        value={editForm.sentDate}
+                        value={editForm.sentDate || ""}
                         onChange={(thaiStr) =>
                           setEditForm((prev) => ({
                             ...prev,
@@ -1138,7 +1245,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                         ติดตามล่าสุด
                       </label>
                       <DatePickerInput
-                        value={editForm.lastTrackDate}
+                        value={editForm.lastTrackDate || ""}
                         onChange={(thaiStr) =>
                           setEditForm((prev) => ({
                             ...prev,
@@ -1153,7 +1260,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                         วันที่รับคืน
                       </label>
                       <DatePickerInput
-                        value={editForm.returnDate}
+                        value={editForm.returnDate || ""}
                         onChange={(thaiStr) =>
                           setEditForm((prev) => ({
                             ...prev,
@@ -1169,7 +1276,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     <div className="flex flex-col gap-1">
                       <label className="font-medium text-foreground">ผู้แจ้ง (Reporter)</label>
                       <Input
-                        value={editForm.reporter}
+                        value={editForm.reporter || ""}
                         onChange={(e) => setEditForm({ ...editForm, reporter: e.target.value })}
                         className="h-8 text-xs"
                         placeholder="ชื่อผู้แจ้ง"
@@ -1178,7 +1285,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     <div className="flex flex-col gap-1">
                       <label className="font-medium text-foreground">ผู้รับผิดชอบ (Assignee)</label>
                       <Input
-                        value={editForm.assignee}
+                        value={editForm.assignee || ""}
                         onChange={(e) => setEditForm({ ...editForm, assignee: e.target.value })}
                         className="h-8 text-xs"
                         placeholder="ชื่อผู้รับผิดชอบ"
@@ -1374,6 +1481,21 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Floating Action Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-xl bg-slate-900 px-4 py-3 text-xs font-medium text-white shadow-2xl animate-in fade-in slide-in-from-bottom-3 border border-slate-800">
+          <Check className="size-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="ml-2 text-slate-400 hover:text-white cursor-pointer"
+          >
+            <X className="size-3.5" />
+          </button>
         </div>
       )}
     </main>

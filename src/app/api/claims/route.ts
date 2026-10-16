@@ -76,9 +76,16 @@ export async function PUT(request: NextRequest) {
 }
 
 /**
+ * PATCH /api/claims
+ * Partial update for claim details or status
+ */
+export const PATCH = PUT
+
+/**
  * DELETE /api/claims
  * Deletes claim by ?id=
  */
 export async function DELETE(request: NextRequest) {
   return handleTicketsDelete(request)
 }
+

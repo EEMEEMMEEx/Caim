@@ -128,9 +128,44 @@ export async function PUT(request: NextRequest) {
     delete updates.id
     const nowIso = new Date().toISOString()
 
-    // Normalize field names (support both naming conventions: problemDesc/description, serialNo/serialNumber)
-    const normalizedProblemDesc = updates.problemDesc !== undefined ? updates.problemDesc : updates.description
-    const normalizedSerialNo = updates.serialNo !== undefined ? String(updates.serialNo).trim() : updates.serialNumber ? String(updates.serialNumber).trim() : undefined
+    // Normalize field names (support both naming conventions across all claim fields)
+    const normalizedProblemDesc = updates.problemDesc !== undefined
+      ? String(updates.problemDesc).trim()
+      : updates.description !== undefined
+      ? String(updates.description).trim()
+      : updates.symptoms !== undefined
+      ? String(updates.symptoms).trim()
+      : undefined
+
+    const normalizedSerialNo = updates.serialNo !== undefined
+      ? String(updates.serialNo).trim()
+      : updates.serialNumber !== undefined
+      ? String(updates.serialNumber).trim()
+      : undefined
+
+    const normalizedVendor = updates.brand !== undefined
+      ? String(updates.brand).trim()
+      : updates.vendor !== undefined
+      ? String(updates.vendor).trim()
+      : undefined
+
+    const normalizedDeviceType = updates.group !== undefined
+      ? String(updates.group).trim()
+      : updates.deviceType !== undefined
+      ? String(updates.deviceType).trim()
+      : undefined
+
+    const normalizedDate = updates.reportedDate !== undefined
+      ? String(updates.reportedDate).trim()
+      : updates.date !== undefined
+      ? String(updates.date).trim()
+      : undefined
+
+    const normalizedDeadlineDate = updates.slaExpiry !== undefined
+      ? String(updates.slaExpiry).trim()
+      : updates.deadlineDate !== undefined
+      ? String(updates.deadlineDate).trim()
+      : undefined
 
     // Normalize status and statusCode
     const STATUS_MAP: Record<number, string> = {
@@ -169,9 +204,28 @@ export async function PUT(request: NextRequest) {
 
     if (normalizedProblemDesc !== undefined) {
       setFields.problemDesc = normalizedProblemDesc
+      setFields.description = normalizedProblemDesc
+      setFields.symptoms = normalizedProblemDesc
     }
     if (normalizedSerialNo !== undefined) {
       setFields.serialNo = normalizedSerialNo
+      setFields.serialNumber = normalizedSerialNo
+    }
+    if (normalizedVendor !== undefined) {
+      setFields.vendor = normalizedVendor
+      setFields.brand = normalizedVendor
+    }
+    if (normalizedDeviceType !== undefined) {
+      setFields.deviceType = normalizedDeviceType
+      setFields.group = normalizedDeviceType
+    }
+    if (normalizedDate !== undefined) {
+      setFields.date = normalizedDate
+      setFields.reportedDate = normalizedDate
+    }
+    if (normalizedDeadlineDate !== undefined) {
+      setFields.deadlineDate = normalizedDeadlineDate
+      setFields.slaExpiry = normalizedDeadlineDate
     }
     if (finalStatus !== undefined) {
       setFields.status = finalStatus
@@ -179,17 +233,15 @@ export async function PUT(request: NextRequest) {
     if (finalStatusCode !== undefined) {
       setFields.statusCode = finalStatusCode
     }
-    if (updates.reporterName !== undefined && updates.reporter === undefined) {
-      setFields.reporter = updates.reporterName
+    if (updates.reporterName !== undefined || updates.reporter !== undefined) {
+      const rep = String(updates.reporter !== undefined ? updates.reporter : updates.reporterName).trim()
+      setFields.reporter = rep
+      setFields.reporterName = rep
     }
-    if (updates.assigneeName !== undefined && updates.assignee === undefined) {
-      setFields.assignee = updates.assigneeName
-    }
-    if (updates.reporter !== undefined && updates.reporterName === undefined) {
-      setFields.reporterName = updates.reporter
-    }
-    if (updates.assignee !== undefined && updates.assigneeName === undefined) {
-      setFields.assigneeName = updates.assignee
+    if (updates.assigneeName !== undefined || updates.assignee !== undefined) {
+      const asn = String(updates.assignee !== undefined ? updates.assignee : updates.assigneeName).trim()
+      setFields.assignee = asn
+      setFields.assigneeName = asn
     }
 
     // Determine current record from disk or mongo to preserve and calculate duration

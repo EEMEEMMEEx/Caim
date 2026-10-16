@@ -723,6 +723,11 @@ export function TicketsView() {
       setSelectedTicket(ticket)
       setEditForm({
         ...ticket,
+        title: ticket.title || "",
+        problemDesc: ticket.problemDesc || "",
+        vendor: ticket.vendor || "",
+        model: ticket.model || "",
+        serialNo: ticket.serialNo || "",
         statusCode: code,
         status: label,
       })
@@ -759,22 +764,42 @@ export function TicketsView() {
       e.preventDefault()
       if (!editForm || isSaving) return
 
+      const title = (editForm.title || "").trim()
+      const problemDesc = (editForm.problemDesc || "").trim()
+      const serialNo = (editForm.serialNo || "").trim()
+
+      if (!title) {
+        showToast("กรุณาระบุหัวข้อเคลม")
+        return
+      }
+      if (!problemDesc) {
+        showToast("กรุณาระบุอาการเสีย / ปัญหาที่พบ")
+        return
+      }
+      if (!serialNo) {
+        showToast("กรุณาระบุหมายเลขเครื่อง (S/N)")
+        return
+      }
+
       setIsSaving(true)
 
       // Transactional Database Update & Realtime Propagation via useTicketsQuery
       try {
         const payload = {
           id: editForm.id,
-          title: editForm.title.trim(),
-          problemDesc: editForm.problemDesc.trim(),
-          description: editForm.problemDesc.trim(),
-          vendor: editForm.vendor.trim(),
-          model: editForm.model.trim(),
-          serialNo: editForm.serialNo.trim(),
-          serialNumber: editForm.serialNo.trim(),
+          title,
+          problemDesc,
+          description: problemDesc,
+          symptoms: problemDesc,
+          vendor: (editForm.vendor || "").trim(),
+          brand: (editForm.vendor || "").trim(),
+          model: (editForm.model || "").trim(),
+          serialNo,
+          serialNumber: serialNo,
           status: editForm.status,
           statusCode: editForm.statusCode,
           date: editForm.date,
+          reportedDate: editForm.date,
           stationId: editForm.stationId,
           station: editForm.station,
           province: editForm.province,
@@ -784,11 +809,11 @@ export function TicketsView() {
 
         const res = await updateTicket(payload)
         if (!res.success) {
-          throw new Error(res.error || "Failed to update ticket")
+          throw new Error(res.error || "บันทึกข้อมูลไม่สำเร็จ")
         }
 
         // Show confirmation toast notification
-        showToast(`อัปเดตข้อมูลเคส ${editForm.id} ในฐานข้อมูลเรียบร้อยแล้ว`)
+        showToast(`บันทึกการแก้ไขข้อมูลสำเร็จ`)
 
         // Invalidate parent table query cache immediately so outer table updates in real time
         await invalidateTicketsCache()
@@ -1428,7 +1453,7 @@ export function TicketsView() {
                 </div>
               ) : (
                 /* Edit Mode */
-                <form onSubmit={handleSaveTicket} className="p-5 text-xs text-slate-700 dark:text-slate-300">
+                <form onSubmit={handleSaveTicket} noValidate className="p-5 text-xs text-slate-700 dark:text-slate-300">
                   {editForm && (
                     <div className="space-y-4">
                       <div>
