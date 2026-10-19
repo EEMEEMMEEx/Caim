@@ -14,6 +14,7 @@ import { dispatchStockFlowWebhook } from "@/lib/webhooks/stockFlowWebhook"
 import { requireCaimApiKey } from "@/lib/auth/apiKeyAuth"
 import { createTicketRecord } from "@/lib/tickets/createTicketRecord"
 import { invalidateDashboardMetrics } from "@/lib/dashboard/dashboardStatsService"
+import { notifyClaimUpdated } from "@/lib/email/claimNotificationService"
 
 function enrichTicket(ticket: TicketDocument): TicketDocument {
   const duration = calculateCaseDuration(ticket)
@@ -278,8 +279,9 @@ export async function PUT(request: NextRequest) {
       try {
         const db = await getDb()
         if (db) {
-          if (isClosedNow) {
-            previousTicket = (await db.collection<TicketDocument>("tickets").findOne({ id })) || previousTicket
+          const mongoExisting = await db.collection<TicketDocument>("tickets").findOne({ id })
+          if (mongoExisting) {
+            previousTicket = mongoExisting
           }
 
           await db.collection("tickets").updateOne({ id }, { $set: setFields })
@@ -365,6 +367,13 @@ export async function PUT(request: NextRequest) {
         }
       })
     }
+
+    // Trigger asynchronous email notification for claim update / status change (Trigger B)
+    notifyClaimUpdated({
+      previousTicket,
+      updatedTicket: finalEnrichedTicket,
+      modifiedFields: setFields,
+    })
 
     return NextResponse.json(
       {

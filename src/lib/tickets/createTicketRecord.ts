@@ -7,6 +7,7 @@ import { savePersistentTicket } from "@/lib/storage/serverTicketStorage"
 import { calculateCaseDuration, calculateDueDate } from "@/lib/utils/caseDuration"
 import { generateNextClaimNumber } from "@/lib/sequences/claimSequence"
 import { invalidateDashboardMetrics } from "@/lib/dashboard/dashboardStatsService"
+import { notifyNewClaimCreated } from "@/lib/email/claimNotificationService"
 
 /**
  * Claim/ticket creation shared by the portal endpoint (POST /api/claims) and the
@@ -179,6 +180,9 @@ export async function createTicketRecord(request: NextRequest) {
         // Instantly invalidate dashboard cache and broadcast fresh metrics
         await invalidateDashboardMetrics(true)
 
+        // Trigger asynchronous email notification for new claim creation (Trigger A)
+        notifyNewClaimCreated(newTicketDoc)
+
         return NextResponse.json(
           {
             success: true,
@@ -239,6 +243,9 @@ export async function createTicketRecord(request: NextRequest) {
 
     // Instantly invalidate dashboard cache and broadcast fresh metrics
     await invalidateDashboardMetrics(true)
+
+    // Trigger asynchronous email notification for new claim creation (Trigger A)
+    notifyNewClaimCreated(fallbackDoc)
 
     return NextResponse.json(
       {
