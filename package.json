@@ -36,7 +36,7 @@
     "lucide-react": "^1.6.0",
     "mongodb": "^7.6.0",
     "next": "16.3.5",
-    "nodemailer": "^6.10.0",
+    "nodemailer": "^6.10.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "shadcn": "^4.1.0",
@@ -48,7 +48,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24",
-    "@types/nodemailer": "^6.4.17",
+    "@types/nodemailer": "^6.4.24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
