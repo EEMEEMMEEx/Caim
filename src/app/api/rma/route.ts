@@ -11,6 +11,8 @@ import {
 } from "@/lib/storage/serverRmaStorage"
 import { calculateRmaMetrics, calculateCurrentStageDuration } from "@/lib/utils/rmaDuration"
 import { invalidateDashboardMetrics } from "@/lib/dashboard/dashboardStatsService"
+import { notifyRmaStageUpdated } from "@/lib/email/claimNotificationService"
+import { getPersistentTickets } from "@/lib/storage/serverTicketStorage"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -247,6 +249,8 @@ export async function PUT(request: NextRequest) {
     const nowIso = new Date().toISOString()
     const diskItems = getPersistentRma()
     const foundItem = diskItems.find((r) => r.id === id)
+    let previousRma: RmaDocument | null = foundItem ? { ...foundItem } : null
+
     const mergedDoc = { ...(foundItem || {}), ...updates, id }
     const enriched = enrichRma(mergedDoc as RmaDocument)
     const setFields = { ...updates, ...enriched, updatedAt: nowIso }
@@ -259,6 +263,11 @@ export async function PUT(request: NextRequest) {
     if (isMongoConfigured()) {
       const db = await getDb()
       if (db) {
+        const mongoRma = await db.collection<RmaDocument>("rma").findOne({ id })
+        if (mongoRma) {
+          previousRma = { ...mongoRma }
+        }
+
         await db.collection("rma").updateOne({ id }, { $set: setFields })
 
         // If returned or completed, update equipment status
@@ -294,9 +303,38 @@ export async function PUT(request: NextRequest) {
     // Instantly invalidate dashboard cache and broadcast fresh metrics
     await invalidateDashboardMetrics(true)
 
+    // Trigger asynchronous, non-blocking email notification upon 8-stage repair progression or status change
+    const prevStage = previousRma?.currentStageNumber || 1
+    const newStage = enriched.currentStageNumber || prevStage
+    const prevStatus = previousRma?.status || ""
+    const newStatus = enriched.status || prevStatus
+
+    const isStageOrStatusChanged =
+      prevStage !== newStage ||
+      prevStatus !== newStatus ||
+      (updates.currentStageName !== undefined && updates.currentStageName !== previousRma?.currentStageName)
+
+    if (isStageOrStatusChanged) {
+      console.log(`[RMA API] Stage transition detected for ${id}: Stage ${prevStage} ('${prevStatus}') -> Stage ${newStage} ('${newStatus}')`)
+
+      const targetTicketId = enriched.ticketId || previousRma?.ticketId
+      let linkedTicket: TicketDocument | null = null
+      if (targetTicketId) {
+        const tickets = getPersistentTickets()
+        linkedTicket = tickets.find((t) => t.id === targetTicketId) || null
+      }
+
+      notifyRmaStageUpdated({
+        previousRma,
+        updatedRma: enriched,
+        ticket: linkedTicket,
+      })
+    }
+
     return NextResponse.json(
       {
         success: true,
+        isStageOrStatusChanged,
         message: `อัปเดตข้อมูลใบส่งซ่อมต่างประเทศ ${id} เรียบร้อยแล้ว`,
       },
       { headers: NO_CACHE_HEADERS }

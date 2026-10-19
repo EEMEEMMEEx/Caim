@@ -270,8 +270,8 @@ export async function PUT(request: NextRequest) {
     // Phase 2: a close transition (statusCode 5 "ปิดเคส") notifies Stock-Flow via webhook.
     // "previousTicket" is read before the update so a case that is already closed does not re-fire,
     // and the record is also available when it only exists in MongoDB.
-    const isClosedNow = finalStatusCode === 5 || finalStatus === "ปิดเคส"
-    let previousTicket: TicketDocument | null = currentTicket || null
+    // Capture pre-update state snapshot before modifications occur
+    let previousTicket: TicketDocument | null = currentTicket ? { ...currentTicket } : null
 
     let updatedTicketDoc: TicketDocument | null = null
 
@@ -281,7 +281,7 @@ export async function PUT(request: NextRequest) {
         if (db) {
           const mongoExisting = await db.collection<TicketDocument>("tickets").findOne({ id })
           if (mongoExisting) {
-            previousTicket = mongoExisting
+            previousTicket = { ...mongoExisting }
           }
 
           await db.collection("tickets").updateOne({ id }, { $set: setFields })
@@ -352,6 +352,7 @@ export async function PUT(request: NextRequest) {
 
     // Phase 2: notify Stock-Flow after the response is sent ("after" keeps the serverless invocation
     // alive) so a Stock-Flow outage can never break or delay a CAIM case update.
+    const isClosedNow = finalStatusCode === 5 || finalStatus === "ปิดเคส"
     const wasClosedBefore = previousTicket?.statusCode === 5 || previousTicket?.status === "ปิดเคส"
     const repairResultChanged =
       (setFields.repairOutcome !== undefined && setFields.repairOutcome !== previousTicket?.repairOutcome) ||
@@ -368,7 +369,18 @@ export async function PUT(request: NextRequest) {
       })
     }
 
-    // Trigger asynchronous email notification for claim update / status change (Trigger B)
+    // Status Transition Detection & Asynchronous Email Dispatch (Trigger B)
+    // Non-blocking so database writes and UI responses remain instantaneous
+    const prevStatus = previousTicket?.status || "รับแจ้ง"
+    const newStatus = finalEnrichedTicket.status || prevStatus
+    const isStatusChanged =
+      prevStatus !== newStatus ||
+      previousTicket?.statusCode !== finalEnrichedTicket.statusCode
+
+    if (isStatusChanged) {
+      console.log(`[Tickets API] Status transition detected for ${id}: '${prevStatus}' -> '${newStatus}'`)
+    }
+
     notifyClaimUpdated({
       previousTicket,
       updatedTicket: finalEnrichedTicket,
@@ -379,6 +391,7 @@ export async function PUT(request: NextRequest) {
       {
         success: true,
         ticket: finalEnrichedTicket,
+        isStatusChanged,
         message: `อัปเดตข้อมูลเคส ${id} ในฐานข้อมูลเรียบร้อยแล้ว`,
       },
       { status: 200, headers: NO_CACHE_HEADERS }
