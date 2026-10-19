@@ -18,13 +18,16 @@ import {
   LogOut,
   X,
   Sun,
-  Moon
+  Moon,
+  Settings,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/components/theme-provider"
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher"
 import { useLocale } from "@/i18n/LocaleContext"
 import { getCurrentSession, clearSession, type UserSession, DEFAULT_USER_SESSION } from "@/lib/session"
+import { SettingsPasswordDialog } from "@/components/settings/SettingsPasswordDialog"
+import { SystemSettingsModal } from "@/components/settings/SystemSettingsModal"
 import packageInfo from "../../../../../package.json"
 
 interface AppShellProps {
@@ -49,6 +52,8 @@ export function AppShell({ children }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false)
   const [session, setSession] = React.useState<UserSession>(DEFAULT_USER_SESSION)
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = React.useState(false)
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false)
   const { theme, toggleTheme, mounted } = useTheme()
   const { t } = useLocale()
 
@@ -392,7 +397,18 @@ export function AppShell({ children }: AppShellProps) {
 
           <div className="flex-1" />
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* System Settings Header Entry Button */}
+            <button
+              type="button"
+              onClick={() => setIsPasswordDialogOpen(true)}
+              className="inline-flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/60 rounded-xl px-3.5 py-1.5 text-sm transition-all duration-200 active:scale-95 cursor-pointer shadow-xs min-h-[40px] touch-manipulation"
+              title="ตั้งค่าระบบ (System Settings)"
+            >
+              <Settings className="size-4 text-slate-300" />
+              <span className="hidden sm:inline font-medium">ตั้งค่าระบบ</span>
+            </button>
+
             {/* Language Selector Dropdown */}
             <LanguageSwitcher />
 
@@ -419,6 +435,22 @@ export function AppShell({ children }: AppShellProps) {
 
         {/* Page Content */}
         <div className="flex-1 flex flex-col min-h-0">{children}</div>
+
+        {/* Security Password Guard Modal */}
+        <SettingsPasswordDialog
+          isOpen={isPasswordDialogOpen}
+          onClose={() => setIsPasswordDialogOpen(false)}
+          onSuccess={() => {
+            setIsPasswordDialogOpen(false)
+            setIsSettingsModalOpen(true)
+          }}
+        />
+
+        {/* System Settings & SMTP Modal */}
+        <SystemSettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+        />
       </div>
     </div>
   )
