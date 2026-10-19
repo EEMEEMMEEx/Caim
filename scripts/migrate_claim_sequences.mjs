@@ -255,7 +255,6 @@ async function runClaimSequenceMigration() {
   }
 
   // Cascade Assets & Equipments
-  let equipmentsUpdatedCount = 0
   for (const assetFile of [ASSETS_FILE, CUSTOM_EQUIPMENTS_FILE]) {
     if (fs.existsSync(assetFile)) {
       try {
@@ -265,7 +264,6 @@ async function runClaimSequenceMigration() {
           if (a.currentClaimId && idMapping[a.currentClaimId]) {
             a.currentClaimId = idMapping[a.currentClaimId]
             a.updatedAt = nowIso
-            equipmentsUpdatedCount++
             modified = true
           }
         }

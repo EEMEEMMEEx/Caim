@@ -64,7 +64,7 @@ async function sendDirectTlsSmtp(options: SendMailOptions): Promise<SendMailResu
     socket.setEncoding("utf8")
 
     let step = 0
-    let messageId = `<caim-${Date.now()}-${Math.random().toString(36).substring(2, 8)}@${config.host}>`
+    const messageId = `<caim-${Date.now()}-${Math.random().toString(36).substring(2, 8)}@${config.host}>`
     let recipientIndex = 0
 
     const cleanup = () => {

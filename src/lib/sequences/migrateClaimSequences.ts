@@ -13,7 +13,6 @@ const TICKETS_FILE = path.join(process.cwd(), "src/data/tickets.json")
 const RMA_FILE = path.join(process.cwd(), "src/data/rma.json")
 const ASSETS_FILE = path.join(process.cwd(), "src/data/assets.json")
 const CUSTOM_EQUIPMENTS_FILE = path.join(process.cwd(), "src/data/custom_equipments.json")
-const COUNTERS_FILE = path.join(process.cwd(), "src/data/counters.json")
 
 const THAI_MONTHS: Record<string, number> = {
   "ม.ค.": 0, "ก.พ.": 1, "มี.ค.": 2, "เม.ย.": 3, "พ.ค.": 4, "มิ.ย.": 5,

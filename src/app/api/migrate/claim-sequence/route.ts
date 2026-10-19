@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { migrateClaimSequences } from "@/lib/sequences/migrateClaimSequences"
 import { peekNextClaimNumber } from "@/lib/sequences/claimSequence"
 import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
@@ -38,7 +38,7 @@ export async function GET() {
  * 3. Cascade updates equipments, RMA records, attached permits, and transaction logs
  * 4. Calibrates sequence counters in MongoDB and persistent disk storage
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const result = await migrateClaimSequences()
     return NextResponse.json(result, { headers: NO_CACHE_HEADERS })
