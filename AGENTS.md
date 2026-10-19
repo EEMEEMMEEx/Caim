@@ -84,8 +84,8 @@ Immediately upon finalizing code modifications:
 
 ---
 
-### 3. Execution Summary Output
-At the very end of every completed turn, append a clean summary block in this format:
+### 3. Execution Summary Output & Thai Language Reporting
+ทุกครั้งที่ทำงานเสร็จสิ้น ให้สรุปสิ่งที่ได้ดำเนินการทั้งหมดเป็น**ภาษาไทย**อย่างครบถ้วนและอ่านเข้าใจง่าย (Thai task summary) พร้อมแนบกล่องสรุป Git Execution Summary ต่อท้ายเสมอดังนี้:
 
 ```text
 ─── Git Execution Summary ───
@@ -94,3 +94,4 @@ Commit Hash:   <commit-hash>
 Commit Msg:    <type>: <message>
 Status:        Pushed to remote successfully
 ─────────────────────────────
+```
