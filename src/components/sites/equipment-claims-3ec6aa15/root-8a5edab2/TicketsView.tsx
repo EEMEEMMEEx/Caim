@@ -866,7 +866,17 @@ export function TicketsView() {
           throw new Error(res.error || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะ")
         }
 
-        showToast(`อัปเดตสถานะเคส ${ticket.id} เป็น "${newStatusLabel}" เรียบร้อยแล้ว พร้อมส่งอีเมลแจ้งเตือน`)
+        if (res.isStatusChanged) {
+          if (res.emailDispatched) {
+            showToast(`อัปเดตสถานะเคส ${ticket.id} เป็น "${newStatusLabel}" เรียบร้อยแล้ว พร้อมส่งอีเมลแจ้งเตือน`)
+          } else if (res.emailError) {
+            showToast(`อัปเดตสถานะสำเร็จ แต่การส่งอีเมลขัดข้อง: ${res.emailError}`)
+          } else {
+            showToast(res.message || `อัปเดตสถานะเคส ${ticket.id} เป็น "${newStatusLabel}" เรียบร้อยแล้ว`)
+          }
+        } else {
+          showToast(res.message || `อัปเดตสถานะเคส ${ticket.id} เป็น "${newStatusLabel}" เรียบร้อยแล้ว`)
+        }
         await invalidateTicketsCache()
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการเปลี่ยนสถานะ"
@@ -986,8 +996,18 @@ export function TicketsView() {
           throw new Error(res.error || "บันทึกข้อมูลไม่สำเร็จ")
         }
 
-        // Show confirmation toast notification
-        showToast(`บันทึกการแก้ไขข้อมูลสำเร็จ`)
+        // Show confirmation toast notification with verified email dispatch status
+        if (res.isStatusChanged) {
+          if (res.emailDispatched) {
+            showToast(`อัปเดตสถานะเคส ${editForm.id} เป็น "${editForm.status}" เรียบร้อยแล้ว พร้อมส่งอีเมลแจ้งเตือน`)
+          } else if (res.emailError) {
+            showToast(`อัปเดตสถานะสำเร็จ แต่การส่งอีเมลขัดข้อง: ${res.emailError}`)
+          } else {
+            showToast(res.message || `บันทึกการแก้ไขข้อมูลสำเร็จ`)
+          }
+        } else {
+          showToast(`บันทึกการแก้ไขข้อมูลสำเร็จ`)
+        }
 
         // Invalidate parent table query cache immediately so outer table updates in real time
         await invalidateTicketsCache()

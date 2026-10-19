@@ -16,7 +16,7 @@ export const DEFAULT_SMTP_SETTINGS: SmtpSettings = {
   port: 465,
   secure: true,
   user: "claimstickets@gmail.com",
-  pass: "pyzzsapzcdvyjtzit",
+  pass: "yzzsapzcdvyjtzit",
   senderName: "USO Project Team",
   senderEmail: "claimstickets@gmail.com",
   enforceSsl: true,

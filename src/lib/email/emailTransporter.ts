@@ -1,15 +1,20 @@
 import nodemailer from "nodemailer"
 import type { Transporter } from "nodemailer"
 import * as tls from "node:tls"
-import { getEmailConfig } from "./emailConfig"
+import { getEmailConfig, type EmailConfig } from "./emailConfig"
 
 let cachedTransporter: Transporter | null = null
+let cachedConfigKey = ""
 
-export function getEmailTransporter(): Transporter {
-  if (cachedTransporter) return cachedTransporter
+export function getEmailTransporter(customConfig?: EmailConfig): Transporter {
+  const config = customConfig || getEmailConfig()
+  const configKey = `${config.host}:${config.port}:${config.secure}:${config.user}:${config.pass}`
 
-  const config = getEmailConfig()
-  cachedTransporter = nodemailer.createTransport({
+  if (cachedTransporter && cachedConfigKey === configKey) {
+    return cachedTransporter
+  }
+
+  const transporter = nodemailer.createTransport({
     host: config.host,
     port: config.port,
     secure: config.secure,
@@ -22,7 +27,9 @@ export function getEmailTransporter(): Transporter {
     socketTimeout: 15000,
   })
 
-  return cachedTransporter
+  cachedTransporter = transporter
+  cachedConfigKey = configKey
+  return transporter
 }
 
 export interface SendMailOptions {
@@ -30,6 +37,7 @@ export interface SendMailOptions {
   subject: string
   html: string
   text?: string
+  smtpSettings?: Partial<EmailConfig> | Record<string, unknown> | null
 }
 
 export interface SendMailResult {
@@ -42,8 +50,8 @@ export interface SendMailResult {
  * Pure Node.js direct TLS SMTP sender fallback
  * Used if external module fails or in environments requiring zero-dependency direct socket dispatch.
  */
-async function sendDirectTlsSmtp(options: SendMailOptions): Promise<SendMailResult> {
-  const config = getEmailConfig()
+async function sendDirectTlsSmtp(options: SendMailOptions, customConfig?: EmailConfig): Promise<SendMailResult> {
+  const config = customConfig || getEmailConfig(options.smtpSettings)
   const recipients = Array.isArray(options.to)
     ? options.to
     : [options.to || config.primaryRecipient]
@@ -197,11 +205,11 @@ async function sendDirectTlsSmtp(options: SendMailOptions): Promise<SendMailResu
  * Dispatches an email using nodemailer with automated direct TLS fallback
  */
 export async function sendEmail(options: SendMailOptions): Promise<SendMailResult> {
-  const config = getEmailConfig()
+  const config = getEmailConfig(options.smtpSettings)
   const to = options.to || config.primaryRecipient
 
   try {
-    const transporter = getEmailTransporter()
+    const transporter = getEmailTransporter(config)
     const info = await transporter.sendMail({
       from: config.from,
       to,
@@ -219,7 +227,7 @@ export async function sendEmail(options: SendMailOptions): Promise<SendMailResul
     console.warn("[Email Dispatcher] Nodemailer primary transport notice, attempting direct TLS fallback:", errorMessage)
 
     try {
-      const fallbackResult = await sendDirectTlsSmtp(options)
+      const fallbackResult = await sendDirectTlsSmtp(options, config)
       return fallbackResult
     } catch (fallbackErr) {
       const fallbackMessage = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)

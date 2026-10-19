@@ -316,12 +316,26 @@ export function useTicketsQuery() {
   )
 
   /**
-   * Update Ticket Mutation (Database Persistence & Instant State Synchronization)
+   * Update Ticket Mutation (Database Persistence, SMTP Dispatch & Instant State Synchronization)
    */
   const updateTicket = React.useCallback(
     async (
-      ticket: Partial<Ticket> & { id: string; description?: string; serialNumber?: string }
-    ): Promise<{ success: boolean; data?: Ticket; message?: string; error?: string }> => {
+      ticket: Partial<Ticket> & {
+        id: string
+        description?: string
+        serialNumber?: string
+        smtpSettings?: Record<string, unknown>
+      }
+    ): Promise<{
+      success: boolean
+      data?: Ticket
+      isStatusChanged?: boolean
+      emailDispatched?: boolean
+      emailMessageId?: string
+      emailError?: string
+      message?: string
+      error?: string
+    }> => {
       if (!ticket || !ticket.id) {
         return { success: false, error: "Missing ticket id" }
       }
@@ -333,20 +347,41 @@ export function useTicketsQuery() {
       applyTicketMutation("update", ticket)
 
       try {
+        // Read client-side SMTP settings from localStorage if available
+        let clientSmtpSettings: Record<string, unknown> | undefined = ticket.smtpSettings
+        let rawSmtpHeader = ""
+        if (!clientSmtpSettings && typeof window !== "undefined") {
+          try {
+            const stored = localStorage.getItem("caim_smtp_settings")
+            if (stored) {
+              clientSmtpSettings = JSON.parse(stored)
+              rawSmtpHeader = encodeURIComponent(stored)
+            }
+          } catch {
+            // Ignore localStorage errors
+          }
+        }
+
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        }
+        if (rawSmtpHeader) {
+          headers["x-smtp-settings"] = rawSmtpHeader
+        }
+
         const payload = {
           ...ticket,
           // Support alias field names for compatibility
           description: ticket.problemDesc || ticket.description,
           serialNumber: ticket.serialNo || ticket.serialNumber,
+          smtpSettings: clientSmtpSettings,
         }
 
         const res = await fetch("/api/tickets", {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-          },
+          headers,
           body: JSON.stringify(payload),
         })
 
@@ -366,6 +401,10 @@ export function useTicketsQuery() {
         return {
           success: true,
           data: data.ticket,
+          isStatusChanged: Boolean(data.isStatusChanged),
+          emailDispatched: Boolean(data.emailDispatched),
+          emailMessageId: data.emailMessageId,
+          emailError: data.emailError,
           message: data.message || `อัปเดตข้อมูลเคส ${ticket.id} เรียบร้อยแล้ว`,
         }
       } catch (err: unknown) {

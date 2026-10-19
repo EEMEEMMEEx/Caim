@@ -1,7 +1,7 @@
 import { after } from "next/server"
 import type { TicketDocument } from "@/types/database"
-import { sendEmail } from "./emailTransporter"
-import { getEmailConfig } from "./emailConfig"
+import { sendEmail, type SendMailResult } from "./emailTransporter"
+import { getEmailConfig, type EmailConfig } from "./emailConfig"
 import {
   buildNewClaimEmail,
   buildClaimUpdatedEmail,
@@ -130,47 +130,55 @@ export function notifyNewClaimCreated(ticket: TicketDocument): void {
   })
 }
 
+export interface NotifyClaimUpdatedOptions extends ClaimUpdatedEmailParams {
+  smtpSettings?: Partial<EmailConfig> | Record<string, unknown> | null
+}
+
 /**
  * Trigger B: Dispatches transactional email when an existing claim is updated or status changed
  */
-export function notifyClaimUpdated(params: ClaimUpdatedEmailParams): void {
+export async function notifyClaimUpdated(params: NotifyClaimUpdatedOptions): Promise<SendMailResult> {
   const claimId = params.updatedTicket.id
   const prevStatus = params.previousTicket?.status || "รับแจ้ง"
   const newStatus = params.updatedTicket.status || prevStatus
 
-  runNonBlocking(async () => {
-    try {
-      const emailContent = buildClaimUpdatedEmail(params)
-      const recipients = resolveClaimRecipients(params.updatedTicket)
+  console.log('[SMTP] Attempting dispatch for:', claimId)
 
-      console.log(
-        `[Claim Notification] Dispatching claim status update email for ${claimId} ('${prevStatus}' → '${newStatus}') to: ${recipients.join(", ")} | Subject: ${emailContent.subject}`
-      )
+  try {
+    const emailContent = buildClaimUpdatedEmail(params)
+    const targetRecipient = (params.smtpSettings as Record<string, unknown>)?.targetRecipient as string | undefined
+    const recipients = resolveClaimRecipients(
+      params.updatedTicket,
+      targetRecipient ? [targetRecipient] : undefined
+    )
 
-      const result = await sendEmail({
-        to: recipients,
-        subject: emailContent.subject,
-        html: emailContent.html,
-        text: emailContent.text,
-      })
+    console.log(
+      `[SMTP] Dispatching claim status update email for ${claimId} ('${prevStatus}' → '${newStatus}') to: ${recipients.join(", ")} | Subject: ${emailContent.subject}`
+    )
 
-      if (result.success) {
-        console.log(
-          `[Claim Notification Success] Email dispatched successfully for claim ${claimId} [${prevStatus} → ${newStatus}]. MessageID: ${result.messageId || "N/A"}`
-        )
-      } else {
-        console.error(
-          `[Claim Notification Error] Failed to dispatch status update email for claim ${claimId} to ${recipients.join(", ")}:`,
-          result.error
-        )
-      }
-    } catch (err) {
-      console.error(
-        `[Claim Notification Error] Unexpected exception dispatching status update email for claim ${claimId}:`,
-        err
-      )
+    const result = await sendEmail({
+      to: recipients,
+      subject: emailContent.subject,
+      html: emailContent.html,
+      text: emailContent.text,
+      smtpSettings: params.smtpSettings,
+    })
+
+    if (result.success) {
+      console.log('[SMTP] Success, messageId:', result.messageId || "N/A")
+    } else {
+      console.error('[SMTP] Failed to send email:', result.error || "Unknown dispatch failure")
     }
-  })
+
+    return result
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    console.error('[SMTP] Failed to send email:', errorMessage)
+    return {
+      success: false,
+      error: errorMessage,
+    }
+  }
 }
 
 /**

@@ -395,8 +395,7 @@ export async function PUT(request: NextRequest) {
       })
     }
 
-    // Status Transition Detection & Asynchronous Email Dispatch (Trigger B)
-    // Non-blocking so database writes and UI responses remain instantaneous
+    // Status Transition Detection & Direct SMTP Email Dispatch (Trigger B)
     const prevStatusCode = Number(previousTicket?.statusCode) || (previousTicket?.status ? STATUS_TO_CODE[previousTicket.status] : 1)
     const newStatusCode = Number(finalEnrichedTicket.statusCode) || (finalEnrichedTicket.status ? STATUS_TO_CODE[finalEnrichedTicket.status] : 1)
     const prevStatus = previousTicket?.status || STATUS_MAP[prevStatusCode] || "รับแจ้ง"
@@ -408,24 +407,57 @@ export async function PUT(request: NextRequest) {
       (updates.statusCode !== undefined && Number(updates.statusCode) !== previousTicket?.statusCode) ||
       (updates.status !== undefined && updates.status !== previousTicket?.status)
 
+    // Extract client-side SMTP settings passed from localStorage if available
+    const clientSmtpSettings = (updates.smtpSettings as Record<string, unknown> | undefined) || (() => {
+      const headerVal = request.headers.get("x-smtp-settings")
+      if (headerVal) {
+        try {
+          return JSON.parse(decodeURIComponent(headerVal))
+        } catch {
+          return null
+        }
+      }
+      return null
+    })()
+
+    let emailResult: { success: boolean; messageId?: string; error?: string } | null = null
+
     if (isStatusChanged) {
       console.log(`[Tickets API] Status transition detected for ${id}: '${prevStatus}' (Stage ${prevStatusCode}) -> '${newStatus}' (Stage ${newStatusCode})`)
+      emailResult = await notifyClaimUpdated({
+        previousTicket: previousTicket
+          ? { ...previousTicket, status: prevStatus, statusCode: prevStatusCode }
+          : null,
+        updatedTicket: finalEnrichedTicket,
+        modifiedFields: setFields,
+        smtpSettings: clientSmtpSettings,
+      })
     }
 
-    notifyClaimUpdated({
-      previousTicket: previousTicket
-        ? { ...previousTicket, status: prevStatus, statusCode: prevStatusCode }
-        : null,
-      updatedTicket: finalEnrichedTicket,
-      modifiedFields: setFields,
-    })
+    const emailDispatched = emailResult ? emailResult.success : false
+    const emailError = emailResult?.error
+    const emailMessageId = emailResult?.messageId
+
+    let responseMessage = `อัปเดตข้อมูลเคส ${id} ในฐานข้อมูลเรียบร้อยแล้ว`
+    if (isStatusChanged) {
+      if (emailDispatched) {
+        responseMessage = `อัปเดตสถานะเคส ${id} เป็น "${newStatus}" เรียบร้อยแล้ว พร้อมส่งอีเมลแจ้งเตือน`
+      } else if (emailError) {
+        responseMessage = `อัปเดตสถานะเคส ${id} เป็น "${newStatus}" สำเร็จ แต่การส่งอีเมลขัดข้อง: ${emailError}`
+      } else {
+        responseMessage = `อัปเดตสถานะเคส ${id} เป็น "${newStatus}" เรียบร้อยแล้ว`
+      }
+    }
 
     return NextResponse.json(
       {
         success: true,
         ticket: finalEnrichedTicket,
         isStatusChanged,
-        message: `อัปเดตข้อมูลเคส ${id} ในฐานข้อมูลเรียบร้อยแล้ว`,
+        emailDispatched,
+        emailMessageId,
+        emailError,
+        message: responseMessage,
       },
       { status: 200, headers: NO_CACHE_HEADERS }
     )

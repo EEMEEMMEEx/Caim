@@ -524,7 +524,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
     setStatusRemark("")
 
     try {
-      await updateTicket({
+      const updateRes = await updateTicket({
         id: data.id,
         statusCode: newStatusStage,
         status: stageNames[newStatusStage] || "รับแจ้ง",
@@ -542,9 +542,15 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("caim:tickets:invalidated"))
       }
-      showBanner("อัปเดตสถานะงานเคลมเรียบร้อยแล้ว")
+      if (updateRes?.emailDispatched) {
+        showBanner("อัปเดตสถานะงานเคลมเรียบร้อยแล้ว พร้อมส่งอีเมลแจ้งเตือน")
+      } else if (updateRes?.emailError) {
+        showBanner(`อัปเดตสถานะสำเร็จ แต่การส่งอีเมลขัดข้อง: ${updateRes.emailError}`)
+      } else {
+        showBanner(updateRes?.message || "อัปเดตสถานะงานเคลมเรียบร้อยแล้ว")
+      }
     } catch {
-      showBanner("อัปเดตสถานะงานเคลมเรียบร้อยแล้ว")
+      showBanner("เกิดข้อผิดพลาดในการอัปเดตสถานะงานเคลม")
     } finally {
       setIsSaving(false)
       setNewRepairOutcome("")
