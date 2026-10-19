@@ -129,6 +129,19 @@ export async function fetchRmaFromApi(force = false): Promise<RmaItem[]> {
   return currentPromise
 }
 
+let rmaDebounceTimer: NodeJS.Timeout | null = null
+
+/**
+ * Debounced RMA cache invalidator to prevent high-frequency re-fetches
+ */
+export function debouncedInvalidateRma(delayMs = 300) {
+  if (rmaDebounceTimer) return
+  rmaDebounceTimer = setTimeout(() => {
+    rmaDebounceTimer = null
+    invalidateRmaCache().catch(() => {})
+  }, delayMs)
+}
+
 /**
  * Invalidate the ['rma'] query cache immediately upon mutation success
  */
@@ -185,16 +198,21 @@ export function useRmaQuery() {
       const custom = e as CustomEvent
       const detail = custom.detail as { action?: string; data?: { id?: string } } | undefined
 
+      // Prevent circular re-render loops from internal dashboard/cache invalidation echoes
+      if (detail?.action === "invalidate") {
+        return
+      }
+
       if (detail?.action === "delete" && detail?.data?.id) {
         applyRmaMutation("delete", { id: detail.data.id })
       }
-      invalidateRmaCache()
+      debouncedInvalidateRma(300)
     }
 
-    // Window focus / visibility change revalidation (refetchOnWindowFocus)
+    // Window focus / visibility change revalidation (refetchOnWindowFocus debounced)
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        invalidateRmaCache()
+        debouncedInvalidateRma(500)
       }
     }
 

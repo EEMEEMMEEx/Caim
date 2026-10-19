@@ -30,19 +30,22 @@ export async function invalidateGlobalDashboardCache(): Promise<void> {
         (key.includes("/api/dashboard/stats") || key.includes("/api/claims/overview"))
     )
 
-    // 2. Dispatch in-window real-time events
+    // 2. Dispatch in-window real-time metrics invalidation event
+    // NOTE: DO NOT dispatch caim:realtime:ticket here, as tickets hooks call this function,
+    // which would create a synchronous infinite recursion loop!
     window.dispatchEvent(
       new CustomEvent("caim:realtime:metrics", { detail: { action: "invalidate" } })
-    )
-    window.dispatchEvent(
-      new CustomEvent("caim:realtime:ticket", { detail: { action: "invalidate" } })
     )
 
     // 3. Broadcast to other open browser tabs via BroadcastChannel
     if (typeof BroadcastChannel !== "undefined") {
-      const bc = new BroadcastChannel("caim_global_sync")
-      bc.postMessage({ type: "invalidate_dashboard", timestamp: Date.now() })
-      bc.close()
+      try {
+        const bc = new BroadcastChannel("caim_global_sync")
+        bc.postMessage({ type: "invalidate_dashboard", timestamp: Date.now() })
+        bc.close()
+      } catch {
+        // ignore BroadcastChannel errors in unsupported environments
+      }
     }
   } catch (err) {
     console.warn("[GlobalSync] Cache invalidation warning:", err)
@@ -77,13 +80,24 @@ export interface UseRealtimeDashboardOptions {
   initialMetrics?: DashboardMetrics
 }
 
+function areMetricsEqual(a?: DashboardMetrics, b?: DashboardMetrics): boolean {
+  if (!a || !b) return false
+  const sA = a.summary
+  const sB = b.summary
+  if (!sA || !sB) return false
+  return (
+    sA.total === sB.total &&
+    sA.inProgress === sB.inProgress &&
+    sA.closed === sB.closed &&
+    sA.rejected === sB.rejected &&
+    a.kpi?.overdueCount === b.kpi?.overdueCount
+  )
+}
+
 export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) {
   const { initialMetrics } = options
 
   // Instant SWR Sync with zero-latency revalidation:
-  // 1. Initial render uses server-hydrated fallbackData (instant rendering, zero spinner)
-  // 2. Revalidates immediately on mount to ensure fresh state
-  // 3. Deduping interval set to 1s to prevent concurrent duplicate calls while allowing instant updates
   const {
     data: metrics,
     mutate,
@@ -94,9 +108,9 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     revalidateOnFocus: true, // Silent revalidation on tab/window focus
     revalidateIfStale: true, // Always refetch if stale
     revalidateOnReconnect: true,
-    dedupingInterval: 1000, // Reduced from 180s to 1s for immediate synchronization
+    dedupingInterval: 1000,
     focusThrottleInterval: 5000,
-    keepPreviousData: true, // Display previous cached data instantly without flicker while revalidating
+    keepPreviousData: true,
   })
 
   // Safe fallback ensuring metrics are always defined
@@ -108,9 +122,17 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     React.useState<ConnectionStatus>("connecting")
   const [lastSyncTime, setLastSyncTime] = React.useState<Date | null>(null)
 
-  // Hydrate lastSyncTime on client after mount to prevent SSR/client time difference
+  // Keep a stable ref to current metrics to compare before re-rendering
+  const currentMetricsRef = React.useRef<DashboardMetrics | undefined>(metrics ?? initialMetrics)
   React.useEffect(() => {
-    if (initialMetrics) {
+    currentMetricsRef.current = metrics ?? initialMetrics
+  }, [metrics, initialMetrics])
+
+  // Hydrate lastSyncTime on client after mount (only once) to prevent SSR/client time differences
+  const initialHydratedRef = React.useRef(false)
+  React.useEffect(() => {
+    if (!initialHydratedRef.current && initialMetrics) {
+      initialHydratedRef.current = true
       setLastSyncTime(new Date())
     }
   }, [initialMetrics])
@@ -121,14 +143,24 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
 
     let eventSource: EventSource | null = null
     let fallbackPollTimer: NodeJS.Timeout | null = null
+    let mutateDebounceTimer: NodeJS.Timeout | null = null
     let syncBc: BroadcastChannel | null = null
+
+    // Debounced mutate helper to coalesce high-frequency events
+    const throttledMutate = () => {
+      if (mutateDebounceTimer) return
+      mutateDebounceTimer = setTimeout(() => {
+        mutateDebounceTimer = null
+        mutate()
+      }, 400)
+    }
 
     function startFallbackPolling() {
       if (fallbackPollTimer) return
-      setConnectionStatus("fallback-polling")
+      setConnectionStatus((prev) => (prev !== "fallback-polling" ? "fallback-polling" : prev))
       fallbackPollTimer = setInterval(() => {
-        mutate()
-      }, 5000)
+        throttledMutate()
+      }, 10000)
     }
 
     function stopFallbackPolling() {
@@ -140,7 +172,7 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
 
     const applyFreshMetrics = (payload: unknown) => {
       if (!payload || typeof payload !== "object") {
-        mutate()
+        throttledMutate()
         return
       }
       const raw = payload as Record<string, unknown>
@@ -152,20 +184,23 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
           : undefined
 
       if (freshMetrics && freshMetrics.summary) {
-        mutate(freshMetrics, { revalidate: false })
-        setLastSyncTime(new Date())
-        setConnectionStatus("connected")
+        // Only update state if metrics data actually changed to avoid infinite re-render loops
+        if (!areMetricsEqual(currentMetricsRef.current, freshMetrics)) {
+          mutate(freshMetrics, { revalidate: false })
+          setLastSyncTime(new Date())
+        }
+        setConnectionStatus((prev) => (prev !== "connected" ? "connected" : prev))
       } else {
-        mutate()
+        throttledMutate()
       }
     }
 
     try {
-      setConnectionStatus("connecting")
-      eventSource = new EventSource("/api/dashboard/stream")
+      setConnectionStatus((prev) => (prev !== "connecting" ? "connecting" : prev))
+      eventSource = new EventSource("/api/realtime/stream")
 
       eventSource.addEventListener("open", () => {
-        setConnectionStatus("connected")
+        setConnectionStatus((prev) => (prev !== "connected" ? "connected" : prev))
         stopFallbackPolling()
       })
 
@@ -195,7 +230,7 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
         syncBc = new BroadcastChannel("caim_global_sync")
         syncBc.onmessage = (event) => {
           if (event.data?.type === "invalidate_dashboard") {
-            mutate()
+            throttledMutate()
           }
         }
       }
@@ -203,10 +238,10 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
       // ignore BroadcastChannel errors in unsupported environments
     }
 
-    // Window focus / visibility listener: revalidate cache silently
+    // Window focus / visibility listener: revalidate cache silently with throttle
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        mutate()
+        throttledMutate()
       }
     }
     window.addEventListener("visibilitychange", handleVisibilityChange)
@@ -215,15 +250,17 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     // Real-time custom event listeners from global sync and mutations
     const handleRealtimeMetricsEvent = (e: Event) => {
       const customEvent = e as CustomEvent<DashboardMetrics | { action?: string; metrics?: DashboardMetrics }>
-      if (customEvent.detail) {
+      if (customEvent.detail && "action" in customEvent.detail && customEvent.detail.action === "invalidate") {
+        throttledMutate()
+      } else if (customEvent.detail) {
         applyFreshMetrics(customEvent.detail)
       } else {
-        mutate()
+        throttledMutate()
       }
     }
 
     const handleTicketChangeEvent = () => {
-      mutate()
+      throttledMutate()
     }
 
     window.addEventListener("caim:realtime:metrics", handleRealtimeMetricsEvent)
@@ -233,9 +270,15 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     return () => {
       if (eventSource) {
         eventSource.close()
+        eventSource = null
       }
       if (syncBc) {
         syncBc.close()
+        syncBc = null
+      }
+      if (mutateDebounceTimer) {
+        clearTimeout(mutateDebounceTimer)
+        mutateDebounceTimer = null
       }
       stopFallbackPolling()
       window.removeEventListener("caim:realtime:metrics", handleRealtimeMetricsEvent)

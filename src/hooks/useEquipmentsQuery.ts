@@ -139,6 +139,19 @@ export function applyEquipmentMutation(action: "create" | "update" | "delete", d
   broadcastCacheUpdate()
 }
 
+let equipmentsDebounceTimer: NodeJS.Timeout | null = null
+
+/**
+ * Debounced equipments cache invalidator
+ */
+export function debouncedInvalidateEquipments(delayMs = 300) {
+  if (equipmentsDebounceTimer) return
+  equipmentsDebounceTimer = setTimeout(() => {
+    equipmentsDebounceTimer = null
+    invalidateEquipmentsCache().catch(() => {})
+  }, delayMs)
+}
+
 /**
  * Unified Query Hook for Equipment Information Registry & New Claim Case Form
  * - Shared cache key: ['equipments']
@@ -162,13 +175,13 @@ export function useEquipmentsQuery() {
 
     // Real-time synchronization event listener from SSE / cross-client sync
     const handleRealtimeEquipment = () => {
-      invalidateEquipmentsCache()
+      debouncedInvalidateEquipments(300)
     }
 
-    // Revalidate when user returns to tab
+    // Revalidate when user returns to tab (debounced)
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        invalidateEquipmentsCache()
+        debouncedInvalidateEquipments(500)
       }
     }
 

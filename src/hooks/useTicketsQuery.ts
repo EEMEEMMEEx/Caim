@@ -140,6 +140,19 @@ export async function fetchTicketsFromApi(force = false): Promise<Ticket[]> {
   return currentPromise
 }
 
+let ticketsDebounceTimer: NodeJS.Timeout | null = null
+
+/**
+ * Debounced cache invalidator to prevent rapid-fire redundant network fetches and React scheduler re-render storms
+ */
+export function debouncedInvalidateTickets(delayMs = 300) {
+  if (ticketsDebounceTimer) return
+  ticketsDebounceTimer = setTimeout(() => {
+    ticketsDebounceTimer = null
+    invalidateTicketsCache().catch(() => {})
+  }, delayMs)
+}
+
 /**
  * Invalidate the ['tickets'] cache immediately and trigger a background re-fetch
  */
@@ -203,16 +216,21 @@ export function useTicketsQuery() {
       const custom = e as CustomEvent
       const detail = custom.detail as { action?: string; data?: { id?: string } } | undefined
 
+      // Prevent circular re-render loops from internal dashboard/cache invalidation echoes
+      if (detail?.action === "invalidate") {
+        return
+      }
+
       if (detail?.action === "delete" && detail.data?.id) {
         applyTicketMutation("delete", { id: detail.data.id })
       }
-      invalidateTicketsCache()
+      debouncedInvalidateTickets(300)
     }
 
-    // Auto revalidate on tab focus and visibility change
+    // Auto revalidate on tab focus and visibility change (debounced)
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        invalidateTicketsCache()
+        debouncedInvalidateTickets(500)
       }
     }
 

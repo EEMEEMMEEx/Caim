@@ -50,6 +50,13 @@ export function NewTicketView() {
   const [nextClaimPreview, setNextClaimPreview] = React.useState<string>(
     "CLM-2026-004"
   )
+  const navTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+
+  React.useEffect(() => {
+    return () => {
+      if (navTimerRef.current) clearTimeout(navTimerRef.current)
+    }
+  }, [])
 
   // Fetch upcoming sequential claim number preview from API on mount
   React.useEffect(() => {
@@ -370,7 +377,8 @@ export function NewTicketView() {
     setIsSaved(true)
     setIsSubmitting(false)
 
-    setTimeout(() => {
+    if (navTimerRef.current) clearTimeout(navTimerRef.current)
+    navTimerRef.current = setTimeout(() => {
       router.push("/tickets")
     }, 1000)
   }

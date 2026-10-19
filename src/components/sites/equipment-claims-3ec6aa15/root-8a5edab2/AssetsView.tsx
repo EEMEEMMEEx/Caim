@@ -163,14 +163,25 @@ export function AssetsView() {
   const [newModel, setNewModel] = React.useState("")
   const [newCategory, setNewCategory] = React.useState("")
   const [newDescription, setNewDescription] = React.useState("")
+  const toastTimerRef = React.useRef<NodeJS.Timeout | null>(null)
 
   const showToast = React.useCallback((msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setToastMessage(msg)
-    setTimeout(() => setToastMessage(null), 3500)
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage(null)
+      toastTimerRef.current = null
+    }, 3500)
+  }, [])
+
+  React.useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
   }, [])
 
   // Real-time connection status
-  useRealtimeSync({})
+  useRealtimeSync()
 
   const deferredQuery = React.useDeferredValue(searchQuery)
 

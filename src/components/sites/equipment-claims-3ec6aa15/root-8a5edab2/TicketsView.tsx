@@ -238,14 +238,25 @@ export function TicketsView() {
   const [ticketToDelete, setTicketToDelete] = React.useState<Ticket | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
   const [toastMessage, setToastMessage] = React.useState<string | null>(null)
+  const toastTimerRef = React.useRef<NodeJS.Timeout | null>(null)
 
   const showToast = React.useCallback((msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setToastMessage(msg)
-    setTimeout(() => setToastMessage(null), 3500)
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage(null)
+      toastTimerRef.current = null
+    }, 3500)
+  }, [])
+
+  React.useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
   }, [])
 
   // Real-time synchronization subscription for Tickets
-  useRealtimeSync({})
+  useRealtimeSync()
 
   // Filter Form States
   const [statusFilter, setStatusFilter] = React.useState("all")

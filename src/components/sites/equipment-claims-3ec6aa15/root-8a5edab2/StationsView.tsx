@@ -238,23 +238,38 @@ export function StationsView() {
     category: "เสาสัญญาณหลัก 60 เมตร",
   })
 
+  const toastTimerRef = React.useRef<NodeJS.Timeout | null>(null)
   const showToast = React.useCallback((msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setToastMessage(msg)
-    setTimeout(() => setToastMessage(null), 3500)
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage(null)
+      toastTimerRef.current = null
+    }, 3500)
   }, [])
 
-  // Real-time synchronization subscription
-  useRealtimeSync({
-    onStationChange: (raw) => {
-      const payload = raw as { action?: "create" | "update" | "delete"; data?: Station } | undefined
-      if (!payload || !payload.data) return
-      const { action, data } = payload
-      if (action) {
-        applyStationMutation(action, data)
-      }
-      showToast("ข้อมูลสถานีได้รับการอัปเดตแบบเรียลไทม์")
-    },
-  })
+  React.useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [])
+
+  // Real-time synchronization subscription (memoized handlers)
+  const realtimeHandlers = React.useMemo(
+    () => ({
+      onStationChange: (raw: unknown) => {
+        const payload = raw as { action?: "create" | "update" | "delete"; data?: Station } | undefined
+        if (!payload || !payload.data) return
+        const { action, data } = payload
+        if (action) {
+          applyStationMutation(action, data)
+        }
+        showToast("ข้อมูลสถานีได้รับการอัปเดตแบบเรียลไทม์")
+      },
+    }),
+    [applyStationMutation, showToast]
+  )
+  useRealtimeSync(realtimeHandlers)
 
   const deferredQuery = React.useDeferredValue(searchQuery)
 

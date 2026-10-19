@@ -141,10 +141,23 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
   const [bannerMessage, setBannerMessage] = React.useState<string | null>(null)
   const [toastMessage, setToastMessage] = React.useState<string | null>(null)
   const [formError, setFormError] = React.useState<string | null>(null)
+  const toastTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+  const bannerTimerRef = React.useRef<NodeJS.Timeout | null>(null)
 
   const showToast = React.useCallback((msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setToastMessage(msg)
-    setTimeout(() => setToastMessage(null), 3500)
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage(null)
+      toastTimerRef.current = null
+    }, 3500)
+  }, [])
+
+  React.useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current)
+    }
   }, [])
 
   // Direct sync function from Authoritative Tickets API
@@ -296,9 +309,11 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
   const strokeDashoffset = circumference - (remainingMetric.progressPercent / 100) * circumference
 
   function showBanner(msg: string) {
+    if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current)
     setBannerMessage(msg)
-    setTimeout(() => {
+    bannerTimerRef.current = setTimeout(() => {
       setBannerMessage(null)
+      bannerTimerRef.current = null
     }, 3000)
   }
 

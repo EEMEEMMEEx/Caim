@@ -29,8 +29,9 @@ export interface DashboardViewProps {
 
 export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
   const router = useRouter()
+  const realtimeOptions = React.useMemo(() => ({ initialMetrics }), [initialMetrics])
   const { metrics, connectionStatus, lastSyncTime, isRefreshing, refresh } =
-    useRealtimeDashboard({ initialMetrics })
+    useRealtimeDashboard(realtimeOptions)
   const { t, locale } = useLocale()
   const [mounted, setMounted] = React.useState(false)
 

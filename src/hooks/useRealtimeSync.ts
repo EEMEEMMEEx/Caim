@@ -18,8 +18,11 @@ let currentStatus: RealtimeConnectionStatus = "disconnected"
 const statusListeners = new Set<(status: RealtimeConnectionStatus) => void>()
 let lastSyncTimestamp = new Date(Date.now() - 30000).toISOString()
 let backgroundSyncTimer: NodeJS.Timeout | null = null
+let reconnectTimeout: NodeJS.Timeout | null = null
+let isSyncCheckActive = false
 
 function broadcastStatus(status: RealtimeConnectionStatus) {
+  if (currentStatus === status) return
   currentStatus = status
   statusListeners.forEach((fn) => fn(status))
 }
@@ -29,6 +32,9 @@ function broadcastStatus(status: RealtimeConnectionStatus) {
  */
 async function checkServerSync() {
   if (typeof window === "undefined") return
+  if (isSyncCheckActive) return
+  isSyncCheckActive = true
+
   try {
     const res = await fetch(`/api/realtime/sync-check?since=${encodeURIComponent(lastSyncTimestamp)}`, {
       cache: "no-store",
@@ -45,7 +51,10 @@ async function checkServerSync() {
       lastSyncTimestamp = data.latestTimestamp
     }
 
-    if (data.hasUpdates && Array.isArray(data.updates)) {
+    if (data.hasUpdates && Array.isArray(data.updates) && data.updates.length > 0) {
+      let hasTicketUpdates = false
+      let hasRmaUpdates = false
+
       for (const update of data.updates) {
         if (update.targetType === "equipment") {
           window.dispatchEvent(
@@ -60,24 +69,31 @@ async function checkServerSync() {
             })
           )
         } else if (update.targetType === "ticket") {
+          hasTicketUpdates = true
           window.dispatchEvent(
             new CustomEvent("caim:realtime:ticket", {
               detail: { action: "update", data: { id: update.targetId } },
             })
           )
-          window.dispatchEvent(new CustomEvent("caim:realtime:metrics", { detail: {} }))
         } else if (update.targetType === "rma") {
+          hasRmaUpdates = true
           window.dispatchEvent(
             new CustomEvent("caim:realtime:rma", {
               detail: { action: "update", data: { id: update.targetId } },
             })
           )
-          window.dispatchEvent(new CustomEvent("caim:realtime:metrics", { detail: {} }))
         }
+      }
+
+      // Dispatch metrics invalidation at most once per sync check batch to avoid re-render storms
+      if (hasTicketUpdates || hasRmaUpdates) {
+        window.dispatchEvent(new CustomEvent("caim:realtime:metrics", { detail: {} }))
       }
     }
   } catch {
     // ignore background sync check transient errors
+  } finally {
+    isSyncCheckActive = false
   }
 }
 
@@ -149,9 +165,13 @@ function initGlobalSSE() {
         globalEventSource.close()
         globalEventSource = null
       }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout)
+        reconnectTimeout = null
+      }
       // Reconnect after 3 seconds if there are active listeners
       if (connectionRefCount > 0) {
-        setTimeout(initGlobalSSE, 3000)
+        reconnectTimeout = setTimeout(initGlobalSSE, 3000)
       }
     })
   } catch {
@@ -173,6 +193,10 @@ function releaseGlobalSSE() {
     if (backgroundSyncTimer) {
       clearInterval(backgroundSyncTimer)
       backgroundSyncTimer = null
+    }
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout)
+      reconnectTimeout = null
     }
     broadcastStatus("disconnected")
   }
