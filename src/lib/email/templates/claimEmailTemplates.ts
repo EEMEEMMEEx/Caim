@@ -299,7 +299,7 @@ export function buildClaimUpdatedEmail(params: ClaimUpdatedEmailParams): { subje
   const remarksPart = updatedTicket.remarks ? `หมายเหตุ: ${updatedTicket.remarks}` : ""
   const remarksOrNotes = [outcomePart, remarksPart].filter(Boolean).join(" | ") || "ไม่มีบันทึกเพิ่มเติม"
 
-  const subject = `[Process Claim] อัปเดตสถานะเคส: ${claimId} → ${newStatus}`
+  const subject = `[Process Claim] แจ้งเตือนการเปลี่ยนสถานะเคส: ${claimId} → ${newStatus}`
   const claimDetailUrl = `${baseUrl}/tickets/${encodeURIComponent(claimId)}`
   const formattedTimestamp = formatThaiDateTime(updatedTicket.updatedAt || new Date())
 
@@ -410,7 +410,7 @@ export function buildClaimUpdatedEmail(params: ClaimUpdatedEmailParams): { subje
                       FORTH CORPORATION · CAIM PORTAL
                     </div>
                     <h1 style="margin: 0 0 6px 0; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.3;">
-                      อัปเดตสถานะเคสงานเคลม (Process Claim)
+                      แจ้งเตือนการเปลี่ยนสถานะเคส (Process Claim)
                     </h1>
                     <div style="font-size: 12px; color: #94a3b8;">
                       เวลาที่อัปเดต: <span style="color: #cbd5e1; font-weight: 500;">${escapeHtml(formattedTimestamp)}</span>

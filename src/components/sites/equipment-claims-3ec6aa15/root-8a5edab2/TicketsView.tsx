@@ -30,6 +30,146 @@ import { calculateCaseDuration, formatDisplayThaiDate } from "@/lib/utils/caseDu
 import { TableActionCell } from "./TableActionCell"
 import { useLocale } from "@/i18n/LocaleContext"
 
+const STATUS_CONFIG_OPTIONS: Record<number, { label: string; bg: string; dot: string; text: string; ring: string }> = {
+  1: {
+    label: "รับแจ้ง",
+    bg: "bg-emerald-50 dark:bg-emerald-950/50",
+    dot: "bg-emerald-500",
+    text: "text-emerald-700 dark:text-emerald-300",
+    ring: "ring-emerald-600/20 dark:ring-emerald-500/30",
+  },
+  2: {
+    label: "ส่งศูนย์",
+    bg: "bg-purple-50 dark:bg-purple-950/50",
+    dot: "bg-purple-500",
+    text: "text-purple-700 dark:text-purple-300",
+    ring: "ring-purple-600/20 dark:ring-purple-500/30",
+  },
+  3: {
+    label: "รออะไหล่",
+    bg: "bg-amber-50 dark:bg-amber-950/50",
+    dot: "bg-amber-500",
+    text: "text-amber-700 dark:text-amber-300",
+    ring: "ring-amber-600/20 dark:ring-amber-500/30",
+  },
+  4: {
+    label: "ซ่อมเสร็จ",
+    bg: "bg-blue-50 dark:bg-blue-950/50",
+    dot: "bg-blue-500",
+    text: "text-blue-700 dark:text-blue-300",
+    ring: "ring-blue-600/20 dark:ring-blue-500/30",
+  },
+  5: {
+    label: "ปิดเคส",
+    bg: "bg-slate-100 dark:bg-slate-800",
+    dot: "bg-slate-500",
+    text: "text-slate-700 dark:text-slate-300",
+    ring: "ring-slate-600/15 dark:ring-white/10",
+  },
+  6: {
+    label: "ปฏิเสธเคลม",
+    bg: "bg-rose-50 dark:bg-rose-950/50",
+    dot: "bg-rose-500",
+    text: "text-rose-700 dark:text-rose-300",
+    ring: "ring-rose-600/20 dark:ring-rose-500/30",
+  },
+}
+
+const STATUS_MAP_CONSTANT: Record<number, string> = {
+  1: "รับแจ้ง",
+  2: "ส่งศูนย์",
+  3: "รออะไหล่",
+  4: "ซ่อมเสร็จ",
+  5: "ปิดเคส",
+  6: "ปฏิเสธเคลม",
+}
+
+const STATUS_TO_CODE_CONSTANT: Record<string, number> = {
+  "รับแจ้ง": 1,
+  "ส่งศูนย์": 2,
+  "รออะไหล่": 3,
+  "ซ่อมเสร็จ": 4,
+  "ปิดเคส": 5,
+  "ปฏิเสธเคลม": 6,
+}
+
+function TableStatusBadgeDropdown({
+  item,
+  onStatusChange,
+}: {
+  item: Ticket
+  onStatusChange?: (item: Ticket, newStatusCode: number) => void
+}) {
+  const [isOpen, setIsOpen] = React.useState(false)
+  const dropdownRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    if (!isOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [isOpen])
+
+  const currentCode =
+    Number(item.statusCode) || (item.status ? STATUS_TO_CODE_CONSTANT[item.status] : 1) || 1
+  const current = STATUS_CONFIG_OPTIONS[currentCode] || STATUS_CONFIG_OPTIONS[1]
+  const currentLabel = item.status || current.label
+
+  return (
+    <div className="relative inline-block text-left" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`group inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${current.bg} ${current.text} ring-1 ${current.ring} shadow-2xs hover:opacity-90 hover:ring-2 hover:ring-blue-500/40 transition-all cursor-pointer select-none`}
+        title="คลิกเพื่อเปลี่ยนสถานะงานเคลม (ระบบจะส่งอีเมลแจ้งเตือนไปยัง dopa-only-tm@forth.co.th อัตโนมัติ)"
+      >
+        <span className={`size-1.5 rounded-full ${current.dot} ${currentCode === 1 ? "animate-pulse" : ""}`} />
+        <span>{currentLabel}</span>
+        <ChevronDown className="size-3 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-transform duration-150" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 mt-1.5 w-38 rounded-xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#1e293b] p-1 shadow-xl ring-1 ring-black/5 z-50">
+          <div className="px-2 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-white/5 mb-1">
+            เปลี่ยนสถานะเคส
+          </div>
+          {[1, 2, 3, 4, 5, 6].map((code) => {
+            const opt = STATUS_CONFIG_OPTIONS[code]
+            const isSelected = currentCode === code
+            return (
+              <button
+                key={code}
+                type="button"
+                onClick={() => {
+                  setIsOpen(false)
+                  if (onStatusChange && code !== currentCode) {
+                    onStatusChange(item, code)
+                  }
+                }}
+                className={`w-full flex items-center justify-between rounded-lg px-2 py-1.5 text-xs text-left cursor-pointer transition-colors ${
+                  isSelected
+                    ? "bg-blue-50 dark:bg-blue-950/60 font-semibold text-blue-700 dark:text-blue-300"
+                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`size-1.5 rounded-full ${opt.dot}`} />
+                  <span>{opt.label}</span>
+                </div>
+                {isSelected && <Check className="size-3 text-blue-600 dark:text-blue-400" />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface TicketTableRowProps {
   item: Ticket
   isSelected: boolean
@@ -37,6 +177,7 @@ interface TicketTableRowProps {
   onView: (item: Ticket) => void
   onEdit: (item: Ticket) => void
   onConfirmDelete: (item: Ticket) => void
+  onStatusChange?: (item: Ticket, newStatusCode: number) => void
 }
 
 const TicketTableRow = React.memo(function TicketTableRow({
@@ -46,6 +187,7 @@ const TicketTableRow = React.memo(function TicketTableRow({
   onView,
   onEdit,
   onConfirmDelete,
+  onStatusChange,
 }: TicketTableRowProps) {
   const duration = React.useMemo(() => calculateCaseDuration(item), [item])
   const isOverdue = duration.isOverdue
@@ -139,50 +281,9 @@ const TicketTableRow = React.memo(function TicketTableRow({
         </div>
       </td>
 
-      {/* สถานะ (Status Pill Badges with Pastel Background & Ring) */}
+      {/* สถานะ (Status Pill Badges with Pastel Background & Ring with Interactive Dropdown) */}
       <td className="px-4 py-3.5 whitespace-nowrap">
-        {item.statusCode === 1 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-600/20 dark:ring-emerald-500/30 shadow-2xs">
-            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>รับแจ้ง</span>
-          </span>
-        )}
-        {item.statusCode === 2 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 dark:bg-purple-950/50 px-2.5 py-0.5 text-[11px] font-medium text-purple-700 dark:text-purple-300 ring-1 ring-purple-600/20 dark:ring-purple-500/30 shadow-2xs">
-            <span className="size-1.5 rounded-full bg-purple-500" />
-            <span>ส่งศูนย์</span>
-          </span>
-        )}
-        {item.statusCode === 3 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 px-2.5 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300 ring-1 ring-amber-600/20 dark:ring-amber-500/30 shadow-2xs">
-            <span className="size-1.5 rounded-full bg-amber-500" />
-            <span>รออะไหล่</span>
-          </span>
-        )}
-        {item.statusCode === 4 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700 dark:text-blue-300 ring-1 ring-blue-600/20 dark:ring-blue-500/30 shadow-2xs">
-            <span className="size-1.5 rounded-full bg-blue-500" />
-            <span>ซ่อมเสร็จ</span>
-          </span>
-        )}
-        {item.statusCode === 5 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 ring-1 ring-slate-600/15 dark:ring-white/10 shadow-2xs">
-            <span className="size-1.5 rounded-full bg-slate-500" />
-            <span>ปิดเคส</span>
-          </span>
-        )}
-        {item.statusCode === 6 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700 dark:text-rose-300 ring-1 ring-rose-600/20 dark:ring-rose-500/30 shadow-2xs">
-            <span className="size-1.5 rounded-full bg-rose-500" />
-            <span>ปฏิเสธเคลม</span>
-          </span>
-        )}
-        {(!item.statusCode || item.statusCode < 1 || item.statusCode > 6) && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 ring-1 ring-slate-600/15 dark:ring-white/10 shadow-2xs">
-            <span className="size-1.5 rounded-full bg-slate-500" />
-            <span>{item.status || "รับแจ้ง"}</span>
-          </span>
-        )}
+        <TableStatusBadgeDropdown item={item} onStatusChange={onStatusChange} />
       </td>
 
       {/* รับแจ้ง (Date) */}
@@ -730,28 +831,50 @@ export function TicketsView() {
     )
   }, [])
 
-  const STATUS_MAP: Record<number, string> = React.useMemo(
-    () => ({
-      1: "รับแจ้ง",
-      2: "ส่งศูนย์",
-      3: "รออะไหล่",
-      4: "ซ่อมเสร็จ",
-      5: "ปิดเคส",
-      6: "ปฏิเสธเคลม",
-    }),
-    []
-  )
+  const STATUS_MAP = STATUS_MAP_CONSTANT
+  const STATUS_TO_CODE = STATUS_TO_CODE_CONSTANT
 
-  const STATUS_TO_CODE: Record<string, number> = React.useMemo(
-    () => ({
-      "รับแจ้ง": 1,
-      "ส่งศูนย์": 2,
-      "รออะไหล่": 3,
-      "ซ่อมเสร็จ": 4,
-      "ปิดเคส": 5,
-      "ปฏิเสธเคลม": 6,
-    }),
-    []
+  // Handle direct 1-click status update from table column dropdown
+  const handleQuickStatusChange = React.useCallback(
+    async (ticket: Ticket, newStatusCode: number) => {
+      const currentCode = Number(ticket.statusCode) || (ticket.status ? STATUS_TO_CODE[ticket.status] : 1) || 1
+      if (currentCode === newStatusCode) return
+      const newStatusLabel = STATUS_MAP[newStatusCode] || "รับแจ้ง"
+
+      try {
+        const payload = {
+          id: ticket.id,
+          title: ticket.claimTitle || ticket.title,
+          claimTitle: ticket.claimTitle || ticket.title,
+          problemDesc: ticket.problemDesc,
+          serialNo: ticket.serialNo,
+          vendor: ticket.vendor,
+          model: ticket.model,
+          status: newStatusLabel,
+          statusCode: newStatusCode,
+          date: ticket.date,
+          stationId: ticket.stationId,
+          station: ticket.station,
+          province: ticket.province,
+          district: ticket.district,
+          subdistrict: ticket.subdistrict,
+          remarks: ticket.remarks,
+        }
+
+        const res = await updateTicket(payload)
+        if (!res.success) {
+          throw new Error(res.error || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะ")
+        }
+
+        showToast(`อัปเดตสถานะเคส ${ticket.id} เป็น "${newStatusLabel}" เรียบร้อยแล้ว พร้อมส่งอีเมลแจ้งเตือน`)
+        await invalidateTicketsCache()
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการเปลี่ยนสถานะ"
+        console.error("[TicketsView] Quick status update failed:", err)
+        showToast(message)
+      }
+    },
+    [STATUS_MAP, STATUS_TO_CODE, updateTicket, showToast]
   )
 
   const [isSaving, setIsSaving] = React.useState(false)
@@ -855,6 +978,7 @@ export function TicketsView() {
           province: editForm.province,
           district: editForm.district,
           subdistrict: editForm.subdistrict,
+          remarks: (editForm.remarks || "").trim(),
         }
 
         const res = await updateTicket(payload)
@@ -1280,6 +1404,7 @@ export function TicketsView() {
                       onView={handleView}
                       onEdit={handleEdit}
                       onConfirmDelete={confirmDeleteTicket}
+                      onStatusChange={handleQuickStatusChange}
                     />
                   ))
                 )}
