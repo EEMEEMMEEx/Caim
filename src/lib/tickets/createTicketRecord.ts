@@ -39,13 +39,22 @@ export async function createTicketRecord(request: NextRequest) {
       ? String(body.id).trim()
       : await generateNextClaimNumber({ date: body.date || body.createdAt })
 
+    const rawClaimTitle = body.claimTitle || body.title
     const ticketTitle =
-      body.title &&
-      !String(body.title).includes("สร้างอัตโนมัติ") &&
-      !String(body.title).includes("XXX") &&
-      !/^CLM-\d{4}-\d+$/i.test(String(body.title).trim())
-        ? String(body.title).trim()
+      rawClaimTitle &&
+      !String(rawClaimTitle).includes("สร้างอัตโนมัติ") &&
+      !String(rawClaimTitle).includes("XXX") &&
+      !/^CLM-\d{4}-\d+$/i.test(String(rawClaimTitle).trim())
+        ? String(rawClaimTitle).trim()
+        : body.problemDesc
+        ? String(body.problemDesc).trim().slice(0, 50)
         : ticketId
+
+    const resolvedClaimTitle =
+      body.claimTitle && String(body.claimTitle).trim()
+        ? String(body.claimTitle).trim()
+        : ticketTitle
+
     const nowIso = new Date().toISOString()
     const serialNo = String(body.serialNo || "").trim()
 
@@ -114,6 +123,7 @@ export async function createTicketRecord(request: NextRequest) {
         const newTicketDoc: TicketDocument = {
           id: ticketId,
           title: ticketTitle,
+          claimTitle: resolvedClaimTitle,
           problemDesc: body.problemDesc || "",
           vendor: body.vendor || "Other",
           model: body.model || "-",
@@ -209,6 +219,7 @@ export async function createTicketRecord(request: NextRequest) {
     const fallbackDoc: TicketDocument = {
       id: ticketId,
       title: ticketTitle,
+      claimTitle: resolvedClaimTitle,
       problemDesc: body.problemDesc || "",
       vendor: body.vendor || "Other",
       model: body.model || "-",

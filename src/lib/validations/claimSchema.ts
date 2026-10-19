@@ -5,6 +5,14 @@ import { z } from "zod"
  * Encapsulates ticket fields and the 'ผู้เกี่ยวข้อง' (Stakeholders & Personnel) section.
  */
 export const claimFormSchema = z.object({
+  claimTitle: z
+    .string()
+    .trim()
+    .optional(),
+  title: z
+    .string()
+    .trim()
+    .optional(),
   ticketTitle: z
     .string()
     .trim()
@@ -67,6 +75,7 @@ export type ClaimFormData = z.infer<typeof claimFormSchema>
  */
 export const claimPayloadSchema = z.object({
   id: z.string().optional(),
+  claimTitle: z.string().optional(),
   title: z.string().optional().default(""),
   problemDesc: z.string().default(""),
   vendor: z.string().default("Other"),

@@ -234,6 +234,12 @@ export async function PUT(request: NextRequest) {
     if (finalStatusCode !== undefined) {
       setFields.statusCode = finalStatusCode
     }
+    if (updates.claimTitle !== undefined || updates.title !== undefined) {
+      const rawT = updates.claimTitle !== undefined ? updates.claimTitle : updates.title
+      const titleStr = String(rawT || "").trim()
+      setFields.title = titleStr
+      setFields.claimTitle = titleStr
+    }
     if (updates.reporterName !== undefined || updates.reporter !== undefined) {
       const rep = String(updates.reporter !== undefined ? updates.reporter : updates.reporterName).trim()
       setFields.reporter = rep
@@ -323,6 +329,7 @@ export async function PUT(request: NextRequest) {
       ...(currentTicket || {
         id,
         title: String(setFields.title || ""),
+        claimTitle: String(setFields.claimTitle || setFields.title || ""),
         problemDesc: String(setFields.problemDesc || ""),
         vendor: String(setFields.vendor || "Other"),
         model: String(setFields.model || "-"),

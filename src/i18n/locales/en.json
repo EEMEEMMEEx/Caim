@@ -78,6 +78,8 @@
   },
   "table": {
     "no": "No.",
+    "claimNo": "Claim No.",
+    "claimTitle": "Claim Title",
     "case": "Case",
     "caseNo": "Case No.",
     "equipment": "Equipment",

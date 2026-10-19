@@ -50,6 +50,31 @@ const TicketTableRow = React.memo(function TicketTableRow({
   const duration = React.useMemo(() => calculateCaseDuration(item), [item])
   const isOverdue = duration.isOverdue
 
+  // Backward compatibility: resolve claim title with graceful fallbacks
+  const resolvedTitle = React.useMemo(() => {
+    // 1. Explicit claimTitle if present
+    if (item.claimTitle && item.claimTitle.trim()) {
+      return item.claimTitle.trim()
+    }
+    // 2. Custom title if not simply sequence ID or auto-gen placeholder
+    if (
+      item.title &&
+      item.title.trim() &&
+      item.title.trim() !== item.id &&
+      !item.title.includes("สร้างอัตโนมัติ") &&
+      !item.title.includes("XXX")
+    ) {
+      return item.title.trim()
+    }
+    // 3. Fallback gracefully to first sentence or slice of symptoms
+    const symptoms = (item.problemDesc || item.description || item.symptoms || "").trim()
+    if (symptoms) {
+      const firstSentence = symptoms.split(/[\n.]/)[0]?.trim()
+      return firstSentence && firstSentence.length > 3 ? firstSentence.slice(0, 50) : symptoms.slice(0, 50)
+    }
+    return item.title || item.id
+  }, [item])
+
   return (
     <tr
       className={`transition-colors duration-150 ${
@@ -69,12 +94,19 @@ const TicketTableRow = React.memo(function TicketTableRow({
         />
       </td>
 
-      {/* เคส (Title & Description) */}
+      {/* 1. เลขที่เคลม (Dedicated Claim Number) */}
+      <td className="px-4 py-3.5 whitespace-nowrap">
+        <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/40 rounded-md px-2 py-1 inline-block">
+          {item.id}
+        </span>
+      </td>
+
+      {/* 2. หัวข้อเคลม (Claim Title / Subject) */}
       <td className="px-4 py-3.5">
-        <p className="font-bold text-slate-800 dark:text-slate-100 text-xs">
-          {item.title}
+        <p className="font-bold text-slate-800 dark:text-slate-100 text-xs line-clamp-1" title={resolvedTitle}>
+          {resolvedTitle}
         </p>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 max-w-[180px] sm:max-w-xs truncate" title={item.problemDesc}>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 max-w-[240px] sm:max-w-xs truncate" title={item.problemDesc}>
           {item.problemDesc}
         </p>
         {item.station && (
@@ -607,11 +639,16 @@ export function TicketsView() {
       ) {
         return false
       }
-      if (
-        appliedFilters.caseNo &&
-        !t.title.toLowerCase().includes(appliedFilters.caseNo.toLowerCase())
-      ) {
-        return false
+      if (appliedFilters.caseNo) {
+        const query = appliedFilters.caseNo.toLowerCase().trim()
+        const matchesQuery =
+          t.id.toLowerCase().includes(query) ||
+          t.title.toLowerCase().includes(query) ||
+          (t.claimTitle && t.claimTitle.toLowerCase().includes(query)) ||
+          (t.problemDesc && t.problemDesc.toLowerCase().includes(query))
+        if (!matchesQuery) {
+          return false
+        }
       }
       if (
         appliedFilters.sn &&
@@ -734,7 +771,8 @@ export function TicketsView() {
       setSelectedTicket(ticket)
       setEditForm({
         ...ticket,
-        title: ticket.title || "",
+        title: ticket.claimTitle || ticket.title || "",
+        claimTitle: ticket.claimTitle || ticket.title || "",
         problemDesc: ticket.problemDesc || "",
         vendor: ticket.vendor || "",
         model: ticket.model || "",
@@ -775,7 +813,7 @@ export function TicketsView() {
       e.preventDefault()
       if (!editForm || isSaving) return
 
-      const title = (editForm.title || "").trim()
+      const title = (editForm.claimTitle || editForm.title || "").trim()
       const problemDesc = (editForm.problemDesc || "").trim()
       const serialNo = (editForm.serialNo || "").trim()
 
@@ -799,6 +837,7 @@ export function TicketsView() {
         const payload = {
           id: editForm.id,
           title,
+          claimTitle: title,
           problemDesc,
           description: problemDesc,
           symptoms: problemDesc,
@@ -1172,7 +1211,7 @@ export function TicketsView() {
            ========================================================================= */}
         <div className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white/95 dark:bg-[#1e293b] backdrop-blur-xs shadow-card overflow-hidden transition-all duration-300">
           <div className="overflow-x-auto scrollbar-subtle">
-            <table className="w-full text-left text-xs min-w-[680px]">
+            <table className="w-full text-left text-xs min-w-[760px]">
               <thead className="border-b border-slate-200/70 dark:border-white/10 bg-slate-50/90 dark:bg-[#0f172a] text-slate-500 dark:text-slate-400 font-semibold text-[11px] uppercase tracking-wider">
                 <tr>
                   <th className="sticky left-0 z-20 w-12 px-4 py-3.5 text-center bg-slate-50 dark:bg-[#0f172a] shadow-[1px_0_0_0_rgba(226,232,240,0.8)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.08)]">
@@ -1184,7 +1223,8 @@ export function TicketsView() {
                       aria-label={t("table.selectAll", "เลือกทั้งหมด")}
                     />
                   </th>
-                  <th className="px-4 py-3.5 min-w-[180px]">{t("table.case", "เคส")}</th>
+                  <th className="px-4 py-3.5 min-w-[130px] whitespace-nowrap">{t("table.claimNo", "เลขที่เคลม")}</th>
+                  <th className="px-4 py-3.5 min-w-[240px]">{t("table.claimTitle", "หัวข้อเคลม")}</th>
                   <th className="px-4 py-3.5 min-w-[160px]">{t("table.equipment", "อุปกรณ์")}</th>
                   <th className="px-4 py-3.5 min-w-[120px]">{t("table.status", "สถานะ")}</th>
                   <th className="px-4 py-3.5 min-w-[110px]">{t("table.reportedDate", "รับแจ้ง")}</th>
@@ -1195,7 +1235,7 @@ export function TicketsView() {
               <tbody className="divide-y divide-slate-100/90 dark:divide-white/10">
                 {filteredTickets.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-14 text-center">
+                    <td colSpan={8} className="py-14 text-center">
                       {isTableCleared ? (
                         <div className="flex flex-col items-center justify-center gap-2.5">
                           <div className="flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
@@ -1473,10 +1513,10 @@ export function TicketsView() {
                         </label>
                         <Input
                           required
-                          value={editForm.title}
+                          value={editForm.claimTitle ?? editForm.title ?? ""}
                           onChange={(e) =>
                             setEditForm((prev) =>
-                              prev ? { ...prev, title: e.target.value } : null
+                              prev ? { ...prev, title: e.target.value, claimTitle: e.target.value } : null
                             )
                           }
                           className="mt-1 h-9 text-xs"

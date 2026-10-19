@@ -79,6 +79,7 @@ export function NewTicketView() {
     new Date().toISOString().split("T")[0]
   )
   const [warranty, setWarranty] = React.useState<string>("warranty")
+  const [claimTitle, setClaimTitle] = React.useState<string>("")
   const [problemDesc, setProblemDesc] = React.useState<string>("")
   const [serviceCenter, setServiceCenter] = React.useState<string>("Huawei")
   const [dueDate, setDueDate] = React.useState<string>("2026-11-21")
@@ -285,6 +286,8 @@ export function NewTicketView() {
 
     // Form Validation with Zod Schema
     const validationResult = claimFormSchema.safeParse({
+      claimTitle,
+      title: claimTitle,
       ticketTitle: nextClaimPreview,
       selectedSerial,
       receivedDate,
@@ -328,9 +331,11 @@ export function NewTicketView() {
     })
 
     const resolvedId = nextClaimPreview.includes("XXX") ? "" : nextClaimPreview.trim()
+    const resolvedTitle = claimTitle.trim() || problemDesc.trim().slice(0, 50) || resolvedId
     const newTicket: StoredTicket = {
       id: resolvedId,
-      title: resolvedId || problemDesc.trim().slice(0, 40),
+      title: resolvedTitle,
+      claimTitle: claimTitle.trim() || undefined,
       problemDesc: problemDesc.trim(),
       vendor: selectedAsset?.vendor || serviceCenter,
       model: selectedAsset?.model || "-",
@@ -748,6 +753,28 @@ export function NewTicketView() {
                   <option value="expired">นอกประกัน</option>
                   <option value="carepack">ประกันพิเศษ (Care Pack)</option>
                 </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label className="font-medium text-foreground">
+                  หัวข้อเคลม (Claim Title / Subject)
+                </label>
+                <input
+                  type="text"
+                  value={claimTitle}
+                  onChange={(e) => {
+                    setClaimTitle(e.target.value)
+                    clearError("claimTitle")
+                    clearError("title")
+                  }}
+                  placeholder="ระบุหัวข้อหรือชื่อเรื่องการเคลม..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/60 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                />
+                {formErrors.claimTitle && (
+                  <span className="text-[11px] text-destructive">
+                    {formErrors.claimTitle}
+                  </span>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5 sm:col-span-2">

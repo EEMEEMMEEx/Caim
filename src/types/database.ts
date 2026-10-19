@@ -47,7 +47,11 @@ export interface EquipmentDocument {
 export interface TicketDocument {
   id: string // e.g. "CLM-2026-0043" or "TICKET-174..."
   title: string
+  claimTitle?: string
   problemDesc: string
+  description?: string
+  symptoms?: string
+  symptomSummary?: string
   vendor: string
   model: string
   serialNo: string // Foreign Key -> EquipmentDocument.serial

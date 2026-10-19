@@ -12,7 +12,11 @@ export const STORAGE_KEYS = {
 export interface StoredTicket {
   id: string
   title: string
+  claimTitle?: string
   problemDesc: string
+  description?: string
+  symptoms?: string
+  symptomSummary?: string
   vendor: string
   model: string
   serialNo: string

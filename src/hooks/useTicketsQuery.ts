@@ -9,7 +9,11 @@ export const TICKETS_QUERY_KEY = ["tickets"] as const
 export interface Ticket {
   id: string
   title: string
+  claimTitle?: string
   problemDesc: string
+  description?: string
+  symptoms?: string
+  symptomSummary?: string
   vendor: string
   model: string
   serialNo: string
