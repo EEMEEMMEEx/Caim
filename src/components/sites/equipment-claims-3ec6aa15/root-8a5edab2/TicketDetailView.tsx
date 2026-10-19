@@ -519,6 +519,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
       ],
     }))
 
+    const effectiveRemarks = statusRemark.trim() || data.remarks || undefined
     setIsStatusModalOpen(false)
     setStatusRemark("")
 
@@ -527,6 +528,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
         id: data.id,
         statusCode: newStatusStage,
         status: stageNames[newStatusStage] || "รับแจ้ง",
+        remarks: effectiveRemarks,
         ...(newStatusStage === 5
           ? {
               repairOutcome: newRepairOutcome || undefined,

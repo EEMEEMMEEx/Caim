@@ -299,7 +299,7 @@ export function buildClaimUpdatedEmail(params: ClaimUpdatedEmailParams): { subje
   const remarksPart = updatedTicket.remarks ? `หมายเหตุ: ${updatedTicket.remarks}` : ""
   const remarksOrNotes = [outcomePart, remarksPart].filter(Boolean).join(" | ") || "ไม่มีบันทึกเพิ่มเติม"
 
-  const subject = `[Process Claim] อัปเดตสถานะเคส: ${claimId} (${equipmentName}) → ${newStatus}`
+  const subject = `[Process Claim] อัปเดตสถานะเคส: ${claimId} → ${newStatus}`
   const claimDetailUrl = `${baseUrl}/tickets/${encodeURIComponent(claimId)}`
   const formattedTimestamp = formatThaiDateTime(updatedTicket.updatedAt || new Date())
 

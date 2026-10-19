@@ -61,31 +61,37 @@ export function resolveClaimRecipients(
 
 /**
  * Executes a task asynchronously without blocking the calling thread.
- * Utilizes Next.js `after()` when in a request lifecycle, falling back to background Promise.
+ * Guarantees execution via setImmediate / detached promise while safely registering
+ * with Next.js after() when present in an active request lifecycle.
  */
 function runNonBlocking(task: () => Promise<void>): void {
-  try {
-    if (typeof after === "function") {
-      after(async () => {
-        try {
-          await task()
-        } catch (err) {
-          console.error("[Claim Notification Service] Background task unhandled error:", err)
-        }
-      })
-      return
-    }
-  } catch {
-    // If after() is invoked outside of request context, fall back to background promise
-  }
+  let executed = false
 
-  Promise.resolve().then(async () => {
+  const executeOnce = async () => {
+    if (executed) return
+    executed = true
     try {
       await task()
     } catch (err) {
-      console.error("[Claim Notification Service] Background promise unhandled error:", err)
+      console.error("[Claim Notification Service] Background task unhandled error:", err)
     }
-  })
+  }
+
+  // Hook into Next.js request lifecycle if active
+  try {
+    if (typeof after === "function") {
+      after(executeOnce)
+    }
+  } catch {
+    // Expected when invoked outside dynamic request context
+  }
+
+  // Always schedule on Node.js event loop check phase to guarantee background delivery
+  if (typeof setImmediate === "function") {
+    setImmediate(executeOnce)
+  } else {
+    Promise.resolve().then(executeOnce)
+  }
 }
 
 /**
@@ -98,7 +104,7 @@ export function notifyNewClaimCreated(ticket: TicketDocument): void {
       const recipients = resolveClaimRecipients(ticket)
 
       console.log(
-        `[Claim Notification] Dispatching new claim email for ${ticket.id} (${ticket.vendor} ${ticket.model}) to ${recipients.join(", ")}...`
+        `[Claim Notification] Dispatching new claim email for ${ticket.id} (${ticket.vendor} ${ticket.model}) to ${recipients.join(", ")} | Subject: ${emailContent.subject}`
       )
 
       const result = await sendEmail({
@@ -109,12 +115,17 @@ export function notifyNewClaimCreated(ticket: TicketDocument): void {
       })
 
       if (result.success) {
-        console.log(`[Claim Notification] Email sent successfully for new claim ${ticket.id}. MessageID: ${result.messageId}`)
+        console.log(
+          `[Claim Notification Success] Email sent successfully for new claim ${ticket.id}. MessageID: ${result.messageId || "N/A"}`
+        )
       } else {
-        console.error(`[Claim Notification] Failed to send new claim email for ${ticket.id}:`, result.error)
+        console.error(
+          `[Claim Notification Error] Failed to send new claim email for ${ticket.id} to ${recipients.join(", ")}:`,
+          result.error
+        )
       }
     } catch (err) {
-      console.error(`[Claim Notification] Unexpected error sending new claim email for ${ticket.id}:`, err)
+      console.error(`[Claim Notification Error] Unexpected error sending new claim email for ${ticket.id}:`, err)
     }
   })
 }
@@ -124,6 +135,8 @@ export function notifyNewClaimCreated(ticket: TicketDocument): void {
  */
 export function notifyClaimUpdated(params: ClaimUpdatedEmailParams): void {
   const claimId = params.updatedTicket.id
+  const prevStatus = params.previousTicket?.status || "รับแจ้ง"
+  const newStatus = params.updatedTicket.status || prevStatus
 
   runNonBlocking(async () => {
     try {
@@ -131,7 +144,7 @@ export function notifyClaimUpdated(params: ClaimUpdatedEmailParams): void {
       const recipients = resolveClaimRecipients(params.updatedTicket)
 
       console.log(
-        `[Claim Notification] Dispatching claim status/update email for ${claimId} to ${recipients.join(", ")}...`
+        `[Claim Notification] Dispatching claim status update email for ${claimId} ('${prevStatus}' → '${newStatus}') to: ${recipients.join(", ")} | Subject: ${emailContent.subject}`
       )
 
       const result = await sendEmail({
@@ -142,12 +155,20 @@ export function notifyClaimUpdated(params: ClaimUpdatedEmailParams): void {
       })
 
       if (result.success) {
-        console.log(`[Claim Notification] Email sent successfully for updated claim ${claimId}. MessageID: ${result.messageId}`)
+        console.log(
+          `[Claim Notification Success] Email dispatched successfully for claim ${claimId} [${prevStatus} → ${newStatus}]. MessageID: ${result.messageId || "N/A"}`
+        )
       } else {
-        console.error(`[Claim Notification] Failed to send claim updated email for ${claimId}:`, result.error)
+        console.error(
+          `[Claim Notification Error] Failed to dispatch status update email for claim ${claimId} to ${recipients.join(", ")}:`,
+          result.error
+        )
       }
     } catch (err) {
-      console.error(`[Claim Notification] Unexpected error sending claim updated email for ${claimId}:`, err)
+      console.error(
+        `[Claim Notification Error] Unexpected exception dispatching status update email for claim ${claimId}:`,
+        err
+      )
     }
   })
 }

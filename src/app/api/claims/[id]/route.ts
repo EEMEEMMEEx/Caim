@@ -38,9 +38,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   const body = { ...rawBody, id: id || rawBody.id }
   const url = new URL(request.url)
   url.searchParams.set("id", id)
+  const headers = new Headers(request.headers)
+  headers.set("content-type", "application/json")
   const modifiedReq = new NextRequest(url.toString(), {
     method: "PUT",
-    headers: request.headers,
+    headers,
     body: JSON.stringify(body),
   })
   return handleTicketsPut(modifiedReq)
