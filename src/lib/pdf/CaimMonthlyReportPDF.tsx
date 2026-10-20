@@ -427,8 +427,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#0f172a",
     paddingVertical: 5,
-    paddingHorizontal: 6,
+    paddingHorizontal: 0,
     alignItems: "center",
+    minHeight: 22,
   },
   tableHeaderText: {
     fontSize: 8,
@@ -436,15 +437,16 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#ffffff",
     lineHeight: 1.25,
+    paddingHorizontal: 4,
   },
   tableRow: {
     flexDirection: "row",
     borderTopWidth: 1,
     borderTopColor: "#e2e8f0",
-    paddingVertical: 4.5,
-    paddingHorizontal: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 0,
     alignItems: "center",
-    minHeight: 25,
+    minHeight: 24,
   },
   tableRowEven: {
     backgroundColor: "#f8fafc",
@@ -453,14 +455,18 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontFamily: "THSarabunNew",
     color: "#334155",
-    lineHeight: 1.25,
+    lineHeight: 1.15,
+    flexWrap: "wrap",
+    paddingHorizontal: 4,
   },
   tableCellBold: {
     fontSize: 8,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#0f172a",
-    lineHeight: 1.25,
+    lineHeight: 1.15,
+    flexWrap: "wrap",
+    paddingHorizontal: 4,
   },
 
   // Badges in table
@@ -1071,13 +1077,13 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
         <View style={styles.tableContainer}>
           {/* Header */}
           <View style={styles.tableHeaderRow}>
-            <Text style={[styles.tableHeaderText, { width: "15%" }]}>เลขที่เคลม</Text>
-            <Text style={[styles.tableHeaderText, { width: "20%" }]}>อุปกรณ์ / หมายเลขซีเรียล</Text>
-            <Text style={[styles.tableHeaderText, { width: "19%" }]}>สถานี / จังหวัด</Text>
-            <Text style={[styles.tableHeaderText, { width: "16%" }]}>ศูนย์บริการที่ส่งซ่อม</Text>
+            <Text style={[styles.tableHeaderText, { width: "14%" }]}>เลขที่เคลม</Text>
+            <Text style={[styles.tableHeaderText, { width: "22%" }]}>อุปกรณ์ / S/N</Text>
+            <Text style={[styles.tableHeaderText, { width: "16%" }]}>สถานี / จังหวัด</Text>
+            <Text style={[styles.tableHeaderText, { width: "14%" }]}>ศูนย์บริการที่ส่งซ่อม</Text>
             <Text style={[styles.tableHeaderText, { width: "9%", textAlign: "center" }]}>อายุเคส</Text>
-            <Text style={[styles.tableHeaderText, { width: "11%", textAlign: "center" }]}>เกิน SLA</Text>
-            <Text style={[styles.tableHeaderText, { width: "10%", textAlign: "right" }]}>ผู้รับผิดชอบ</Text>
+            <Text style={[styles.tableHeaderText, { width: "10%", textAlign: "center" }]}>เกิน SLA</Text>
+            <Text style={[styles.tableHeaderText, { width: "15%", textAlign: "right" }]}>ผู้รับผิดชอบ</Text>
           </View>
 
           {/* Rows */}
@@ -1093,29 +1099,31 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
                 key={item.id}
                 style={[styles.tableRow, idx % 2 === 1 ? styles.tableRowEven : {}]}
               >
-                <Text style={[styles.tableCellBold, { width: "15%" }]}>{item.id}</Text>
-                <View style={{ width: "20%", flexDirection: "column" }}>
+                <Text style={[styles.tableCellBold, { width: "14%" }]}>{item.id}</Text>
+                <View style={{ width: "22%", flexDirection: "column" }}>
                   <Text style={styles.tableCellBold}>{item.equipment}</Text>
                   <Text style={[styles.tableCell, { fontSize: 7.5, color: "#64748b", marginTop: 1.5 }]}>
                     S/N: {item.serialNo}
                   </Text>
                 </View>
-                <View style={{ width: "19%", flexDirection: "column" }}>
+                <View style={{ width: "16%", flexDirection: "column" }}>
                   <Text style={styles.tableCell}>{item.station}</Text>
                   <Text style={[styles.tableCell, { fontSize: 7.5, color: "#64748b", marginTop: 1.5 }]}>
                     {item.province}
                   </Text>
                 </View>
-                <Text style={[styles.tableCell, { width: "16%" }]}>{item.serviceCenter}</Text>
+                <Text style={[styles.tableCell, { width: "14%" }]}>{item.serviceCenter}</Text>
                 <Text style={[styles.tableCell, { width: "9%", textAlign: "center" }]}>
                   {item.ageDays}
                 </Text>
-                <View style={{ width: "11%", alignItems: "center", justifyContent: "center" }}>
+                <View style={{ width: "10%", alignItems: "center", justifyContent: "center" }}>
                   <Text style={styles.badgeDanger}>{item.overdueDays}</Text>
                 </View>
-                <Text style={[styles.tableCell, { width: "10%", textAlign: "right" }]}>
-                  {item.assignee}
-                </Text>
+                <View style={{ width: "15%", flexDirection: "column", justifyContent: "center" }}>
+                  <Text style={[styles.tableCell, { textAlign: "right", lineHeight: 1.15, flexWrap: "wrap" }]}>
+                    {item.assignee}
+                  </Text>
+                </View>
               </View>
             ))
           )}
