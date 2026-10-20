@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flexDirection: "column",
-    maxWidth: "68%",
+    width: "64%",
   },
   companyName: {
     fontSize: 10.5,
@@ -204,24 +204,25 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   documentTitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#1e3a8a",
-    lineHeight: 1.3,
-    marginTop: 2,
+    lineHeight: 1.25,
+    marginTop: 3,
   },
   headerRight: {
     flexDirection: "column",
     alignItems: "flex-end",
+    width: "36%",
   },
   docBadge: {
     backgroundColor: "#f1f5f9",
     borderWidth: 1,
     borderColor: "#94a3b8",
     borderRadius: 4,
-    paddingVertical: 2.5,
-    paddingHorizontal: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 7,
     alignItems: "center",
     marginBottom: 2,
   },
@@ -233,10 +234,11 @@ const styles = StyleSheet.create({
     lineHeight: 1.2,
   },
   metaText: {
-    fontSize: 8,
+    fontSize: 7.5,
     color: "#475569",
     lineHeight: 1.25,
     marginTop: 1,
+    textAlign: "right",
   },
   statusApproved: {
     fontSize: 7.5,
@@ -245,6 +247,7 @@ const styles = StyleSheet.create({
     color: "#059669",
     lineHeight: 1.25,
     marginTop: 2,
+    textAlign: "right",
   },
 
   // Executive summary narrative
@@ -283,8 +286,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#cbd5e1",
     borderRadius: 6,
-    padding: 8,
-    minHeight: 68,
+    paddingHorizontal: 7,
+    paddingVertical: 7,
+    minHeight: 74,
     flexDirection: "column",
     justifyContent: "space-between",
   },
@@ -292,7 +296,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 6,
   },
   kpiLabel: {
     fontSize: 8,
@@ -300,6 +304,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#475569",
     lineHeight: 1.2,
+    flexShrink: 1,
+    marginRight: 4,
   },
   kpiBadgeContainer: {
     backgroundColor: "#e2e8f0",
@@ -308,32 +314,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   kpiBadge: {
     fontSize: 7,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#334155",
-    lineHeight: 1.2,
+    lineHeight: 1.15,
   },
   kpiValueContainer: {
     flexDirection: "row",
     alignItems: "baseline",
     gap: 3,
-    marginBottom: 3,
+    marginVertical: 4,
   },
   kpiNumber: {
-    fontSize: 17,
+    fontSize: 18,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#0f172a",
-    lineHeight: 1.2,
+    lineHeight: 1.1,
   },
   kpiUnit: {
     fontSize: 8.5,
     fontFamily: "THSarabunNew",
     color: "#64748b",
-    lineHeight: 1.2,
+    lineHeight: 1.1,
   },
   kpiSubtextContainer: {
     flexDirection: "column",
@@ -341,7 +348,7 @@ const styles = StyleSheet.create({
   kpiSubtext: {
     fontSize: 7.5,
     color: "#64748b",
-    lineHeight: 1.3,
+    lineHeight: 1.25,
   },
 
   // Two Column Sections
@@ -803,7 +810,7 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
           {/* Card 1 */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiTop}>
-              <Text style={styles.kpiLabel}>เคสเคลมสะสมทั้งหมด</Text>
+              <Text style={styles.kpiLabel}>เคสเคลมสะสม</Text>
               <View style={styles.kpiBadgeContainer}>
                 <Text style={styles.kpiBadge}>Total</Text>
               </View>
@@ -822,7 +829,7 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
           {/* Card 2 */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiTop}>
-              <Text style={styles.kpiLabel}>อัตราผ่านเกณฑ์ SLA</Text>
+              <Text style={styles.kpiLabel}>อัตราผ่าน SLA</Text>
               <View
                 style={[
                   styles.kpiBadgeContainer,
@@ -860,9 +867,9 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
           {/* Card 3 */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiTop}>
-              <Text style={styles.kpiLabel}>เวลาเฉลี่ยปิดเคส (MTTR)</Text>
+              <Text style={styles.kpiLabel}>เวลาเฉลี่ย MTTR</Text>
               <View style={styles.kpiBadgeContainer}>
-                <Text style={styles.kpiBadge}>เกณฑ์ ≤15 วัน</Text>
+                <Text style={styles.kpiBadge}>เกณฑ์ ≤15วัน</Text>
               </View>
             </View>
             <View style={styles.kpiValueContainer}>
@@ -879,7 +886,7 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
           {/* Card 4 */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiTop}>
-              <Text style={styles.kpiLabel}>ส่งซ่อมต่างประเทศ (RMA)</Text>
+              <Text style={styles.kpiLabel}>ส่งซ่อม ตปท. RMA</Text>
               <View style={styles.kpiBadgeContainer}>
                 <Text style={styles.kpiBadge}>8 Stages</Text>
               </View>
