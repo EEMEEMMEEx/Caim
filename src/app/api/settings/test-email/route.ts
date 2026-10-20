@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
 import { getEmailConfig } from "@/lib/email/emailConfig"
+import { formatThaiDateTime } from "@/lib/email/templates/claimEmailTemplates"
 import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 
 export const dynamic = "force-dynamic"
@@ -40,10 +41,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const testTimestamp = new Date().toLocaleString("th-TH", {
-      dateStyle: "medium",
-      timeStyle: "medium",
-    })
+    const testTimestamp = formatThaiDateTime(new Date())
 
     const subject = `[CAIM Test] ทดสอบการเชื่อมต่อเซิร์ฟเวอร์ SMTP สำเร็จ (${testTimestamp})`
 

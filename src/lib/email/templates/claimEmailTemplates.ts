@@ -48,7 +48,15 @@ export function buildNewClaimEmail(ticket: TicketDocument): { subject: string; h
   const reporter = ticket.reporterName || ticket.reporter || "ไม่ระบุ"
   const assignee = ticket.assigneeName || ticket.assignee || "รอระบุผู้รับผิดชอบ"
   const status = ticket.status || "รับแจ้ง"
-  const reportedDate = ticket.date || ticket.reportedDate || new Date().toLocaleDateString("th-TH")
+  const reportedDate =
+    ticket.date ||
+    ticket.reportedDate ||
+    new Date().toLocaleDateString("th-TH", {
+      timeZone: "Asia/Bangkok",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })
   const deadlineDate = ticket.deadlineDate || "-"
   const remarks = ticket.remarks || ""
 
@@ -240,19 +248,40 @@ export function buildNewClaimEmail(ticket: TicketDocument): { subject: string; h
   return { subject, html, text }
 }
 
-function formatThaiDateTime(dateInput?: Date | string | number): string {
+/**
+ * Formats a Date, ISO timestamp, or epoch number into Thai date and time string in Asia/Bangkok (UTC+7) timezone.
+ * Format: DD ม.ค. YYYY เวลา HH:mm น. (e.g., 20 ต.ค. 2569 เวลา 09:04 น.)
+ */
+export function formatThaiDateTime(dateInput?: Date | string | number | null): string {
   const date = dateInput ? new Date(dateInput) : new Date()
   const d = isNaN(date.getTime()) ? new Date() : date
-  const thaiMonths = [
-    "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
-    "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
-  ]
-  const day = d.getDate()
-  const month = thaiMonths[d.getMonth()]
-  const year = d.getFullYear() + 543
-  const hours = String(d.getHours()).padStart(2, "0")
-  const minutes = String(d.getMinutes()).padStart(2, "0")
-  return `${day} ${month} ${year} เวลา ${hours}:${minutes} น.`
+
+  const formatter = new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+
+  const parts = formatter.formatToParts(d)
+  let day = ""
+  let month = ""
+  let year = ""
+  let hour = ""
+  let minute = ""
+
+  for (const part of parts) {
+    if (part.type === "day") day = part.value
+    else if (part.type === "month") month = part.value
+    else if (part.type === "year") year = part.value
+    else if (part.type === "hour") hour = part.value
+    else if (part.type === "minute") minute = part.value
+  }
+
+  return `${day} ${month} ${year} เวลา ${hour}:${minute} น.`
 }
 
 export interface ClaimUpdatedEmailParams {
