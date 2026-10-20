@@ -24,6 +24,7 @@ import {
 import { useRealtimeDashboard } from "@/hooks/useRealtimeDashboard"
 import { useLocale } from "@/i18n/LocaleContext"
 import type { DashboardMetrics } from "@/lib/dashboard/calculateMetrics"
+import type { TicketDocument, RmaDocument, StationDocument } from "@/types/database"
 
 export interface DashboardViewProps {
   initialMetrics?: DashboardMetrics
@@ -50,7 +51,45 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
         import("@/lib/pdf/exportMonthlyReportPdf"),
       ])
 
-      const reportData = generateMonthlyReportData({ metrics })
+      // Fetch live production records concurrently (strictly zero mock data)
+      const [ticketsRes, rmaRes, stationsRes] = await Promise.allSettled([
+        fetch("/api/tickets", { cache: "no-store" }),
+        fetch("/api/rma", { cache: "no-store" }),
+        fetch("/api/stations", { cache: "no-store" }),
+      ])
+
+      let liveTickets: TicketDocument[] = []
+      let liveRmas: RmaDocument[] = []
+      let liveStations: StationDocument[] = []
+
+      if (ticketsRes.status === "fulfilled" && ticketsRes.value.ok) {
+        const json = await ticketsRes.value.json()
+        if (Array.isArray(json.tickets)) {
+          liveTickets = json.tickets
+        }
+      }
+
+      if (rmaRes.status === "fulfilled" && rmaRes.value.ok) {
+        const json = await rmaRes.value.json()
+        if (Array.isArray(json.rmas)) {
+          liveRmas = json.rmas
+        }
+      }
+
+      if (stationsRes.status === "fulfilled" && stationsRes.value.ok) {
+        const json = await stationsRes.value.json()
+        if (Array.isArray(json.stations)) {
+          liveStations = json.stations
+        }
+      }
+
+      const reportData = generateMonthlyReportData({
+        metrics,
+        tickets: liveTickets,
+        rmas: liveRmas,
+        stations: liveStations,
+      })
+
       await exportMonthlyReportPdf(reportData)
     } catch (err) {
       console.error("[Dashboard] Export PDF failed:", err)
