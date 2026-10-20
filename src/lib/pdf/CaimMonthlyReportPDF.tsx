@@ -18,6 +18,7 @@ let fontRegisterPromise: Promise<void> | null = null
  * Robust Thai font registration for @react-pdf/renderer.
  * Uses client-side fetch + base64 data URI loader to ensure TTF binary is
  * fully parsed in-memory without truncation, vowel shifting, or race conditions.
+ * Declares all font weights (normal, bold, 400, 700) to guarantee stable bounding boxes.
  */
 export async function registerPdfFonts(): Promise<void> {
   if (fontRegisterPromise) return fontRegisterPromise
@@ -47,16 +48,31 @@ export async function registerPdfFonts(): Promise<void> {
             return window.btoa(binary)
           }
 
+          const regBase64 = `data:font/ttf;base64,${toBase64(regBuffer)}`
+          const boldBase64 = `data:font/ttf;base64,${toBase64(boldBuffer)}`
+
           Font.register({
             family: "THSarabunNew",
             fonts: [
               {
-                src: `data:font/ttf;base64,${toBase64(regBuffer)}`,
+                src: regBase64,
                 fontWeight: "normal",
+                fontStyle: "normal",
               },
               {
-                src: `data:font/ttf;base64,${toBase64(boldBuffer)}`,
+                src: regBase64,
+                fontWeight: 400,
+                fontStyle: "normal",
+              },
+              {
+                src: boldBase64,
                 fontWeight: "bold",
+                fontStyle: "normal",
+              },
+              {
+                src: boldBase64,
+                fontWeight: 700,
+                fontStyle: "normal",
               },
             ],
           })
@@ -64,7 +80,7 @@ export async function registerPdfFonts(): Promise<void> {
         }
       }
 
-      // Fallback for Node environment or relative loader
+      // Fallback for Node environment or direct relative loader
       const origin =
         typeof window !== "undefined" && window.location?.origin
           ? window.location.origin
@@ -75,10 +91,22 @@ export async function registerPdfFonts(): Promise<void> {
           {
             src: `${origin}/fonts/THSarabunNew.ttf`,
             fontWeight: "normal",
+            fontStyle: "normal",
+          },
+          {
+            src: `${origin}/fonts/THSarabunNew.ttf`,
+            fontWeight: 400,
+            fontStyle: "normal",
           },
           {
             src: `${origin}/fonts/THSarabunNew-Bold.ttf`,
             fontWeight: "bold",
+            fontStyle: "normal",
+          },
+          {
+            src: `${origin}/fonts/THSarabunNew-Bold.ttf`,
+            fontWeight: 700,
+            fontStyle: "normal",
           },
         ],
       })
@@ -102,10 +130,22 @@ try {
       {
         src: `${origin}/fonts/THSarabunNew.ttf`,
         fontWeight: "normal",
+        fontStyle: "normal",
+      },
+      {
+        src: `${origin}/fonts/THSarabunNew.ttf`,
+        fontWeight: 400,
+        fontStyle: "normal",
       },
       {
         src: `${origin}/fonts/THSarabunNew-Bold.ttf`,
         fontWeight: "bold",
+        fontStyle: "normal",
+      },
+      {
+        src: `${origin}/fonts/THSarabunNew-Bold.ttf`,
+        fontWeight: 700,
+        fontStyle: "normal",
       },
     ],
   })
@@ -116,21 +156,21 @@ try {
 const styles = StyleSheet.create({
   page: {
     fontFamily: "THSarabunNew",
-    fontSize: 9.5,
+    fontSize: 9,
     color: "#0f172a",
-    paddingTop: 24,
-    paddingBottom: 28,
+    paddingTop: 22,
+    paddingBottom: 40,
     paddingHorizontal: 28,
     flexDirection: "column",
     backgroundColor: "#ffffff",
-    lineHeight: 1.25,
+    lineHeight: 1.3,
   },
 
   // Top Accent Bar
   topAccentBar: {
     height: 3,
     backgroundColor: "#1d4ed8",
-    marginBottom: 10,
+    marginBottom: 8,
     borderRadius: 1,
   },
 
@@ -141,34 +181,35 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     borderBottomWidth: 1,
     borderBottomColor: "#cbd5e1",
-    paddingBottom: 8,
-    marginBottom: 10,
+    paddingBottom: 6,
+    marginBottom: 8,
   },
   headerLeft: {
     flexDirection: "column",
     maxWidth: "68%",
   },
   companyName: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#0f172a",
     letterSpacing: 0.5,
     lineHeight: 1.25,
+    marginBottom: 1,
   },
   systemSubtitle: {
-    fontSize: 8.5,
+    fontSize: 8,
     color: "#64748b",
-    marginTop: 1,
     lineHeight: 1.25,
+    marginBottom: 2,
   },
   documentTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#1e3a8a",
-    marginTop: 3,
-    lineHeight: 1.25,
+    lineHeight: 1.3,
+    marginTop: 2,
   },
   headerRight: {
     flexDirection: "column",
@@ -179,30 +220,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#94a3b8",
     borderRadius: 4,
-    paddingVertical: 3,
+    paddingVertical: 2.5,
     paddingHorizontal: 8,
     alignItems: "center",
+    marginBottom: 2,
   },
   docNumberText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#0f172a",
-    lineHeight: 1.25,
+    lineHeight: 1.2,
   },
   metaText: {
-    fontSize: 8.5,
+    fontSize: 8,
     color: "#475569",
-    marginTop: 2,
     lineHeight: 1.25,
+    marginTop: 1,
   },
   statusApproved: {
-    fontSize: 8,
+    fontSize: 7.5,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#059669",
-    marginTop: 2,
     lineHeight: 1.25,
+    marginTop: 2,
   },
 
   // Executive summary narrative
@@ -211,11 +253,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e2e8f0",
     borderRadius: 5,
-    padding: 8,
-    marginBottom: 12,
+    padding: 7,
+    marginBottom: 10,
   },
   narrativeTitle: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#1e293b",
@@ -223,7 +265,7 @@ const styles = StyleSheet.create({
     lineHeight: 1.25,
   },
   narrativeText: {
-    fontSize: 9,
+    fontSize: 8.5,
     color: "#334155",
     lineHeight: 1.35,
   },
@@ -232,7 +274,7 @@ const styles = StyleSheet.create({
   kpiGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 14,
+    marginBottom: 12,
     gap: 8,
   },
   kpiCard: {
@@ -242,7 +284,7 @@ const styles = StyleSheet.create({
     borderColor: "#cbd5e1",
     borderRadius: 6,
     padding: 8,
-    minHeight: 64,
+    minHeight: 68,
     flexDirection: "column",
     justifyContent: "space-between",
   },
@@ -253,35 +295,53 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   kpiLabel: {
-    fontSize: 8.5,
+    fontSize: 8,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#475569",
-    lineHeight: 1.25,
+    lineHeight: 1.2,
+  },
+  kpiBadgeContainer: {
+    backgroundColor: "#e2e8f0",
+    borderRadius: 3,
+    paddingVertical: 1,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
   },
   kpiBadge: {
-    fontSize: 7.5,
-    paddingVertical: 1.5,
-    paddingHorizontal: 4,
-    borderRadius: 3,
-    backgroundColor: "#e2e8f0",
+    fontSize: 7,
+    fontFamily: "THSarabunNew",
+    fontWeight: "bold",
     color: "#334155",
     lineHeight: 1.2,
   },
-  kpiValueBlock: {
-    marginBottom: 2,
+  kpiValueContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 3,
+    marginBottom: 3,
   },
-  kpiValue: {
+  kpiNumber: {
     fontSize: 17,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#0f172a",
     lineHeight: 1.2,
   },
-  kpiSubtext: {
-    fontSize: 8,
+  kpiUnit: {
+    fontSize: 8.5,
+    fontFamily: "THSarabunNew",
     color: "#64748b",
-    lineHeight: 1.25,
+    lineHeight: 1.2,
+  },
+  kpiSubtextContainer: {
+    flexDirection: "column",
+  },
+  kpiSubtext: {
+    fontSize: 7.5,
+    color: "#64748b",
+    lineHeight: 1.3,
   },
 
   // Two Column Sections
@@ -289,36 +349,38 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   colHalf: {
     flex: 1,
     borderWidth: 1,
     borderColor: "#e2e8f0",
     borderRadius: 6,
-    padding: 10,
+    padding: 9,
     backgroundColor: "#ffffff",
+    flexDirection: "column",
   },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#1e3a8a",
     marginBottom: 6,
-    paddingBottom: 3,
+    paddingBottom: 2,
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
-    lineHeight: 1.25,
+    lineHeight: 1.3,
   },
 
   // Progress item
   progressItem: {
-    marginBottom: 7,
+    marginBottom: 6,
   },
   progressHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    fontSize: 8.5,
+    alignItems: "center",
+    fontSize: 8,
     marginBottom: 2,
   },
   progressLabel: {
@@ -326,12 +388,14 @@ const styles = StyleSheet.create({
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     lineHeight: 1.25,
+    fontSize: 8,
   },
   progressValue: {
     color: "#0f172a",
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     lineHeight: 1.25,
+    fontSize: 8,
   },
   progressBarTrack: {
     height: 4,
@@ -350,7 +414,7 @@ const styles = StyleSheet.create({
     borderColor: "#cbd5e1",
     borderRadius: 5,
     overflow: "hidden",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   tableHeaderRow: {
     flexDirection: "row",
@@ -360,7 +424,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tableHeaderText: {
-    fontSize: 8.5,
+    fontSize: 8,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#ffffff",
@@ -370,22 +434,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderTopWidth: 1,
     borderTopColor: "#e2e8f0",
-    paddingVertical: 5,
+    paddingVertical: 4.5,
     paddingHorizontal: 6,
     alignItems: "center",
-    minHeight: 22,
+    minHeight: 25,
   },
   tableRowEven: {
     backgroundColor: "#f8fafc",
   },
   tableCell: {
-    fontSize: 8.5,
+    fontSize: 8,
     fontFamily: "THSarabunNew",
     color: "#334155",
     lineHeight: 1.25,
   },
   tableCellBold: {
-    fontSize: 8.5,
+    fontSize: 8,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#0f172a",
@@ -397,9 +461,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fee2e2",
     color: "#b91c1c",
     paddingVertical: 2,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4.5,
     borderRadius: 3,
-    fontSize: 7.5,
+    fontSize: 7,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     lineHeight: 1.25,
@@ -410,9 +474,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fef3c7",
     color: "#b45309",
     paddingVertical: 2,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4.5,
     borderRadius: 3,
-    fontSize: 7.5,
+    fontSize: 7,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     lineHeight: 1.25,
@@ -423,9 +487,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#d1fae5",
     color: "#047857",
     paddingVertical: 2,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4.5,
     borderRadius: 3,
-    fontSize: 7.5,
+    fontSize: 7,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     lineHeight: 1.25,
@@ -436,9 +500,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#e2e8f0",
     color: "#334155",
     paddingVertical: 2,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4.5,
     borderRadius: 3,
-    fontSize: 7.5,
+    fontSize: 7,
     fontFamily: "THSarabunNew",
     lineHeight: 1.25,
     textAlign: "center",
@@ -450,7 +514,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 6,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   pipelineBox: {
     flex: 1,
@@ -460,13 +524,16 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 6,
     alignItems: "center",
-    justifyContent: "center",
-    minHeight: 56,
+    justifyContent: "space-between",
+    minHeight: 64,
     backgroundColor: "#f8fafc",
   },
   pipelineNumberBlock: {
-    marginBottom: 3,
-    alignItems: "center",
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "center",
+    gap: 2,
+    marginBottom: 2,
   },
   pipelineNumber: {
     fontSize: 15,
@@ -475,17 +542,36 @@ const styles = StyleSheet.create({
     color: "#1e3a8a",
     lineHeight: 1.2,
   },
-  pipelineName: {
-    fontSize: 8.5,
+  pipelineUnit: {
+    fontSize: 7.5,
     fontFamily: "THSarabunNew",
-    fontWeight: "bold",
-    color: "#334155",
-    lineHeight: 1.25,
-    textAlign: "center",
+    color: "#64748b",
+    lineHeight: 1.2,
+  },
+  pipelineLabelBlock: {
+    flexDirection: "column",
+    alignItems: "center",
     marginBottom: 2,
   },
+  pipelineStageTag: {
+    fontSize: 7,
+    fontFamily: "THSarabunNew",
+    color: "#64748b",
+    lineHeight: 1.2,
+  },
+  pipelineName: {
+    fontSize: 8,
+    fontFamily: "THSarabunNew",
+    fontWeight: "bold",
+    color: "#0f172a",
+    lineHeight: 1.25,
+    textAlign: "center",
+  },
+  pipelineSubBlock: {
+    alignItems: "center",
+  },
   pipelineSub: {
-    fontSize: 7.5,
+    fontSize: 6.5,
     color: "#64748b",
     lineHeight: 1.2,
     textAlign: "center",
@@ -497,21 +583,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#bbf7d0",
     borderRadius: 5,
-    padding: 7,
+    padding: 6,
     marginTop: 4,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   noticeBoxBlue: {
     backgroundColor: "#eff6ff",
     borderWidth: 1,
     borderColor: "#bfdbfe",
     borderRadius: 5,
-    padding: 7,
+    padding: 6,
     marginTop: 4,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   noticeText: {
-    fontSize: 8.5,
+    fontSize: 8,
     color: "#1e3a8a",
     lineHeight: 1.3,
   },
@@ -521,19 +607,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#94a3b8",
     borderRadius: 6,
-    padding: 10,
+    padding: 9,
     marginTop: 10,
     marginBottom: 8,
     backgroundColor: "#f8fafc",
   },
   signOffTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#0f172a",
     textAlign: "center",
-    marginBottom: 8,
-    paddingBottom: 4,
+    marginBottom: 6,
+    paddingBottom: 3,
     borderBottomWidth: 1,
     borderBottomColor: "#cbd5e1",
     lineHeight: 1.25,
@@ -550,11 +636,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   signOffRole: {
-    fontSize: 9.5,
+    fontSize: 8.5,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#1e3a8a",
-    marginBottom: 22,
+    marginBottom: 18,
     textAlign: "center",
     lineHeight: 1.25,
   },
@@ -563,10 +649,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#94a3b8",
     borderBottomStyle: "dashed",
-    marginBottom: 5,
+    marginBottom: 4,
   },
   signOffName: {
-    fontSize: 9,
+    fontSize: 8,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#0f172a",
@@ -574,16 +660,16 @@ const styles = StyleSheet.create({
     lineHeight: 1.25,
   },
   signOffPosition: {
-    fontSize: 8,
+    fontSize: 7.5,
     color: "#475569",
     textAlign: "center",
     marginTop: 1,
     lineHeight: 1.25,
   },
   signOffDate: {
-    fontSize: 8,
+    fontSize: 7.5,
     color: "#64748b",
-    marginTop: 6,
+    marginTop: 5,
     textAlign: "center",
     lineHeight: 1.25,
   },
@@ -594,12 +680,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 6,
-    paddingTop: 6,
+    paddingTop: 5,
     borderTopWidth: 1,
     borderTopColor: "#e2e8f0",
   },
   stampText: {
-    fontSize: 7.5,
+    fontSize: 7,
     color: "#64748b",
     lineHeight: 1.3,
     maxWidth: "80%",
@@ -609,11 +695,11 @@ const styles = StyleSheet.create({
     borderColor: "#059669",
     borderRadius: 3,
     paddingVertical: 2,
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
     backgroundColor: "#ecfdf5",
   },
   digitalBadgeText: {
-    fontSize: 7.5,
+    fontSize: 7,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#047857",
@@ -623,7 +709,7 @@ const styles = StyleSheet.create({
   // Footers
   footerContainer: {
     position: "absolute",
-    bottom: 16,
+    bottom: 12,
     left: 28,
     right: 28,
     flexDirection: "row",
@@ -631,15 +717,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderTopWidth: 1,
     borderTopColor: "#e2e8f0",
-    paddingTop: 5,
+    paddingTop: 4,
+    height: 18,
   },
   footerText: {
-    fontSize: 8,
+    fontSize: 7.5,
     color: "#94a3b8",
     lineHeight: 1.25,
   },
   pageNumberText: {
-    fontSize: 8.5,
+    fontSize: 8,
     fontFamily: "THSarabunNew",
     fontWeight: "bold",
     color: "#64748b",
@@ -717,58 +804,95 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
           <View style={styles.kpiCard}>
             <View style={styles.kpiTop}>
               <Text style={styles.kpiLabel}>เคสเคลมสะสมทั้งหมด</Text>
-              <Text style={styles.kpiBadge}>Total</Text>
+              <View style={styles.kpiBadgeContainer}>
+                <Text style={styles.kpiBadge}>Total</Text>
+              </View>
             </View>
-            <View style={styles.kpiValueBlock}>
-              <Text style={styles.kpiValue}>{kpis.totalClaims} เคส</Text>
+            <View style={styles.kpiValueContainer}>
+              <Text style={styles.kpiNumber}>{kpis.totalClaims}</Text>
+              <Text style={styles.kpiUnit}>เคส</Text>
             </View>
-            <Text style={styles.kpiSubtext}>
-              อยู่ระหว่างซ่อม {kpis.inProgressCount ?? 0} · ปิดแล้ว {kpis.closedCount ?? 0}
-            </Text>
+            <View style={styles.kpiSubtextContainer}>
+              <Text style={styles.kpiSubtext}>
+                อยู่ระหว่างซ่อม {kpis.inProgressCount ?? 0} · ปิดแล้ว {kpis.closedCount ?? 0}
+              </Text>
+            </View>
           </View>
 
           {/* Card 2 */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiTop}>
               <Text style={styles.kpiLabel}>อัตราผ่านเกณฑ์ SLA</Text>
-              <Text style={styles.kpiBadge}>เป้า ≥90%</Text>
+              <View
+                style={[
+                  styles.kpiBadgeContainer,
+                  { backgroundColor: kpis.slaComplianceRate >= 90 ? "#d1fae5" : "#fee2e2" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.kpiBadge,
+                    { color: kpis.slaComplianceRate >= 90 ? "#047857" : "#b91c1c" },
+                  ]}
+                >
+                  เป้า ≥90%
+                </Text>
+              </View>
             </View>
-            <View style={styles.kpiValueBlock}>
-              <Text style={[styles.kpiValue, { color: kpis.slaComplianceRate >= 90 ? "#059669" : "#dc2626" }]}>
-                {kpis.slaComplianceRate}%
+            <View style={styles.kpiValueContainer}>
+              <Text
+                style={[
+                  styles.kpiNumber,
+                  { color: kpis.slaComplianceRate >= 90 ? "#059669" : "#dc2626" },
+                ]}
+              >
+                {kpis.slaComplianceRate}
+              </Text>
+              <Text style={styles.kpiUnit}>%</Text>
+            </View>
+            <View style={styles.kpiSubtextContainer}>
+              <Text style={styles.kpiSubtext}>
+                {overdueClaims.length > 0 ? `เกินกำหนดสะสม ${overdueClaims.length} รายการ` : "ผ่านเกณฑ์ 100% ไม่มีเคสค้าง"}
               </Text>
             </View>
-            <Text style={styles.kpiSubtext}>
-              {overdueClaims.length > 0 ? `เกินกำหนดสะสม ${overdueClaims.length} รายการ` : "ผ่านเกณฑ์ 100% ไม่มีเคสค้าง"}
-            </Text>
           </View>
 
           {/* Card 3 */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiTop}>
               <Text style={styles.kpiLabel}>เวลาเฉลี่ยปิดเคส (MTTR)</Text>
-              <Text style={styles.kpiBadge}>เกณฑ์ ≤15 วัน</Text>
+              <View style={styles.kpiBadgeContainer}>
+                <Text style={styles.kpiBadge}>เกณฑ์ ≤15 วัน</Text>
+              </View>
             </View>
-            <View style={styles.kpiValueBlock}>
-              <Text style={styles.kpiValue}>{kpis.mttrDays} วัน</Text>
+            <View style={styles.kpiValueContainer}>
+              <Text style={styles.kpiNumber}>{kpis.mttrDays}</Text>
+              <Text style={styles.kpiUnit}>วัน</Text>
             </View>
-            <Text style={styles.kpiSubtext}>
-              {kpis.mttrDays > 0 ? `รอบระยะเวลาเฉลี่ยตามจริง` : `ยังไม่มีเคสปิดในรอบนี้`}
-            </Text>
+            <View style={styles.kpiSubtextContainer}>
+              <Text style={styles.kpiSubtext}>
+                {kpis.mttrDays > 0 ? `รอบระยะเวลาเฉลี่ยตามจริง` : `ยังไม่มีเคสปิดในรอบนี้`}
+              </Text>
+            </View>
           </View>
 
           {/* Card 4 */}
           <View style={styles.kpiCard}>
             <View style={styles.kpiTop}>
               <Text style={styles.kpiLabel}>ส่งซ่อมต่างประเทศ (RMA)</Text>
-              <Text style={styles.kpiBadge}>8 Stages</Text>
+              <View style={styles.kpiBadgeContainer}>
+                <Text style={styles.kpiBadge}>8 Stages</Text>
+              </View>
             </View>
-            <View style={styles.kpiValueBlock}>
-              <Text style={[styles.kpiValue, { color: "#2563eb" }]}>{kpis.overseasRmaCount} เคส</Text>
+            <View style={styles.kpiValueContainer}>
+              <Text style={[styles.kpiNumber, { color: "#2563eb" }]}>{kpis.overseasRmaCount}</Text>
+              <Text style={styles.kpiUnit}>เคส</Text>
             </View>
-            <Text style={styles.kpiSubtext}>
-              {kpis.overseasRmaCount > 0 ? `เคสติดตามในระบบ RMA รวม ${kpis.overseasRmaCount} รายการ` : `ไม่มีงานส่งซ่อมต่างประเทศ`}
-            </Text>
+            <View style={styles.kpiSubtextContainer}>
+              <Text style={styles.kpiSubtext}>
+                {kpis.overseasRmaCount > 0 ? `ติดตามในระบบรวม ${kpis.overseasRmaCount} รายการ` : `ไม่มีงานส่งซ่อมต่างประเทศ`}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -920,9 +1044,15 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
             <View key={stg.stageNumber} style={styles.pipelineBox}>
               <View style={styles.pipelineNumberBlock}>
                 <Text style={styles.pipelineNumber}>{stg.count}</Text>
+                <Text style={styles.pipelineUnit}>เคส</Text>
               </View>
-              <Text style={styles.pipelineName}>ขั้นที่ {stg.stageNumber}: {stg.name}</Text>
-              <Text style={styles.pipelineSub}>{stg.nameEn}</Text>
+              <View style={styles.pipelineLabelBlock}>
+                <Text style={styles.pipelineStageTag}>ขั้นที่ {stg.stageNumber}</Text>
+                <Text style={styles.pipelineName}>{stg.name}</Text>
+              </View>
+              <View style={styles.pipelineSubBlock}>
+                <Text style={styles.pipelineSub}>{stg.nameEn}</Text>
+              </View>
             </View>
           ))}
         </View>
@@ -934,19 +1064,19 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
         <View style={styles.tableContainer}>
           {/* Header */}
           <View style={styles.tableHeaderRow}>
-            <Text style={[styles.tableHeaderText, { width: "16%" }]}>เลขที่เคลม</Text>
+            <Text style={[styles.tableHeaderText, { width: "15%" }]}>เลขที่เคลม</Text>
             <Text style={[styles.tableHeaderText, { width: "20%" }]}>อุปกรณ์ / หมายเลขซีเรียล</Text>
-            <Text style={[styles.tableHeaderText, { width: "20%" }]}>สถานี / จังหวัด</Text>
+            <Text style={[styles.tableHeaderText, { width: "19%" }]}>สถานี / จังหวัด</Text>
             <Text style={[styles.tableHeaderText, { width: "16%" }]}>ศูนย์บริการที่ส่งซ่อม</Text>
             <Text style={[styles.tableHeaderText, { width: "9%", textAlign: "center" }]}>อายุเคส</Text>
-            <Text style={[styles.tableHeaderText, { width: "9%", textAlign: "center" }]}>เกิน SLA</Text>
+            <Text style={[styles.tableHeaderText, { width: "11%", textAlign: "center" }]}>เกิน SLA</Text>
             <Text style={[styles.tableHeaderText, { width: "10%", textAlign: "right" }]}>ผู้รับผิดชอบ</Text>
           </View>
 
           {/* Rows */}
           {overdueClaims.length === 0 ? (
             <View style={[styles.tableRow, { justifyContent: "center", paddingVertical: 12, backgroundColor: "#f0fdf4" }]}>
-              <Text style={[styles.tableCellBold, { color: "#059669", fontSize: 9.5 }]}>
+              <Text style={[styles.tableCellBold, { color: "#059669", fontSize: 9 }]}>
                 ✓ ไม่มีรายการเคลมที่เกินกำหนด SLA (การดำเนินงานเป็นไปตามเกณฑ์มาตรฐาน 100%)
               </Text>
             </View>
@@ -956,16 +1086,16 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
                 key={item.id}
                 style={[styles.tableRow, idx % 2 === 1 ? styles.tableRowEven : {}]}
               >
-                <Text style={[styles.tableCellBold, { width: "16%" }]}>{item.id}</Text>
+                <Text style={[styles.tableCellBold, { width: "15%" }]}>{item.id}</Text>
                 <View style={{ width: "20%", flexDirection: "column" }}>
                   <Text style={styles.tableCellBold}>{item.equipment}</Text>
-                  <Text style={[styles.tableCell, { fontSize: 7.5, color: "#64748b" }]}>
+                  <Text style={[styles.tableCell, { fontSize: 7.5, color: "#64748b", marginTop: 1.5 }]}>
                     S/N: {item.serialNo}
                   </Text>
                 </View>
-                <View style={{ width: "20%", flexDirection: "column" }}>
+                <View style={{ width: "19%", flexDirection: "column" }}>
                   <Text style={styles.tableCell}>{item.station}</Text>
-                  <Text style={[styles.tableCell, { fontSize: 7.5, color: "#64748b" }]}>
+                  <Text style={[styles.tableCell, { fontSize: 7.5, color: "#64748b", marginTop: 1.5 }]}>
                     {item.province}
                   </Text>
                 </View>
@@ -973,7 +1103,7 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
                 <Text style={[styles.tableCell, { width: "9%", textAlign: "center" }]}>
                   {item.ageDays}
                 </Text>
-                <View style={{ width: "9%", alignItems: "center" }}>
+                <View style={{ width: "11%", alignItems: "center", justifyContent: "center" }}>
                   <Text style={styles.badgeDanger}>{item.overdueDays}</Text>
                 </View>
                 <Text style={[styles.tableCell, { width: "10%", textAlign: "right" }]}>
@@ -1030,38 +1160,38 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
         <View style={styles.tableContainer}>
           {/* Header */}
           <View style={styles.tableHeaderRow}>
-            <Text style={[styles.tableHeaderText, { width: "15%" }]}>เลขที่ RMA</Text>
-            <Text style={[styles.tableHeaderText, { width: "15%" }]}>เลขอ้างอิงเคส</Text>
+            <Text style={[styles.tableHeaderText, { width: "14%" }]}>เลขที่ RMA</Text>
+            <Text style={[styles.tableHeaderText, { width: "14%" }]}>เลขอ้างอิงเคส</Text>
             <Text style={[styles.tableHeaderText, { width: "20%" }]}>อุปกรณ์ / ซีเรียล</Text>
-            <Text style={[styles.tableHeaderText, { width: "16%" }]}>ปลายทางส่งซ่อม</Text>
-            <Text style={[styles.tableHeaderText, { width: "18%" }]}>ขั้นตอนปัจจุบัน (1-8)</Text>
+            <Text style={[styles.tableHeaderText, { width: "15%" }]}>ปลายทางส่งซ่อม</Text>
+            <Text style={[styles.tableHeaderText, { width: "19%" }]}>ขั้นตอนปัจจุบัน (1-8)</Text>
             <Text style={[styles.tableHeaderText, { width: "7%", textAlign: "center" }]}>รวมวัน</Text>
-            <Text style={[styles.tableHeaderText, { width: "9%", textAlign: "right" }]}>ค่าปรับผู้ขาย</Text>
+            <Text style={[styles.tableHeaderText, { width: "11%", textAlign: "right" }]}>ค่าปรับผู้ขาย</Text>
           </View>
 
           {/* Rows */}
           {rmaCases.length === 0 ? (
             <View style={[styles.tableRow, { justifyContent: "center", paddingVertical: 12, backgroundColor: "#f8fafc" }]}>
-              <Text style={[styles.tableCell, { color: "#64748b", fontSize: 9 }]}>
+              <Text style={[styles.tableCell, { color: "#64748b", fontSize: 8.5 }]}>
                 ไม่มีรายการส่งซ่อมต่างประเทศ (Overseas RMA) ที่อยู่ระหว่างดำเนินการในรอบรายงานนี้
               </Text>
             </View>
           ) : (
             rmaCases.map((rma, idx) => (
               <View key={rma.rmaNo} style={[styles.tableRow, idx % 2 === 1 ? styles.tableRowEven : {}]}>
-                <Text style={[styles.tableCellBold, { width: "15%" }]}>{rma.rmaNo}</Text>
-                <Text style={[styles.tableCell, { width: "15%" }]}>{rma.claimId}</Text>
+                <Text style={[styles.tableCellBold, { width: "14%" }]}>{rma.rmaNo}</Text>
+                <Text style={[styles.tableCell, { width: "14%" }]}>{rma.claimId}</Text>
                 <View style={{ width: "20%", flexDirection: "column" }}>
                   <Text style={styles.tableCellBold}>{rma.equipment}</Text>
-                  <Text style={[styles.tableCell, { fontSize: 7.5, color: "#64748b" }]}>{rma.serialNo}</Text>
+                  <Text style={[styles.tableCell, { fontSize: 7.5, color: "#64748b", marginTop: 1.5 }]}>{rma.serialNo}</Text>
                 </View>
-                <Text style={[styles.tableCell, { width: "16%" }]}>{rma.destination}</Text>
-                <View style={{ width: "18%", flexDirection: "column" }}>
+                <Text style={[styles.tableCell, { width: "15%" }]}>{rma.destination}</Text>
+                <View style={{ width: "19%", flexDirection: "column" }}>
                   <Text style={styles.tableCellBold}>ขั้นที่ {rma.stageNumber}/8</Text>
-                  <Text style={[styles.tableCell, { fontSize: 7.5 }]}>{rma.stageName}</Text>
+                  <Text style={[styles.tableCell, { fontSize: 7.5, marginTop: 1.5 }]}>{rma.stageName}</Text>
                 </View>
                 <Text style={[styles.tableCell, { width: "7%", textAlign: "center" }]}>{rma.totalDays}</Text>
-                <View style={{ width: "9%", alignItems: "flex-end" }}>
+                <View style={{ width: "11%", alignItems: "flex-end", justifyContent: "center" }}>
                   {rma.isPenalty ? (
                     <Text style={styles.badgeDanger}>{rma.penaltyStatus}</Text>
                   ) : (
@@ -1081,17 +1211,17 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
           {/* Header */}
           <View style={styles.tableHeaderRow}>
             <Text style={[styles.tableHeaderText, { width: "18%" }]}>เลขที่ใบอนุญาต</Text>
-            <Text style={[styles.tableHeaderText, { width: "22%" }]}>ประเภทใบอนุญาต</Text>
+            <Text style={[styles.tableHeaderText, { width: "21%" }]}>ประเภทใบอนุญาต</Text>
             <Text style={[styles.tableHeaderText, { width: "15%" }]}>อ้างอิงซีเรียล (S/N)</Text>
-            <Text style={[styles.tableHeaderText, { width: "19%" }]}>หน่วยงานผู้ออกใบอนุญาต</Text>
+            <Text style={[styles.tableHeaderText, { width: "18%" }]}>หน่วยงานผู้ออกใบอนุญาต</Text>
             <Text style={[styles.tableHeaderText, { width: "12%", textAlign: "center" }]}>วันหมดอายุ</Text>
-            <Text style={[styles.tableHeaderText, { width: "14%", textAlign: "right" }]}>สถานะการคุ้มครอง</Text>
+            <Text style={[styles.tableHeaderText, { width: "16%", textAlign: "right" }]}>สถานะการคุ้มครอง</Text>
           </View>
 
           {/* Rows */}
           {permits.length === 0 ? (
             <View style={[styles.tableRow, { justifyContent: "center", paddingVertical: 12, backgroundColor: "#f8fafc" }]}>
-              <Text style={[styles.tableCell, { color: "#64748b", fontSize: 9 }]}>
+              <Text style={[styles.tableCell, { color: "#64748b", fontSize: 8.5 }]}>
                 ไม่มีรายการใบอนุญาตส่งออก/นำเข้า กสทช. หรือศุลกากร ที่ต้องเฝ้าระวังในรอบรายงานนี้
               </Text>
             </View>
@@ -1099,12 +1229,20 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
             permits.map((p, idx) => (
               <View key={p.permitNo} style={[styles.tableRow, idx % 2 === 1 ? styles.tableRowEven : {}]}>
                 <Text style={[styles.tableCellBold, { width: "18%" }]}>{p.permitNo}</Text>
-                <Text style={[styles.tableCell, { width: "22%" }]}>{p.permitType}</Text>
+                <Text style={[styles.tableCell, { width: "21%" }]}>{p.permitType}</Text>
                 <Text style={[styles.tableCell, { width: "15%" }]}>{p.serialNo}</Text>
-                <Text style={[styles.tableCell, { width: "19%" }]}>{p.authority}</Text>
+                <Text style={[styles.tableCell, { width: "18%" }]}>{p.authority}</Text>
                 <Text style={[styles.tableCell, { width: "12%", textAlign: "center" }]}>{p.expiryDate}</Text>
-                <View style={{ width: "14%", alignItems: "flex-end" }}>
-                  <Text style={p.status === "warning" ? styles.badgeWarning : p.status === "expired" ? styles.badgeDanger : styles.badgeSuccess}>
+                <View style={{ width: "16%", alignItems: "flex-end", justifyContent: "center" }}>
+                  <Text
+                    style={
+                      p.status === "warning"
+                        ? styles.badgeWarning
+                        : p.status === "expired"
+                        ? styles.badgeDanger
+                        : styles.badgeSuccess
+                    }
+                  >
                     {p.badgeText}
                   </Text>
                 </View>
@@ -1161,29 +1299,29 @@ export function CaimMonthlyReportPDF({ data }: CaimMonthlyReportPDFProps) {
             <Text style={styles.sectionTitle}>สถานีที่เกิดเหตุขัดข้องสูงสุด (Top Incident Stations)</Text>
             <View style={styles.tableContainer}>
               <View style={styles.tableHeaderRow}>
-                <Text style={[styles.tableHeaderText, { width: "24%" }]}>รหัสสถานี</Text>
-                <Text style={[styles.tableHeaderText, { width: "42%" }]}>ชื่อสถานี / จังหวัด</Text>
+                <Text style={[styles.tableHeaderText, { width: "22%" }]}>รหัสสถานี</Text>
+                <Text style={[styles.tableHeaderText, { width: "44%" }]}>ชื่อสถานี / จังหวัด</Text>
                 <Text style={[styles.tableHeaderText, { width: "17%", textAlign: "center" }]}>รวมเคลม</Text>
                 <Text style={[styles.tableHeaderText, { width: "17%", textAlign: "right" }]}>ค้างซ่อม</Text>
               </View>
               {topStations.length === 0 ? (
                 <View style={[styles.tableRow, { justifyContent: "center", paddingVertical: 10, backgroundColor: "#f8fafc" }]}>
-                  <Text style={[styles.tableCell, { color: "#64748b", fontSize: 8.5 }]}>
+                  <Text style={[styles.tableCell, { color: "#64748b", fontSize: 8 }]}>
                     ยังไม่มีข้อมูลสถิติสถานีที่มีการแจ้งเคลม
                   </Text>
                 </View>
               ) : (
                 topStations.map((stn, idx) => (
                   <View key={stn.code} style={[styles.tableRow, idx % 2 === 1 ? styles.tableRowEven : {}]}>
-                    <Text style={[styles.tableCellBold, { width: "24%", fontSize: 8 }]}>{stn.code}</Text>
-                    <View style={{ width: "42%", flexDirection: "column" }}>
+                    <Text style={[styles.tableCellBold, { width: "22%", fontSize: 7.5 }]}>{stn.code}</Text>
+                    <View style={{ width: "44%", flexDirection: "column" }}>
                       <Text style={[styles.tableCellBold, { fontSize: 8 }]}>{stn.name}</Text>
-                      <Text style={[styles.tableCell, { fontSize: 7, color: "#64748b" }]}>{stn.province}</Text>
+                      <Text style={[styles.tableCell, { fontSize: 7, color: "#64748b", marginTop: 1 }]}>{stn.province}</Text>
                     </View>
-                    <Text style={[styles.tableCell, { width: "17%", textAlign: "center", fontSize: 8 }]}>
+                    <Text style={[styles.tableCell, { width: "17%", textAlign: "center", fontSize: 7.5 }]}>
                       {stn.claimCount} เคส
                     </Text>
-                    <View style={{ width: "17%", alignItems: "flex-end" }}>
+                    <View style={{ width: "17%", alignItems: "flex-end", justifyContent: "center" }}>
                       <Text style={stn.activeCount > 1 ? styles.badgeWarning : styles.badgeNeutral}>
                         {stn.activeCount} เคส
                       </Text>
