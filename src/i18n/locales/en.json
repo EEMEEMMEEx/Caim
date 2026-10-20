@@ -113,6 +113,7 @@
     "heroTitleSuffix": "CLAIM PORTAL",
     "description": "Central hub for managing and tracking radio network equipment claims. Connect claim workflows, overseas repairs, SLAs, and vendor penalties in one unified, sleek system.",
     "enterPortal": "Enter Claim Portal",
+    "enterPortalAuto": "Enter Claim Portal (Auto in {count}s)",
     "portalSub": "SHF Radio Network System",
     "entering": "Entering portal..."
   }

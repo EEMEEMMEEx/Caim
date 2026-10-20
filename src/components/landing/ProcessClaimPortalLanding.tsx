@@ -21,7 +21,11 @@ export function ProcessClaimPortalLanding() {
   const { t } = useLocale()
   const [isPending, setIsPending] = React.useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = React.useState(false)
+  const [countdown, setCountdown] = React.useState(5)
   const videoRef = React.useRef<HTMLVideoElement>(null)
+  const redirectTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+  const countdownIntervalRef = React.useRef<NodeJS.Timeout | null>(null)
+  const hasNavigatedRef = React.useRef(false)
 
   // Detect user's accessibility reduced motion preference
   React.useEffect(() => {
@@ -47,7 +51,20 @@ export function ProcessClaimPortalLanding() {
     }
   }, [prefersReducedMotion])
 
-  const handleEnterPortal = React.useCallback(async () => {
+  const handleEnterPortal = React.useCallback(() => {
+    if (hasNavigatedRef.current) return
+    hasNavigatedRef.current = true
+
+    // Clear timers immediately if active
+    if (redirectTimerRef.current) {
+      clearTimeout(redirectTimerRef.current)
+      redirectTimerRef.current = null
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current)
+      countdownIntervalRef.current = null
+    }
+
     setIsPending(true)
 
     // Silently auto-initialize default staff session in the background
@@ -56,6 +73,45 @@ export function ProcessClaimPortalLanding() {
     // Immediate seamless transition to dashboard
     router.push(next || "/dashboard")
   }, [next, router])
+
+  const handleEnterPortalRef = React.useRef(handleEnterPortal)
+  React.useEffect(() => {
+    handleEnterPortalRef.current = handleEnterPortal
+  })
+
+  // 5-second auto-redirection lifecycle hook
+  React.useEffect(() => {
+    // 1. Countdown tick interval (every 1 second)
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current)
+            countdownIntervalRef.current = null
+          }
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    // 2. Auto-redirection timeout (triggers precisely after 5000ms)
+    redirectTimerRef.current = setTimeout(() => {
+      handleEnterPortalRef.current()
+    }, 5000)
+
+    // Clean React lifecycle cleanup: prevents memory leaks and recursive loops
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current)
+        redirectTimerRef.current = null
+      }
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current)
+        countdownIntervalRef.current = null
+      }
+    }
+  }, [])
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#070d18] text-slate-100 flex flex-col justify-between selection:bg-cyan-500 selection:text-white">
@@ -159,12 +215,17 @@ export function ProcessClaimPortalLanding() {
 
           {/* CTA Action Area */}
           <div className="flex items-center w-full pt-2">
-            {/* Primary CTA Button */}
+            {/* Primary CTA Button with 5s countdown indicator and bottom progress line */}
             <button
               type="button"
               disabled={isPending}
               onClick={handleEnterPortal}
-              className="group relative inline-flex h-12 sm:h-13 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-8 text-sm sm:text-base font-semibold text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+              className="group relative inline-flex h-12 sm:h-13 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-7 sm:px-8 text-sm sm:text-base font-semibold text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed overflow-hidden"
+              aria-label={
+                isPending
+                  ? t("landing.entering", "กำลังเข้าสู่ระบบ...")
+                  : `${t("landing.enterPortal", "เข้าสู่ระบบจัดการงานเคลม")} (${countdown}s)`
+              }
             >
               {isPending ? (
                 <>
@@ -173,9 +234,29 @@ export function ProcessClaimPortalLanding() {
                 </>
               ) : (
                 <>
-                  <span>{t("landing.enterPortal", "เข้าสู่ระบบจัดการงานเคลม")}</span>
+                  <span>
+                    {t(
+                      "landing.enterPortalAuto",
+                      "เข้าสู่ระบบจัดการงานเคลม (เข้าอัตโนมัติใน {count} วิ)"
+                    ).replace("{count}", String(countdown))}
+                  </span>
                   <ArrowRight className="size-4.5 transition-transform duration-200 group-hover:translate-x-1" />
                 </>
+              )}
+
+              {/* 5-second subtle progress bar indicator running along button bottom edge */}
+              {!isPending && (
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute bottom-0 left-0 right-0 h-1 bg-black/25 overflow-hidden"
+                >
+                  <div
+                    className="h-full bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-300 shadow-[0_0_8px_rgba(56,189,248,0.8)] transition-all duration-1000 ease-linear motion-reduce:transition-none"
+                    style={{
+                      width: `${Math.min(100, Math.max(0, ((5 - countdown) / 5) * 100))}%`,
+                    }}
+                  />
+                </div>
               )}
             </button>
           </div>
