@@ -17,7 +17,9 @@ import {
   TrendingDown,
   TrendingUp,
   RefreshCw,
-  Activity
+  Activity,
+  FileDown,
+  Loader2,
 } from "lucide-react"
 import { useRealtimeDashboard } from "@/hooks/useRealtimeDashboard"
 import { useLocale } from "@/i18n/LocaleContext"
@@ -34,10 +36,28 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
     useRealtimeDashboard(realtimeOptions)
   const { t, locale } = useLocale()
   const [mounted, setMounted] = React.useState(false)
+  const [isExportingPdf, setIsExportingPdf] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
   }, [])
+
+  const handleExportPdf = React.useCallback(async () => {
+    try {
+      setIsExportingPdf(true)
+      const [{ generateMonthlyReportData }, { exportMonthlyReportPdf }] = await Promise.all([
+        import("@/lib/pdf/generateReportData"),
+        import("@/lib/pdf/exportMonthlyReportPdf"),
+      ])
+
+      const reportData = generateMonthlyReportData({ metrics })
+      await exportMonthlyReportPdf(reportData)
+    } catch (err) {
+      console.error("[Dashboard] Export PDF failed:", err)
+    } finally {
+      setIsExportingPdf(false)
+    }
+  }, [metrics])
 
   const formattedSyncTime = React.useMemo(() => {
     if (!mounted || !lastSyncTime) return locale === "th" ? "พร้อมใช้งาน" : "Ready"
@@ -130,8 +150,34 @@ export function DashboardView({ initialMetrics }: DashboardViewProps = {}) {
             </div>
           </div>
 
-          {/* Action Trigger: Refresh Button */}
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          {/* Action Triggers: Export PDF & Refresh */}
+          <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+            {/* Export Monthly Report PDF Button (Dark Glassmorphism) */}
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={isExportingPdf}
+              title={
+                locale === "th"
+                  ? "ส่งออกรายงานสรุปงานเคลมประจำเดือน 4 หน้ามาตรฐานทางการ (PDF)"
+                  : "Export 4-Page Formal CAIM Monthly Claims & RMA Report (PDF)"
+              }
+              className="inline-flex items-center gap-2 px-3.5 py-2 min-h-[44px] text-xs font-semibold rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white border border-blue-400/30 shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 backdrop-blur-md transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer touch-manipulation hover:-translate-y-0.5"
+            >
+              {isExportingPdf ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin text-white" />
+                  <span>{t("dashboard.exportingPdf", "กำลังสร้าง PDF...")}</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="size-3.5 text-cyan-200" />
+                  <span>{t("dashboard.exportMonthlyReport", "ส่งออกรายงานประจำเดือน (Export PDF)")}</span>
+                </>
+              )}
+            </button>
+
+            {/* Refresh Button */}
             <button
               type="button"
               onClick={() => refresh()}

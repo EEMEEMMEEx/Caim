@@ -49,6 +49,8 @@
     "online": "System Online",
     "refresh": "Refresh Data",
     "refreshing": "Refreshing...",
+    "exportMonthlyReport": "Export Monthly Report (PDF)",
+    "exportingPdf": "Generating PDF...",
     "lastSync": "Last sync",
     "syncPolling": "Polling sync",
     "connecting": "Connecting...",

@@ -49,6 +49,8 @@
     "online": "ระบบออนไลน์",
     "refresh": "รีเฟรชข้อมูล",
     "refreshing": "กำลังรีเฟรช...",
+    "exportMonthlyReport": "ส่งออกรายงานประจำเดือน (Export PDF)",
+    "exportingPdf": "กำลังสร้าง PDF...",
     "lastSync": "ซิงก์ล่าสุด",
     "syncPolling": "ซิงก์แบบ Polling",
     "connecting": "กำลังเชื่อมต่อ...",
