@@ -22,9 +22,9 @@ export function getEmailTransporter(customConfig?: EmailConfig): Transporter {
       user: config.user,
       pass: config.pass,
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    connectionTimeout: 4000,
+    greetingTimeout: 4000,
+    socketTimeout: 5000,
   })
 
   cachedTransporter = transporter
@@ -62,7 +62,7 @@ async function sendDirectTlsSmtp(options: SendMailOptions, customConfig?: EmailC
         host: config.host,
         port: config.port,
         rejectUnauthorized: false,
-        timeout: 15000,
+        timeout: 5000,
       },
       () => {
         // Connected
@@ -207,16 +207,21 @@ async function sendDirectTlsSmtp(options: SendMailOptions, customConfig?: EmailC
 export async function sendEmail(options: SendMailOptions): Promise<SendMailResult> {
   const config = getEmailConfig(options.smtpSettings)
   const to = options.to || config.primaryRecipient
+  const transporter = getEmailTransporter(config)
 
   try {
-    const transporter = getEmailTransporter(config)
-    const info = await transporter.sendMail({
-      from: config.from,
-      to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-    })
+    const info = await Promise.race([
+      transporter.sendMail({
+        from: config.from,
+        to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("SMTP operation timed out (5s exceeded)")), 5000)
+      ),
+    ])
 
     return {
       success: true,
@@ -241,6 +246,13 @@ export async function sendEmail(options: SendMailOptions): Promise<SendMailResul
         success: false,
         error: `${errorMessage} | Fallback: ${fallbackMessage}`,
       }
+    }
+  } finally {
+    // Immediately close idle connection sockets to prevent holding serverless container open
+    try {
+      transporter.close()
+    } catch {
+      // ignore close errors
     }
   }
 }

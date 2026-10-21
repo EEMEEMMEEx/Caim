@@ -7,6 +7,7 @@ import { getPrecomputedDashboardMetrics } from "@/lib/dashboard/dashboardStatsSe
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 export const fetchCache = "force-no-store"
+export const maxDuration = 15
 
 export async function GET(req: NextRequest) {
   const encoder = new TextEncoder()
@@ -80,18 +81,16 @@ export async function GET(req: NextRequest) {
       realtimeEmitter.on(REALTIME_EVENTS.RMA_CHANGED, onRmaChanged)
       realtimeEmitter.on(REALTIME_EVENTS.METRICS_CHANGED, onMetricsChanged)
 
-      // 3. Heartbeat keepalive ping every 10s to prevent Vercel / proxy timeout
+      // 3. Heartbeat keepalive ping every 5s
       const pingInterval = setInterval(() => {
         if (isClosed) {
           clearInterval(pingInterval)
           return
         }
         safeEnqueue(`: ping\n\n`)
-      }, 10000)
+      }, 5000)
 
       // 4. Cross-IP & Cross-Instance Database Poller:
-      // Polls caim.transaction_logs so any mutation executed from another Vercel Serverless instance
-      // or different client IP address is immediately broadcast to this connection!
       let lastCheckedTimestamp = new Date().toISOString()
 
       const crossClientSyncInterval = setInterval(async () => {
@@ -185,10 +184,10 @@ export async function GET(req: NextRequest) {
         } catch {
           // ignore poller transient errors
         }
-      }, 2500)
+      }, 5000)
 
-      // Cleanup on client abort
-      req.signal.addEventListener("abort", () => {
+      const cleanup = () => {
+        if (isClosed) return
         isClosed = true
         realtimeEmitter.off(REALTIME_EVENTS.STATIONS_CHANGED, onStationChanged)
         realtimeEmitter.off(REALTIME_EVENTS.EQUIPMENTS_CHANGED, onEquipmentChanged)
@@ -197,12 +196,22 @@ export async function GET(req: NextRequest) {
         realtimeEmitter.off(REALTIME_EVENTS.METRICS_CHANGED, onMetricsChanged)
         clearInterval(pingInterval)
         clearInterval(crossClientSyncInterval)
+        clearTimeout(sessionTimeout)
         try {
           controller.close()
         } catch {
           // ignore
         }
-      })
+      }
+
+      // Cap individual stream session duration to 12s so Vercel Serverless Functions never hang open
+      const sessionTimeout = setTimeout(() => {
+        safeEnqueue(`: session-end\n\n`)
+        cleanup()
+      }, 12000)
+
+      // Cleanup on client abort / disconnect
+      req.signal.addEventListener("abort", cleanup)
     },
   })
 

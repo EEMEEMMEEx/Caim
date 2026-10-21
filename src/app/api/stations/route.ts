@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb, isMongoConfigured } from "@/lib/mongodb"
 import { StationDocument } from "@/types/database"
 import { realtimeEmitter, REALTIME_EVENTS } from "@/lib/events/realtimeEmitter"
-import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
+import { NO_CACHE_HEADERS, STATIC_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 
 export const dynamic = "force-dynamic"
-export const revalidate = 0
-export const fetchCache = "force-no-store"
+export const revalidate = 60
+export const maxDuration = 10
 
 // Runtime in-memory fallback store (strictly dynamic - zero mock data)
 const fallbackStations: StationDocument[] = []
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
           if (station) {
             return NextResponse.json(
               { success: true, station, source: "mongodb" },
-              { headers: NO_CACHE_HEADERS }
+              { headers: STATIC_CACHE_HEADERS }
             )
           }
         }
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
             total: stations.length,
             stations,
           },
-          { headers: NO_CACHE_HEADERS }
+          { headers: STATIC_CACHE_HEADERS }
         )
       }
     }
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       const found = list.find((s) => s.id === id)
       return NextResponse.json(
         { success: true, station: found || null, source: "local" },
-        { headers: NO_CACHE_HEADERS }
+        { headers: STATIC_CACHE_HEADERS }
       )
     }
 
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
         total: list.length,
         stations: list,
       },
-      { headers: NO_CACHE_HEADERS }
+      { headers: STATIC_CACHE_HEADERS }
     )
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to fetch stations"

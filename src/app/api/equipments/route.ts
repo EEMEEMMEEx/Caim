@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb, isMongoConfigured } from "@/lib/mongodb"
 import { EquipmentDocument } from "@/types/database"
 import { realtimeEmitter, REALTIME_EVENTS } from "@/lib/events/realtimeEmitter"
-import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
+import { NO_CACHE_HEADERS, STATIC_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 import {
   getPersistentEquipments,
   savePersistentEquipment,
@@ -10,8 +10,8 @@ import {
 } from "@/lib/storage/serverEquipmentStorage"
 
 export const dynamic = "force-dynamic"
-export const revalidate = 0
-export const fetchCache = "force-no-store"
+export const revalidate = 60
+export const maxDuration = 10
 
 const deletedSerials = new Set<string>()
 
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
               equipments: mongoEquipments,
             },
             {
-              headers: NO_CACHE_HEADERS,
+              headers: STATIC_CACHE_HEADERS,
             }
           )
         }
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
         equipments: list,
       },
       {
-        headers: NO_CACHE_HEADERS,
+        headers: STATIC_CACHE_HEADERS,
       }
     )
   } catch (error: unknown) {

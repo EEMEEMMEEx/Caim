@@ -6,6 +6,7 @@ import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 export const fetchCache = "force-no-store"
+export const maxDuration = 10
 
 /**
  * GET /api/migrate/claim-sequence

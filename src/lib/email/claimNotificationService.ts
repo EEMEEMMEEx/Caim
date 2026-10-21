@@ -71,9 +71,15 @@ function runNonBlocking(task: () => Promise<void>): void {
     if (executed) return
     executed = true
     try {
-      await task()
+      // Impose a strict 4-second safety ceiling so background email dispatch NEVER keeps serverless invocation alive
+      await Promise.race([
+        task(),
+        new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error("Background email task safety timeout (4s exceeded)")), 4000)
+        ),
+      ])
     } catch (err) {
-      console.error("[Claim Notification Service] Background task unhandled error:", err)
+      console.warn("[Claim Notification Service] Background task notice:", err)
     }
   }
 

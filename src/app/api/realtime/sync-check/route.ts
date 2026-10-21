@@ -6,6 +6,7 @@ import { TransactionLogDocument } from "@/types/database"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 export const fetchCache = "force-no-store"
+export const maxDuration = 10
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)

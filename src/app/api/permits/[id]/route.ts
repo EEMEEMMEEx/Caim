@@ -5,6 +5,7 @@ import { PATCH as handlePermitPatch } from "@/app/api/rma/permit/route"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 export const fetchCache = "force-no-store"
+export const maxDuration = 10
 
 /**
  * Dedicated REST endpoint: PATCH /api/permits/:id

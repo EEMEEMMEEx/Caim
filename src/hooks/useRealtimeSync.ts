@@ -32,6 +32,7 @@ function broadcastStatus(status: RealtimeConnectionStatus) {
  */
 async function checkServerSync() {
   if (typeof window === "undefined") return
+  if (typeof document !== "undefined" && document.visibilityState === "hidden") return
   if (isSyncCheckActive) return
   isSyncCheckActive = true
 
@@ -97,8 +98,42 @@ async function checkServerSync() {
   }
 }
 
+function startFallbackPolling() {
+  if (typeof document !== "undefined" && document.visibilityState === "hidden") return
+  if (backgroundSyncTimer) return
+  // Fallback poll every 15 seconds only when SSE is offline
+  backgroundSyncTimer = setInterval(() => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+      pauseSyncWhenHidden()
+      return
+    }
+    checkServerSync()
+  }, 15000)
+}
+
+function stopFallbackPolling() {
+  if (backgroundSyncTimer) {
+    clearInterval(backgroundSyncTimer)
+    backgroundSyncTimer = null
+  }
+}
+
+function pauseSyncWhenHidden() {
+  if (globalEventSource) {
+    globalEventSource.close()
+    globalEventSource = null
+  }
+  stopFallbackPolling()
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout)
+    reconnectTimeout = null
+  }
+  broadcastStatus("disconnected")
+}
+
 function initGlobalSSE() {
   if (typeof window === "undefined") return
+  if (typeof document !== "undefined" && document.visibilityState === "hidden") return
   if (globalEventSource) return
 
   broadcastStatus("connecting")
@@ -108,6 +143,7 @@ function initGlobalSSE() {
 
     globalEventSource.addEventListener("open", () => {
       broadcastStatus("connected")
+      stopFallbackPolling()
     })
 
     globalEventSource.addEventListener("station", (e) => {
@@ -169,18 +205,16 @@ function initGlobalSSE() {
         clearTimeout(reconnectTimeout)
         reconnectTimeout = null
       }
-      // Reconnect after 3 seconds if there are active listeners
-      if (connectionRefCount > 0) {
+      // Reconnect after 3 seconds if active listeners and document is visible
+      if (connectionRefCount > 0 && typeof document !== "undefined" && document.visibilityState === "visible") {
         reconnectTimeout = setTimeout(initGlobalSSE, 3000)
+      } else {
+        startFallbackPolling()
       }
     })
   } catch {
     broadcastStatus("disconnected")
-  }
-
-  // Dual-channel background delta check every 4 seconds to guarantee cross-IP updates
-  if (!backgroundSyncTimer) {
-    backgroundSyncTimer = setInterval(checkServerSync, 4000)
+    startFallbackPolling()
   }
 }
 
@@ -190,10 +224,7 @@ function releaseGlobalSSE() {
       globalEventSource.close()
       globalEventSource = null
     }
-    if (backgroundSyncTimer) {
-      clearInterval(backgroundSyncTimer)
-      backgroundSyncTimer = null
-    }
+    stopFallbackPolling()
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout)
       reconnectTimeout = null
@@ -244,13 +275,15 @@ export function useRealtimeSync(handlers?: RealtimeEventHandlers) {
     window.addEventListener("caim:realtime:rma", handleRma)
     window.addEventListener("caim:realtime:metrics", handleMetrics)
 
-    // Revalidate on tab focus and visibility change
+    // Revalidate on tab focus and visibility change, pause while backgrounded to conserve Vercel memory
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
         if (!globalEventSource || globalEventSource.readyState === EventSource.CLOSED) {
           initGlobalSSE()
         }
         checkServerSync()
+      } else {
+        pauseSyncWhenHidden()
       }
     }
     window.addEventListener("visibilitychange", handleVisibility)

@@ -141,8 +141,6 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
   React.useEffect(() => {
     if (typeof window === "undefined") return
 
-    let eventSource: EventSource | null = null
-    let fallbackPollTimer: NodeJS.Timeout | null = null
     let mutateDebounceTimer: NodeJS.Timeout | null = null
     let syncBc: BroadcastChannel | null = null
 
@@ -153,21 +151,6 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
         mutateDebounceTimer = null
         mutate()
       }, 400)
-    }
-
-    function startFallbackPolling() {
-      if (fallbackPollTimer) return
-      setConnectionStatus((prev) => (prev !== "fallback-polling" ? "fallback-polling" : prev))
-      fallbackPollTimer = setInterval(() => {
-        throttledMutate()
-      }, 10000)
-    }
-
-    function stopFallbackPolling() {
-      if (fallbackPollTimer) {
-        clearInterval(fallbackPollTimer)
-        fallbackPollTimer = null
-      }
     }
 
     const applyFreshMetrics = (payload: unknown) => {
@@ -195,34 +178,8 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
       }
     }
 
-    try {
-      setConnectionStatus((prev) => (prev !== "connecting" ? "connecting" : prev))
-      eventSource = new EventSource("/api/realtime/stream")
-
-      eventSource.addEventListener("open", () => {
-        setConnectionStatus((prev) => (prev !== "connected" ? "connected" : prev))
-        stopFallbackPolling()
-      })
-
-      // Support both "metrics" and "update" SSE event types
-      const handleSseMessage = (event: MessageEvent) => {
-        try {
-          const payload = JSON.parse(event.data)
-          applyFreshMetrics(payload)
-        } catch (e) {
-          console.warn("Failed to parse SSE metrics payload", e)
-        }
-      }
-
-      eventSource.addEventListener("metrics", handleSseMessage)
-      eventSource.addEventListener("update", handleSseMessage)
-
-      eventSource.addEventListener("error", () => {
-        startFallbackPolling()
-      })
-    } catch {
-      startFallbackPolling()
-    }
+    // Centralized event bus is managed by useRealtimeSync; mark connected and listen for events
+    setConnectionStatus("connected")
 
     // Cross-tab synchronization via BroadcastChannel
     try {
@@ -268,10 +225,6 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
     window.addEventListener("caim:realtime:rma", handleTicketChangeEvent)
 
     return () => {
-      if (eventSource) {
-        eventSource.close()
-        eventSource = null
-      }
       if (syncBc) {
         syncBc.close()
         syncBc = null
@@ -280,7 +233,6 @@ export function useRealtimeDashboard(options: UseRealtimeDashboardOptions = {}) 
         clearTimeout(mutateDebounceTimer)
         mutateDebounceTimer = null
       }
-      stopFallbackPolling()
       window.removeEventListener("caim:realtime:metrics", handleRealtimeMetricsEvent)
       window.removeEventListener("caim:realtime:ticket", handleTicketChangeEvent)
       window.removeEventListener("caim:realtime:rma", handleTicketChangeEvent)

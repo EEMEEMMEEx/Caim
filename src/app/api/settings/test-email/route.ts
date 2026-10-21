@@ -7,12 +7,14 @@ import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 export const fetchCache = "force-no-store"
+export const maxDuration = 15
 
 /**
  * POST /api/settings/test-email
  * Tests live SMTP connectivity by dispatching a test email with the provided or stored configuration.
  */
 export async function POST(request: NextRequest) {
+  let transporter: nodemailer.Transporter | null = null
   try {
     const body = await request.json().catch(() => ({}))
     const serverConfig = getEmailConfig()
@@ -113,7 +115,7 @@ export async function POST(request: NextRequest) {
 </body>
 </html>`
 
-    const transporter = nodemailer.createTransport({
+    transporter = nodemailer.createTransport({
       host,
       port,
       secure,
@@ -124,18 +126,23 @@ export async function POST(request: NextRequest) {
       tls: {
         rejectUnauthorized,
       },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
+      connectionTimeout: 4000,
+      greetingTimeout: 4000,
+      socketTimeout: 5000,
     })
 
-    const info = await transporter.sendMail({
-      from,
-      to: targetRecipient,
-      subject,
-      html,
-      text: `ทดสอบการเชื่อมต่อเซิร์ฟเวอร์ SMTP สำเร็จ\nโฮสต์: ${host}:${port}\nผู้ส่ง: ${from}\nผู้รับ: ${targetRecipient}\nเวลา: ${testTimestamp}`,
-    })
+    const info = await Promise.race([
+      transporter.sendMail({
+        from,
+        to: targetRecipient,
+        subject,
+        html,
+        text: `ทดสอบการเชื่อมต่อเซิร์ฟเวอร์ SMTP สำเร็จ\nโฮสต์: ${host}:${port}\nผู้ส่ง: ${from}\nผู้รับ: ${targetRecipient}\nเวลา: ${testTimestamp}`,
+      }),
+      new Promise<nodemailer.SentMessageInfo>((_, reject) =>
+        setTimeout(() => reject(new Error("SMTP send timeout (5s exceeded)")), 5000)
+      ),
+    ])
 
     return NextResponse.json(
       {
@@ -170,5 +177,11 @@ export async function POST(request: NextRequest) {
       },
       { status: 400, headers: NO_CACHE_HEADERS }
     )
+  } finally {
+    try {
+      transporter?.close()
+    } catch {
+      // ignore close errors
+    }
   }
 }

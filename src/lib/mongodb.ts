@@ -1,10 +1,12 @@
 import { MongoClient, Db } from "mongodb"
 
 const options = {
-  maxPoolSize: 10,
+  maxPoolSize: 2,
+  minPoolSize: 0,
+  maxIdleTimeMS: 5000,
   serverSelectionTimeoutMS: 3000,
   connectTimeoutMS: 3000,
-  socketTimeoutMS: 15000,
+  socketTimeoutMS: 5000,
 }
 
 declare global {
