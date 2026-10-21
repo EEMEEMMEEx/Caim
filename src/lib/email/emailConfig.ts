@@ -10,6 +10,8 @@ export interface EmailConfig {
   user: string
   pass: string
   from: string
+  senderName?: string
+  senderEmail?: string
   primaryRecipient: string
   baseUrl: string
 }
@@ -42,10 +44,10 @@ export function getEmailConfig(overrideConfig?: Partial<EmailConfig> | Record<st
   const secure = overrides?.secure !== undefined
     ? Boolean(overrides.secure)
     : overrides?.enforceSsl !== undefined
-    ? Boolean(overrides.enforceSsl)
-    : process.env.SMTP_SECURE !== undefined
-    ? process.env.SMTP_SECURE === "true"
-    : port === 465
+      ? Boolean(overrides.enforceSsl)
+      : process.env.SMTP_SECURE !== undefined
+        ? process.env.SMTP_SECURE === "true"
+        : port === 465
 
   // Extract and sanitize username
   let user = String(overrides?.user || overrides?.senderEmail || process.env.SMTP_USER || "claimstickets@gmail.com").trim()
@@ -68,7 +70,48 @@ export function getEmailConfig(overrideConfig?: Partial<EmailConfig> | Record<st
     primaryRecipient = primaryRecipient.slice(1, -1).trim()
   }
 
-  const senderName = String(overrides?.senderName || "CAIM Equipment Claims").trim()
+  // Extract and sanitize sender name & email from overrides, environment variables, or defaults
+  const envSenderName = process.env.SMTP_SENDER_NAME || process.env.SMTP_FROM_NAME || process.env.SENDER_NAME
+  const rawSenderName = overrides?.senderName !== undefined ? overrides.senderName : envSenderName
+  let senderName = rawSenderName !== undefined && rawSenderName !== null
+    ? String(rawSenderName).trim()
+    : "USO Project Team"
+
+  if ((senderName.startsWith('"') && senderName.endsWith('"')) || (senderName.startsWith("'") && senderName.endsWith("'"))) {
+    senderName = senderName.slice(1, -1).trim()
+  }
+
+  // Remove legacy "CAIM Equipment Claims" or "Equipment Claims" prefix, aligning with official System Settings
+  if (senderName === "CAIM Equipment Claims" || senderName === "Equipment Claims") {
+    senderName = "USO Project Team"
+  }
+
+  const senderEmail = String(
+    overrides?.senderEmail ||
+    process.env.SMTP_SENDER_EMAIL ||
+    user
+  ).trim()
+
+  // Build dynamic 'from' field
+  let from = ""
+  if (overrides?.from && typeof overrides.from === "string" && overrides.from.trim()) {
+    from = overrides.from.trim()
+  } else if (process.env.SMTP_FROM && process.env.SMTP_FROM.trim()) {
+    from = process.env.SMTP_FROM.trim()
+  } else if (senderName) {
+    from = `"${senderName}" <${senderEmail}>`
+  } else {
+    from = `<${senderEmail}>`
+  }
+
+  // Strip unwanted legacy prefix if embedded in custom 'from'
+  if (from.includes("CAIM Equipment Claims")) {
+    from = from.replace(/["']?CAIM Equipment Claims["']?\s*/gi, "").trim()
+    if (!from || !from.includes("<")) {
+      from = senderName ? `"${senderName}" <${senderEmail}>` : `<${senderEmail}>`
+    }
+  }
+
   const baseUrl = getAppBaseUrl()
 
   return {
@@ -77,7 +120,9 @@ export function getEmailConfig(overrideConfig?: Partial<EmailConfig> | Record<st
     secure,
     user,
     pass,
-    from: `"${senderName}" <${user}>`,
+    from,
+    senderName,
+    senderEmail,
     primaryRecipient,
     baseUrl,
   }

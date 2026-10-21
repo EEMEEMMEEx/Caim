@@ -37,6 +37,9 @@ export interface SendMailOptions {
   subject: string
   html: string
   text?: string
+  from?: string
+  senderName?: string
+  senderEmail?: string
   smtpSettings?: Partial<EmailConfig> | Record<string, unknown> | null
 }
 
@@ -44,6 +47,65 @@ export interface SendMailResult {
   success: boolean
   messageId?: string
   error?: string
+}
+
+/**
+ * Resolves the dynamic RFC-compliant From header using configured senderName and senderEmail.
+ * Dynamically removes the unwanted legacy "CAIM Equipment Claims" prefix, aligning with
+ * System Settings (e.g. "USO Project Team <claimstickets@gmail.com>" or purely "<claimstickets@gmail.com>").
+ */
+export function resolveSenderFrom(options?: SendMailOptions, config?: EmailConfig): string {
+  // 1. Explicitly provided 'from' field
+  if (options?.from && typeof options.from === "string" && options.from.trim()) {
+    let rawFrom = options.from.trim()
+    if (rawFrom.includes("CAIM Equipment Claims") || rawFrom.includes("Equipment Claims")) {
+      rawFrom = rawFrom.replace(/["']?(?:CAIM\s+)?Equipment Claims["']?\s*/gi, "").trim()
+    }
+    if (rawFrom) return rawFrom
+  }
+
+  const overrideSettings = options?.smtpSettings as Record<string, unknown> | undefined
+
+  // 2. Resolve sender email address dynamically from options, settings, config, or env
+  const senderEmail = String(
+    options?.senderEmail ||
+    overrideSettings?.senderEmail ||
+    config?.senderEmail ||
+    config?.user ||
+    process.env.SMTP_SENDER_EMAIL ||
+    process.env.SMTP_USER ||
+    "claimstickets@gmail.com"
+  ).trim().replace(/^["']|["']$/g, "")
+
+  // 3. Resolve sender display name dynamically
+  const hasExplicitSenderName =
+    options?.senderName !== undefined ||
+    overrideSettings?.senderName !== undefined
+
+  const rawSenderName = hasExplicitSenderName
+    ? (options?.senderName ?? overrideSettings?.senderName)
+    : (config?.senderName ??
+       process.env.SMTP_SENDER_NAME ??
+       process.env.SMTP_FROM_NAME ??
+       "USO Project Team")
+
+  let senderName = rawSenderName !== undefined && rawSenderName !== null
+    ? String(rawSenderName).trim().replace(/^["']|["']$/g, "")
+    : ""
+
+  if (senderName === "CAIM Equipment Claims" || senderName === "Equipment Claims") {
+    senderName = "USO Project Team"
+  }
+
+  // 4. If no explicit senderName override was provided, check if config.from is clean
+  if (!hasExplicitSenderName && config?.from) {
+    if (!config.from.includes("CAIM Equipment Claims") && !config.from.includes("Equipment Claims")) {
+      return config.from
+    }
+  }
+
+  // 5. Format dynamic RFC header
+  return senderName ? `"${senderName}" <${senderEmail}>` : `<${senderEmail}>`
 }
 
 /**
@@ -55,6 +117,7 @@ async function sendDirectTlsSmtp(options: SendMailOptions, customConfig?: EmailC
   const recipients = Array.isArray(options.to)
     ? options.to
     : [options.to || config.primaryRecipient]
+  const fromHeader = resolveSenderFrom(options, config)
 
   return new Promise((resolve, reject) => {
     const socket = tls.connect(
@@ -166,7 +229,7 @@ async function sendDirectTlsSmtp(options: SendMailOptions, customConfig?: EmailC
             const rawDate = new Date().toUTCString()
 
             const headers = [
-              `From: ${config.from}`,
+              `From: ${fromHeader}`,
               `To: ${toHeader}`,
               `Subject: ${encodedSubject}`,
               `Date: ${rawDate}`,
@@ -207,12 +270,13 @@ async function sendDirectTlsSmtp(options: SendMailOptions, customConfig?: EmailC
 export async function sendEmail(options: SendMailOptions): Promise<SendMailResult> {
   const config = getEmailConfig(options.smtpSettings)
   const to = options.to || config.primaryRecipient
+  const from = resolveSenderFrom(options, config)
   const transporter = getEmailTransporter(config)
 
   try {
     const info = await Promise.race([
       transporter.sendMail({
-        from: config.from,
+        from,
         to,
         subject: options.subject,
         html: options.html,

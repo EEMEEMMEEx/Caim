@@ -29,9 +29,12 @@ export async function POST(request: NextRequest) {
 
     const user = String(body.user || serverConfig.user).trim()
     const pass = String(body.pass || serverConfig.pass).trim()
-    const senderName = String(body.senderName || "USO Project Team").trim()
-    const senderEmail = String(body.senderEmail || user).trim()
-    const from = `"${senderName}" <${senderEmail}>`
+    let senderName = String(body.senderName || serverConfig.senderName || "USO Project Team").trim()
+    if (senderName === "CAIM Equipment Claims" || senderName === "Equipment Claims") {
+      senderName = "USO Project Team"
+    }
+    const senderEmail = String(body.senderEmail || serverConfig.senderEmail || user).trim()
+    const from = senderName ? `"${senderName}" <${senderEmail}>` : `<${senderEmail}>`
 
     const targetRecipient = String(body.targetRecipient || body.recipient || serverConfig.primaryRecipient).trim()
     const rejectUnauthorized = body.rejectUnauthorized !== undefined ? Boolean(body.rejectUnauthorized) : false
