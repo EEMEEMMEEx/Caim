@@ -7,7 +7,7 @@ import { parseThaiDate } from "./caseDuration"
 import type { StageHistoryRecord } from "@/types/database"
 
 export const VENDOR_PENALTY_STANDARD_DAYS = 14
-export const VENDOR_PENALTY_STAGE_NUMBER = 6 // 6. จีน (เข้ากระบวนการซ่อม)
+export const VENDOR_PENALTY_STAGE_NUMBER = 5 // 5. อยู่ระหว่างการซ่อม/ทดสอบ
 
 export interface RmaStageConfig {
   stageNumber: number
@@ -18,15 +18,162 @@ export interface RmaStageConfig {
 }
 
 export const RMA_STAGES_CONFIG: RmaStageConfig[] = [
-  { stageNumber: 1, name: "ระบบใบ RMA", shortName: "เปิดใบ RMA", standardDays: 2 },
-  { stageNumber: 2, name: "Forth (ส่งตรวจสอบภายใน)", shortName: "Forth ตรวจ", standardDays: 7 },
-  { stageNumber: 3, name: "กสทช. (ตรวจสอบ / อนุมัติ)", shortName: "กสทช. อนุมัติ", standardDays: 5 },
-  { stageNumber: 4, name: "ส่งออก", shortName: "ส่งออก", standardDays: 3 },
-  { stageNumber: 5, name: "Hytera / Huawei Hongkong (ถึงศูนย์ต่างประเทศ)", shortName: "ถึงศูนย์ ตปท.", standardDays: 21 },
-  { stageNumber: 6, name: "จีน (เข้ากระบวนการซ่อม)", shortName: "จีน — ซ่อม", standardDays: 14, hasVendorPenalty: true },
-  { stageNumber: 7, name: "ส่งกลับเครื่องบิน", shortName: "ขนส่งกลับ", standardDays: 3 },
-  { stageNumber: 8, name: "เคลียร์ของออก (ศุลกากรขาเข้า)", shortName: "ศุลกากรขาเข้า", standardDays: 5 },
+  { stageNumber: 1, name: "แจ้งส่งซ่อมต่างประเทศ", shortName: "แจ้งส่งซ่อมต่างประเทศ", standardDays: 2 },
+  { stageNumber: 2, name: "จัดเตรียมเอกสาร/ขอใบอนุญาต กสทช.", shortName: "จัดเตรียมเอกสาร/กสทช.", standardDays: 7 },
+  { stageNumber: 3, name: "ขนส่งไปต่างประเทศ (Air Freight)", shortName: "ขนส่งไปต่างประเทศ", standardDays: 5 },
+  { stageNumber: 4, name: "ถึงศูนย์บริการ/โรงงานผู้ผลิต", shortName: "ถึงศูนย์บริการ", standardDays: 3 },
+  { stageNumber: 5, name: "อยู่ระหว่างการซ่อม/ทดสอบ", shortName: "อยู่ระหว่างการซ่อม", standardDays: 14, hasVendorPenalty: true },
+  { stageNumber: 6, name: "ส่งกลับทางเครื่องบิน (ส่งกลับเครื่องบิน)", shortName: "ส่งกลับเครื่องบิน", standardDays: 3 },
+  { stageNumber: 7, name: "พิธีการศุลกากรขาเข้า / เคลียร์ของออก (เคลียร์ของออก (ศุลกากรขาเข้า))", shortName: "เคลียร์ของออก (ศุลกากรขาเข้า)", standardDays: 5 },
+  { stageNumber: 8, name: "ตรวจรับเข้าคลัง / ปิดงานส่งซ่อม (Completed)", shortName: "ตรวจรับเข้าคลัง", standardDays: 2 },
 ]
+
+/**
+ * Canonical 8-Stage RMA Lifecycle Number Resolver
+ * Maps any stage name, status string, or legacy number strictly to the standard 8-stage index:
+ *   Stage 1: แจ้งส่งซ่อมต่างประเทศ
+ *   Stage 2: จัดเตรียมเอกสาร/ขอใบอนุญาต กสทช.
+ *   Stage 3: ขนส่งไปต่างประเทศ (Air Freight)
+ *   Stage 4: ถึงศูนย์บริการ/โรงงานผู้ผลิต
+ *   Stage 5: อยู่ระหว่างการซ่อม/ทดสอบ
+ *   Stage 6: ส่งกลับทางเครื่องบิน (ส่งกลับเครื่องบิน)
+ *   Stage 7: พิธีการศุลกากรขาเข้า / เคลียร์ของออก (เคลียร์ของออก (ศุลกากรขาเข้า))
+ *   Stage 8: ตรวจรับเข้าคลัง / ปิดงานส่งซ่อม (Completed)
+ */
+export function resolveRmaStageNumber(
+  statusOrStageName?: string | null,
+  stageNumber?: number | string | null
+): number {
+  const text = (statusOrStageName || "").trim().toLowerCase()
+
+  // 1. Stage 7: Customs Import Clearance (MUST evaluate to 7)
+  if (
+    text.includes("เคลียร์ของออก") ||
+    text.includes("ศุลกากรขาเข้า") ||
+    text.includes("พิธีการศุลกากร") ||
+    text.includes("customs") ||
+    text.includes("clearance")
+  ) {
+    return 7
+  }
+
+  // 2. Stage 8: Completed / Returned / Warehouse Acceptance
+  if (
+    text.includes("ตรวจรับเข้าคลัง") ||
+    text.includes("ปิดงานส่งซ่อม") ||
+    text.includes("ปิดงาน") ||
+    text.includes("completed") ||
+    text.includes("returned") ||
+    text.includes("ของกลับถึงแล้ว") ||
+    text.includes("เสร็จสิ้น")
+  ) {
+    return 8
+  }
+
+  // 3. Stage 6: Return Flight (Air Freight Return)
+  if (
+    text.includes("ส่งกลับเครื่องบิน") ||
+    text.includes("ส่งกลับทางเครื่องบิน") ||
+    text.includes("ขนส่งกลับ") ||
+    text.includes("return flight")
+  ) {
+    return 6
+  }
+
+  // 4. Stage 5: In Repair / Testing (Vendor Factory Repair)
+  if (
+    text.includes("อยู่ระหว่างการซ่อม") ||
+    text.includes("ซ่อม/ทดสอบ") ||
+    text.includes("เข้ากระบวนการซ่อม") ||
+    text.includes("จีน — ซ่อม") ||
+    text.includes("จีน (เข้ากระบวนการซ่อม)") ||
+    text.includes("under repair")
+  ) {
+    return 5
+  }
+
+  // 5. Stage 4: Arrived at Overseas Service Center
+  if (
+    text.includes("ถึงศูนย์บริการ") ||
+    text.includes("โรงงานผู้ผลิต") ||
+    text.includes("ถึงศูนย์ต่างประเทศ") ||
+    text.includes("ถึงศูนย์ ตปท.") ||
+    text.includes("hongkong") ||
+    text.includes("ฮ่องกง")
+  ) {
+    return 4
+  }
+
+  // 6. Stage 3: Outbound Transport (Air Freight)
+  if (
+    text.includes("ขนส่งไปต่างประเทศ") ||
+    text.includes("air freight") ||
+    text.includes("ส่งออก") ||
+    text.includes("outbound")
+  ) {
+    return 3
+  }
+
+  // 7. Stage 2: Documentation & NBTC Permit Request
+  if (
+    text.includes("จัดเตรียมเอกสาร") ||
+    text.includes("ขอใบอนุญาต") ||
+    text.includes("กสทช.") ||
+    text.includes("nbtc") ||
+    text.includes("ส่งตรวจสอบภายใน")
+  ) {
+    return 2
+  }
+
+  // 8. Stage 1: Initial Overseas RMA Notice / Ticket
+  if (
+    text.includes("แจ้งส่งซ่อมต่างประเทศ") ||
+    text.includes("ระบบใบ rma") ||
+    text.includes("เปิดใบ rma") ||
+    text.includes("initial")
+  ) {
+    return 1
+  }
+
+  // 9. Check prefix numbers in text like "ขั้นที่ 7", "ขั้นตอน 7/8", "7. เคลียร์ของออก"
+  const stepPrefixMatch = text.match(/(?:ขั้น(?:ตอน)?ที่?\s*|^)(\d+)(?:\.|\/|\:|\s|$)/i)
+  if (stepPrefixMatch) {
+    const parsed = parseInt(stepPrefixMatch[1], 10)
+    if (parsed >= 1 && parsed <= 8) {
+      return parsed
+    }
+  }
+
+  // 10. Direct numerical fallback
+  if (stageNumber !== null && stageNumber !== undefined && stageNumber !== "") {
+    const num = Number(stageNumber)
+    if (!isNaN(num) && num >= 1 && num <= 8) {
+      return num
+    }
+  }
+
+  return 1
+}
+
+/**
+ * Resolve clean, canonical stage name according to the 8-stage RMA standard.
+ */
+export function resolveRmaStageName(
+  statusOrStageName?: string | null,
+  stageNumber?: number | string | null
+): string {
+  const resolvedNum = resolveRmaStageNumber(statusOrStageName, stageNumber)
+  const config = RMA_STAGES_CONFIG.find((s) => s.stageNumber === resolvedNum)
+
+  if (statusOrStageName) {
+    const trimmed = statusOrStageName
+      .replace(/^(\d+\.|\d+\)|\s*ขั้น(?:ตอน)?ที่?\s*\d+:?)\s*/i, "")
+      .trim()
+    if (trimmed) return trimmed
+  }
+
+  return config?.name || `ขั้นตอนที่ ${resolvedNum}`
+}
 
 export interface RmaCalculationItem {
   id?: string
@@ -144,12 +291,18 @@ export function calculateRmaTotalDays(
 ): RmaTotalDaysResult {
   const currentMidnight = toLocalMidnight(currentDateInput) || new Date()
 
+  const resolvedStageNum = resolveRmaStageNumber(item.currentStageName || item.status, item.currentStageNumber)
   const isCompleted =
     item.statusBadge === "returned" ||
     item.status === "returned" ||
     item.status === "completed" ||
+    item.status === "เสร็จสิ้น" ||
     item.statusBadgeText === "ของกลับถึงแล้ว" ||
-    (item.currentStageNumber ?? 1) >= 8
+    (resolvedStageNum >= 8 &&
+      !item.currentStageName?.includes("เคลียร์ของออก") &&
+      !item.status?.includes("เคลียร์ของออก") &&
+      !item.currentStageName?.includes("ศุลกากรขาเข้า") &&
+      !item.status?.includes("ศุลกากรขาเข้า"))
 
   const issueDate = parseRmaCalendarDate(item.openDate) || parseRmaCalendarDate(item.createdAt)
 
@@ -209,9 +362,9 @@ export function calculateRmaTotalDays(
 
 /**
  * 2. Vendor Penalty Days Calculation ('บทปรับผู้ขาย')
- * - Strictly starts when case enters stage 6 (จีน - เข้ากระบวนการซ่อม)
- * - If stage 6 is active: count dynamically (today - stage6StartDate)
- * - If stage 6 is completed: freeze duration at completion date
+ * - Strictly starts when case enters vendor repair stage (Stage 5 / Stage 6)
+ * - If stage is active: count dynamically (today - stageStartDate)
+ * - If stage is completed: freeze duration at completion date
  * - If > 14 days standard limit: flag isOverduePenalty and format "เกิน X วัน" in red
  */
 export function calculateRmaPenaltyDays(
@@ -220,7 +373,7 @@ export function calculateRmaPenaltyDays(
   penaltyLimitDays: number = VENDOR_PENALTY_STANDARD_DAYS
 ): RmaPenaltyDaysResult {
   const currentMidnight = toLocalMidnight(currentDateInput) || new Date()
-  const currentStageNum = item.currentStageNumber ?? 1
+  const currentStageNum = resolveRmaStageNumber(item.currentStageName || item.status, item.currentStageNumber)
 
   let elapsedDays = 0
   let isStarted = false
@@ -229,7 +382,7 @@ export function calculateRmaPenaltyDays(
   // Case A: Stage history is available
   if (Array.isArray(item.stageHistory) && item.stageHistory.length > 0) {
     const penaltyStage = item.stageHistory.find(
-      (s) => s.hasVendorPenalty || s.stageNumber === VENDOR_PENALTY_STAGE_NUMBER
+      (s) => s.hasVendorPenalty || s.stageNumber === VENDOR_PENALTY_STAGE_NUMBER || s.stageNumber === 6
     )
 
     if (penaltyStage) {
@@ -266,12 +419,12 @@ export function calculateRmaPenaltyDays(
   } else {
     // Case B: Flat item without stageHistory
     if (currentStageNum < VENDOR_PENALTY_STAGE_NUMBER) {
-      // Has not reached stage 6 yet
+      // Has not reached vendor repair stage yet
       isStarted = false
       isCompleted = false
       elapsedDays = 0
     } else if (currentStageNum === VENDOR_PENALTY_STAGE_NUMBER) {
-      // Actively in stage 6
+      // Actively in vendor repair stage
       isStarted = true
       isCompleted = false
 
@@ -287,7 +440,7 @@ export function calculateRmaPenaltyDays(
         elapsedDays = 0
       }
     } else {
-      // Past stage 6 (e.g. stage 7 or 8)
+      // Past vendor repair stage (e.g. stage 6, 7 or 8)
       isStarted = true
       isCompleted = true
 
@@ -461,7 +614,7 @@ export function calculateCurrentStageDuration(
   currentDateInput: Date = new Date()
 ): CurrentStageDurationResult {
   const currentMidnight = toLocalMidnight(currentDateInput) || new Date()
-  const stageNumber = Math.max(1, Math.min(8, item.currentStageNumber ?? 1))
+  const stageNumber = resolveRmaStageNumber(item.currentStageName || item.status, item.currentStageNumber)
   const stageConfig = RMA_STAGES_CONFIG.find((s) => s.stageNumber === stageNumber)
 
   // Resolve clean stage name without numerical prefixes like "6. "

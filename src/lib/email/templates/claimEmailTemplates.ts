@@ -1,5 +1,6 @@
 import type { TicketDocument } from "@/types/database"
 import { getAppBaseUrl } from "../emailConfig"
+import { resolveRmaStageNumber, resolveRmaStageName } from "@/lib/utils/rmaDuration"
 
 function escapeHtml(str: unknown): string {
   if (str === null || str === undefined) return "-"
@@ -312,21 +313,35 @@ export function buildClaimUpdatedEmail(params: ClaimUpdatedEmailParams): { subje
     updatedTicket.station ||
     [updatedTicket.subdistrict, updatedTicket.district, updatedTicket.province].filter(Boolean).join(" ") ||
     "-"
-  const assignee = updatedTicket.assigneeName || updatedTicket.assignee || "รอระบุผู้รับผิดชอบ"
-  const reporter = updatedTicket.reporterName || updatedTicket.reporter || "ไม่ระบุผู้แจ้ง"
+  const sanitizeClaimField = (val?: unknown, fallback = "-"): string => {
+    if (val === undefined || val === null) return fallback
+    const str = String(val).trim()
+    if (
+      !str ||
+      str === "—" ||
+      str === "-" ||
+      str.includes("ทดสอบขอบเคส") ||
+      str.includes("ทดสอบผู้แจ้ง") ||
+      str.includes("ทดสอบหมายเหตุ")
+    ) {
+      return fallback
+    }
+    return str
+  }
+
+  const assignee = sanitizeClaimField(updatedTicket.assigneeName || updatedTicket.assignee, "-")
+  const reporter = sanitizeClaimField(updatedTicket.reporterName || updatedTicket.reporter, "-")
 
   const prevStatus = previousTicket?.status || "รับแจ้ง"
   const newStatus = updatedTicket.status || prevStatus
   const isStatusChanged = prevStatus !== newStatus
 
   // Format remarks / repair outcome / notes
-  const outcomePart = updatedTicket.repairOutcome
-    ? `ผลการซ่อม: ${updatedTicket.repairOutcome}`
-    : updatedTicket.repairResult
-    ? `ผลการซ่อม: ${updatedTicket.repairResult}`
-    : ""
-  const remarksPart = updatedTicket.remarks ? `หมายเหตุ: ${updatedTicket.remarks}` : ""
-  const remarksOrNotes = [outcomePart, remarksPart].filter(Boolean).join(" | ") || "ไม่มีบันทึกเพิ่มเติม"
+  const cleanOutcome = sanitizeClaimField(updatedTicket.repairOutcome || updatedTicket.repairResult, "")
+  const outcomePart = cleanOutcome ? `ผลการซ่อม: ${cleanOutcome}` : ""
+  const cleanRemarks = sanitizeClaimField(updatedTicket.remarks, "")
+  const remarksPart = cleanRemarks ? `หมายเหตุ: ${cleanRemarks}` : ""
+  const remarksOrNotes = [outcomePart, remarksPart].filter(Boolean).join(" | ") || "-"
 
   const subject = `[Process Claim] แจ้งเตือนการเปลี่ยนสถานะเคส: ${claimId} → ${newStatus}`
   const claimDetailUrl = `${baseUrl}/tickets/${encodeURIComponent(claimId)}`
@@ -626,29 +641,78 @@ export function buildRmaStageUpdatedEmail(params: RmaStageUpdatedEmailParams): {
 
   const rmaNo = updatedRma.rmaNo || updatedRma.id
   const claimId = ticket?.id || updatedRma.ticketId || rmaNo
-  const brand = updatedRma.vendor || ticket?.vendor || "Other"
-  const model = updatedRma.model || ticket?.model || "-"
-  const equipmentName = `${brand} ${model}`.trim() || "อุปกรณ์"
-  const serialNo = updatedRma.serialNo || ticket?.serialNo || "-"
-  const destination = updatedRma.destination || "ต่างประเทศ"
-  const location = ticket?.location || ticket?.station || destination
-  const assignee = ticket?.assigneeName || ticket?.assignee || "ทีมบริหารงานส่งซ่อมต่างประเทศ"
-  const reporter = ticket?.reporterName || ticket?.reporter || "ไม่ระบุผู้แจ้ง"
 
-  const prevStageNumber = previousRma?.currentStageNumber || 1
-  const newStageNumber = updatedRma.currentStageNumber || prevStageNumber
-  const prevStageName = previousRma?.currentStageName || `ขั้นตอนที่ ${prevStageNumber}`
-  const newStageName = updatedRma.currentStageName || `ขั้นตอนที่ ${newStageNumber}`
+  // Helper to sanitize values and discard mock placeholder strings
+  const sanitize = (val?: unknown, fallback = "-"): string => {
+    if (val === undefined || val === null) return fallback
+    const str = String(val).trim()
+    if (
+      !str ||
+      str === "—" ||
+      str === "-" ||
+      str.includes("ทดสอบขอบเคส") ||
+      str.includes("ทดสอบผู้แจ้ง") ||
+      str.includes("ทดสอบหมายเหตุ")
+    ) {
+      return fallback
+    }
+    return str
+  }
 
-  const prevStatus = previousRma?.status || prevStageName
-  const newStatus = updatedRma.status || newStageName
+  // Exact Case Entity Records Binding:
+  // equipment: claim.brand + ' ' + claim.model
+  const rawBrand = (ticket as unknown as Record<string, unknown>)?.brand || ticket?.vendor || updatedRma.vendor
+  const rawModel = ticket?.model || updatedRma.model
+  const brand = sanitize(rawBrand, "")
+  const model = sanitize(rawModel, "")
+  const equipment = (brand && model ? `${brand} ${model}` : brand || model || "อุปกรณ์").trim()
 
-  const subject = `[Process Claim] อัปเดตสถานะเคส: ${claimId} (${equipmentName}) → ขั้นที่ ${newStageNumber}: ${newStageName}`
+  // serialNumber: claim.serialNumber
+  const rawSerial = (ticket as unknown as Record<string, unknown>)?.serialNumber || ticket?.serialNo || updatedRma.serialNo
+  const serialNumber = sanitize(rawSerial, "-")
+
+  // location: claim.stationName || claim.location
+  const rawLoc = ticket?.location
+  const rawStation = (ticket as unknown as Record<string, unknown>)?.stationName || ticket?.station
+  const rawLocation = (rawLoc && String(rawLoc).includes("จ."))
+    ? rawLoc
+    : (rawStation || rawLoc || updatedRma.destination)
+  const location = sanitize(rawLocation, "-")
+
+  // assignee: claim.assignee || '-' (do NOT default to 'ทดสอบขอบเคส')
+  const rawAssignee = ticket?.assignee || (ticket as unknown as Record<string, unknown>)?.assigneeName
+  const assignee = sanitize(rawAssignee, "-")
+
+  // reporter: claim.reporter || '-' (do NOT default to 'ทดสอบผู้แจ้ง')
+  const rawReporter = ticket?.reporter || (ticket as unknown as Record<string, unknown>)?.reporterName
+  const reporter = sanitize(rawReporter, "-")
+
+  // remarks: claim.remarks || claim.notes || '-' (do NOT default to 'ทดสอบหมายเหตุ')
+  const rawRemarks = ticket?.remarks ||
+    (ticket as unknown as Record<string, unknown>)?.notes ||
+    updatedRma.remarks ||
+    updatedRma.notes
+  const remarks = sanitize(rawRemarks, "-")
+
+  // Dynamic 8-Stage RMA Number & Name Resolution
+  const newStageNumber = resolveRmaStageNumber(
+    updatedRma.currentStageName || updatedRma.status,
+    updatedRma.currentStageNumber
+  )
+  const prevStageNumber = resolveRmaStageNumber(
+    previousRma?.currentStageName || previousRma?.status,
+    previousRma?.currentStageNumber || (newStageNumber > 1 ? newStageNumber - 1 : 1)
+  )
+
+  const newStageName = resolveRmaStageName(updatedRma.currentStageName || updatedRma.status, newStageNumber)
+  const prevStageName = resolveRmaStageName(previousRma?.currentStageName || previousRma?.status, prevStageNumber)
+
+  // Subject line: [Process Claim] อัปเดตสถานะเคส: ${claimId} (${equipment}) — ขั้นที่ ${newStageNumber}: ${newStageName}
+  const subject = `[Process Claim] อัปเดตสถานะเคส: ${claimId} (${equipment}) — ขั้นที่ ${newStageNumber}: ${newStageName}`
   const claimDetailUrl = ticket?.id
     ? `${baseUrl}/tickets/${encodeURIComponent(ticket.id)}`
     : `${baseUrl}/overseas-rma`
   const formattedTimestamp = formatThaiDateTime(updatedRma.updatedAt || new Date())
-  const remarksOrNotes = updatedRma.notes || updatedRma.remarks || ticket?.remarks || "ไม่มีบันทึกเพิ่มเติม"
 
   const html = `<!DOCTYPE html>
 <html lang="th">
@@ -727,23 +791,23 @@ export function buildRmaStageUpdatedEmail(params: RmaStageUpdatedEmailParams): {
           <tr>
             <td style="padding: 12px 32px 16px 32px;">
               <div style="font-size: 13px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; border-left: 3px solid #ec4899; padding-left: 8px;">
-                ข้อมูลสรุปเคสงานเคลม / RMA (Core Case Summary)
+                ข้อมูลสรุปเคสงานเคลม (Core Case Summary)
               </div>
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background: rgba(15, 23, 42, 0.45); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.07); overflow: hidden;">
                 <tr>
                   <td style="padding: 12px 16px; width: 38%; font-size: 13px; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">เลขที่เคส / ใบ RMA (ID)</td>
-                  <td style="padding: 12px 16px; font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">${escapeHtml(claimId)} / ${escapeHtml(rmaNo)}</td>
+                  <td style="padding: 12px 16px; font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">${escapeHtml(claimId)}${rmaNo && rmaNo !== claimId ? ` / ${escapeHtml(rmaNo)}` : ""}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px 16px; font-size: 13px; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">อุปกรณ์ (Equipment)</td>
                   <td style="padding: 12px 16px; font-size: 13px; color: #f1f5f9; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-                    <span style="font-weight: 600; color: #ffffff;">${escapeHtml(brand)} ${escapeHtml(model)}</span>
-                    <span style="display: block; font-family: ui-monospace, monospace; font-size: 12px; color: #38bdf8; margin-top: 2px;">S/N: ${escapeHtml(serialNo)}</span>
+                    <span style="font-weight: 600; color: #ffffff;">${escapeHtml(equipment)}</span>
+                    <span style="display: block; font-family: ui-monospace, monospace; font-size: 12px; color: #38bdf8; margin-top: 2px;">S/N: ${escapeHtml(serialNumber)}</span>
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding: 12px 16px; font-size: 13px; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">สถานที่ / ปลายทาง (Destination)</td>
-                  <td style="padding: 12px 16px; font-size: 13px; color: #e2e8f0; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">${escapeHtml(destination)} (${escapeHtml(location)})</td>
+                  <td style="padding: 12px 16px; font-size: 13px; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">สถานที่ติดตั้ง (Location)</td>
+                  <td style="padding: 12px 16px; font-size: 13px; color: #e2e8f0; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">${escapeHtml(location)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px 16px; font-size: 13px; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">ผู้รับผิดชอบ (Assignee)</td>
@@ -754,8 +818,8 @@ export function buildRmaStageUpdatedEmail(params: RmaStageUpdatedEmailParams): {
                   <td style="padding: 12px 16px; font-size: 13px; color: #f1f5f9; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">${escapeHtml(reporter)}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 12px 16px; font-size: 13px; color: #94a3b8; vertical-align: top;">บันทึกเพิ่มเติม / ผลการดำเนินการ</td>
-                  <td style="padding: 12px 16px; font-size: 13px; color: #e2e8f0; line-height: 1.5;">${escapeHtml(remarksOrNotes)}</td>
+                  <td style="padding: 12px 16px; font-size: 13px; color: #94a3b8; vertical-align: top;">บันทึกเพิ่มเติม / ผลการดำเนินการ (Remarks/Notes)</td>
+                  <td style="padding: 12px 16px; font-size: 13px; color: #e2e8f0; line-height: 1.5;">${escapeHtml(remarks)}</td>
                 </tr>
               </table>
             </td>
@@ -801,18 +865,18 @@ export function buildRmaStageUpdatedEmail(params: RmaStageUpdatedEmailParams): {
 </body>
 </html>`
 
-  const text = `[Process Claim] อัปเดตสถานะเคส: ${claimId} (${equipmentName}) → ขั้นที่ ${newStageNumber}: ${newStageName}
+  const text = `[Process Claim] อัปเดตสถานะเคส: ${claimId} (${equipment}) — ขั้นที่ ${newStageNumber}: ${newStageName}
 -------------------------------------------------------------
-สถานะเดิม: ${prevStatus} → สถานะใหม่: ${newStatus}
+สถานะเดิม: ${prevStageName} → สถานะใหม่: ${newStageName}
 เวลาที่อัปเดต: ${formattedTimestamp}
 
-ข้อมูลสรุปเคสงานเคลม / RMA:
-- เลขที่เคส / ใบ RMA: ${claimId} / ${rmaNo}
-- อุปกรณ์: ${brand} ${model} (S/N: ${serialNo})
-- ปลายทาง: ${destination} (${location})
-- ผู้รับผิดชอบ: ${assignee}
-- ผู้แจ้ง: ${reporter}
-- บันทึกเพิ่มเติม / ผลการดำเนินการ: ${remarksOrNotes}
+ข้อมูลสรุปเคสงานเคลม (Core Case Summary):
+- เลขที่เคส / ใบ RMA: ${claimId}${rmaNo && rmaNo !== claimId ? ` / ${rmaNo}` : ""}
+- อุปกรณ์ (Equipment): ${equipment} (S/N: ${serialNumber})
+- สถานที่ติดตั้ง (Location): ${location}
+- ผู้รับผิดชอบ (Assignee): ${assignee}
+- ผู้แจ้ง (Reporter): ${reporter}
+- บันทึกเพิ่มเติม / ผลการดำเนินการ (Remarks/Notes): ${remarks}
 
 เปิดดูรายละเอียดเคส: ${claimDetailUrl}
 `

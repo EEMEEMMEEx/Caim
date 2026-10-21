@@ -1,5 +1,7 @@
 import { after } from "next/server"
 import type { TicketDocument } from "@/types/database"
+import { getDb, isMongoConfigured } from "@/lib/mongodb"
+import { getPersistentTickets } from "@/lib/storage/serverTicketStorage"
 import { sendEmail, type SendMailResult } from "./emailTransporter"
 import { getEmailConfig, type EmailConfig } from "./emailConfig"
 import {
@@ -200,11 +202,40 @@ export function notifyRmaStageUpdated(params: RmaStageUpdatedEmailParams): void 
 
   runNonBlocking(async () => {
     try {
-      const emailContent = buildRmaStageUpdatedEmail(params)
-      const recipients = resolveClaimRecipients(params.ticket, params.additionalRecipients)
+      let linkedTicket: TicketDocument | null = params.ticket || null
+      const targetTicketId = linkedTicket?.id || params.updatedRma.ticketId
+
+      // Directly query targeted claim record by unique ID (params.id / claimId) from DB or persistent store
+      const anyTicket = linkedTicket as unknown as Record<string, unknown> | null
+      const hasEquipmentInfo = Boolean(linkedTicket?.vendor || anyTicket?.brand) && Boolean(linkedTicket?.model)
+      if ((!linkedTicket || !hasEquipmentInfo) && targetTicketId) {
+        if (isMongoConfigured()) {
+          try {
+            const db = await getDb()
+            if (db) {
+              const doc = await db.collection<TicketDocument>("tickets").findOne({ id: targetTicketId })
+              if (doc) linkedTicket = doc
+            }
+          } catch (dbErr) {
+            console.warn("[RMA Notification] MongoDB query for ticket failed, fallback to disk store:", dbErr)
+          }
+        }
+        if (!linkedTicket) {
+          const tickets = getPersistentTickets()
+          linkedTicket = tickets.find((t) => t.id === targetTicketId) || null
+        }
+      }
+
+      const emailParams: RmaStageUpdatedEmailParams = {
+        ...params,
+        ticket: linkedTicket,
+      }
+
+      const emailContent = buildRmaStageUpdatedEmail(emailParams)
+      const recipients = resolveClaimRecipients(linkedTicket, params.additionalRecipients)
 
       console.log(
-        `[RMA Notification] Dispatching RMA stage update email for ${rmaId} to ${recipients.join(", ")}...`
+        `[RMA Notification] Dispatching RMA stage update email for ${rmaId} to ${recipients.join(", ")} | Subject: ${emailContent.subject}`
       )
 
       const result = await sendEmail({

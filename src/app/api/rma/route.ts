@@ -9,7 +9,11 @@ import {
   deletePersistentRma,
   getPersistentDeletedRmaIds,
 } from "@/lib/storage/serverRmaStorage"
-import { calculateRmaMetrics, calculateCurrentStageDuration } from "@/lib/utils/rmaDuration"
+import {
+  calculateRmaMetrics,
+  calculateCurrentStageDuration,
+  resolveRmaStageNumber,
+} from "@/lib/utils/rmaDuration"
 import { invalidateDashboardMetrics } from "@/lib/dashboard/dashboardStatsService"
 import { notifyRmaStageUpdated } from "@/lib/email/claimNotificationService"
 import { getPersistentTickets } from "@/lib/storage/serverTicketStorage"
@@ -20,10 +24,15 @@ export const fetchCache = "force-no-store"
 export const maxDuration = 10
 
 function enrichRma(doc: RmaDocument): RmaDocument {
-  const metrics = calculateRmaMetrics(doc)
-  const stageDuration = calculateCurrentStageDuration(doc)
-  return {
+  const resolvedStage = resolveRmaStageNumber(doc.currentStageName || doc.status, doc.currentStageNumber)
+  const normalizedDoc: RmaDocument = {
     ...doc,
+    currentStageNumber: resolvedStage,
+  }
+  const metrics = calculateRmaMetrics(normalizedDoc)
+  const stageDuration = calculateCurrentStageDuration(normalizedDoc)
+  return {
+    ...normalizedDoc,
     stageWaitDays: stageDuration.text,
     totalDays: metrics.total.text,
     statusBadge: metrics.total.statusBadge,
@@ -305,8 +314,8 @@ export async function PUT(request: NextRequest) {
     await invalidateDashboardMetrics(true)
 
     // Trigger asynchronous, non-blocking email notification upon 8-stage repair progression or status change
-    const prevStage = previousRma?.currentStageNumber || 1
-    const newStage = enriched.currentStageNumber || prevStage
+    const prevStage = resolveRmaStageNumber(previousRma?.currentStageName || previousRma?.status, previousRma?.currentStageNumber)
+    const newStage = resolveRmaStageNumber(enriched.currentStageName || enriched.status, enriched.currentStageNumber)
     const prevStatus = previousRma?.status || ""
     const newStatus = enriched.status || prevStatus
 
@@ -321,8 +330,20 @@ export async function PUT(request: NextRequest) {
       const targetTicketId = enriched.ticketId || previousRma?.ticketId
       let linkedTicket: TicketDocument | null = null
       if (targetTicketId) {
-        const tickets = getPersistentTickets()
-        linkedTicket = tickets.find((t) => t.id === targetTicketId) || null
+        if (isMongoConfigured()) {
+          try {
+            const db = await getDb()
+            if (db) {
+              linkedTicket = await db.collection<TicketDocument>("tickets").findOne({ id: targetTicketId })
+            }
+          } catch (dbErr) {
+            console.warn("[RMA API] MongoDB query for ticket failed:", dbErr)
+          }
+        }
+        if (!linkedTicket) {
+          const tickets = getPersistentTickets()
+          linkedTicket = tickets.find((t) => t.id === targetTicketId) || null
+        }
       }
 
       notifyRmaStageUpdated({
