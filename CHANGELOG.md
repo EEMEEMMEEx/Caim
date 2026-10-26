@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.6] - 2026-10-26
+
+### Added
+- **Claim Rejection Support & Stock-Flow Webhook Integration (`src/types/database.ts`, `src/lib/webhooks/stockFlowWebhook.ts`, `src/app/api/tickets/route.ts`, `src/components/sites/equipment-claims-3ec6aa15/root-8a5edab2/TicketDetailView.tsx`)**:
+  - Added `"rejected"` outcome to `CaimRepairOutcome` type and UI selection in `TicketDetailView`.
+  - Added keyword detection and automatic outcome mapping for claim rejection (`statusCode: 6` / `ปฏิเสธเคลม`).
+  - Trigger Stock-Flow webhook on claim rejection to maintain synchronization.
+
 ## [0.38.5] - 2026-10-09
 
 ### Changed
