@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server"
 import { getDb, isMongoConfigured } from "@/lib/mongodb"
 import { realtimeEmitter, REALTIME_EVENTS } from "@/lib/events/realtimeEmitter"
-import { TicketDocument, EquipmentDocument } from "@/types/database"
+import { TicketDocument, EquipmentDocument, CaimRepairOutcome } from "@/types/database"
 import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 import {
   getPersistentTickets,
@@ -379,14 +379,31 @@ export async function PUT(request: NextRequest) {
 
     // Phase 2: notify Stock-Flow after the response is sent ("after" keeps the serverless invocation
     // alive) so a Stock-Flow outage can never break or delay a CAIM case update.
-    const isClosedNow = finalStatusCode === 5 || finalStatus === "ปิดเคส"
-    const wasClosedBefore = previousTicket?.statusCode === 5 || previousTicket?.status === "ปิดเคส"
+    const isClosedNow =
+      finalStatusCode === 5 ||
+      finalStatusCode === 6 ||
+      finalStatus === "ปิดเคส" ||
+      finalStatus === "ปฏิเสธเคลม" ||
+      String(finalStatus || "").includes("ปฏิเสธเคลม")
+    const wasClosedBefore =
+      previousTicket?.statusCode === 5 ||
+      previousTicket?.statusCode === 6 ||
+      previousTicket?.status === "ปิดเคส" ||
+      previousTicket?.status === "ปฏิเสธเคลม" ||
+      String(previousTicket?.status || "").includes("ปฏิเสธเคลม")
     const repairResultChanged =
       (setFields.repairOutcome !== undefined && setFields.repairOutcome !== previousTicket?.repairOutcome) ||
-      (setFields.repairResult !== undefined && setFields.repairResult !== previousTicket?.repairResult)
+      (setFields.repairResult !== undefined && setFields.repairResult !== previousTicket?.repairResult) ||
+      (finalStatusCode === 6 && previousTicket?.statusCode !== 6)
 
     if (isClosedNow && (!wasClosedBefore || repairResultChanged)) {
-      const webhookTicket: TicketDocument = { ...finalEnrichedTicket, closedAt: nowIso }
+      const isRejectedOutcome = finalStatusCode === 6 || String(finalStatus || "").includes("ปฏิเสธเคลม")
+      const webhookTicket: TicketDocument = {
+        ...finalEnrichedTicket,
+        closedAt: nowIso,
+        repairOutcome: (finalEnrichedTicket.repairOutcome as CaimRepairOutcome) || (isRejectedOutcome ? "rejected" : undefined),
+        repairResult: finalEnrichedTicket.repairResult || (isRejectedOutcome ? "ปฏิเสธเคลม (ไม่อยู่ในเงื่อนไขการรับประกัน)" : finalEnrichedTicket.repairResult),
+      }
       after(async () => {
         try {
           await dispatchStockFlowWebhook(webhookTicket, { closedAt: nowIso })

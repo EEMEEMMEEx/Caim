@@ -84,7 +84,18 @@ Immediately upon finalizing code modifications:
 
 ---
 
-### 3. Execution Summary Output & Thai Language Reporting
+### 3. GitHub Auto-Merge Bot Operating Rules
+The repository features an automated merge bot (`.github/workflows/auto-merge.yml`) that merges pull requests automatically when quality and safety invariants hold.
+
+- **Author Allowlist:** The pull request must be opened by GitHub user `EEMEEMMEEx`. All other PR authors are ignored.
+- **CI Passing:** The upstream `CI` workflow (`quality` check: lint, typecheck, build) must conclude with status `success`.
+- **No Conflicts:** The PR must be cleanly mergeable into `main` without merge conflicts (`mergeStateStatus == "CLEAN"`).
+- **Failure Feedback:** If CI fails or conflicts occur, the bot aborts the merge and posts an explanatory notification comment to the PR.
+- **Agent Responsibilities:** Always run `npm run lint` and `npm run typecheck` locally prior to pushing. Keep working branch synced with upstream `main` to prevent conflict rejections.
+
+---
+
+### 4. Execution Summary Output & Thai Language Reporting
 ทุกครั้งที่ทำงานเสร็จสิ้น ให้สรุปสิ่งที่ได้ดำเนินการทั้งหมดเป็น**ภาษาไทย**อย่างครบถ้วนและอ่านเข้าใจง่าย (Thai task summary) พร้อมแนบกล่องสรุป Git Execution Summary ต่อท้ายเสมอดังนี้:
 
 ```text

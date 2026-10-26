@@ -111,14 +111,16 @@ const REPAIR_OUTCOMES: { value: CaimRepairOutcome; label: string }[] = [
   { value: "unrepairable", label: "ซ่อมไม่ได้ / แทงจำหน่ายเป็นของเสีย" },
   { value: "repaired", label: "ซ่อมสำเร็จ ใช้ S/N เดิม" },
   { value: "replaced_new", label: "ศูนย์เปลี่ยนของใหม่ (S/N ใหม่)" },
+  { value: "rejected", label: "ปฏิเสธเคลม / ไม่อยู่ในเงื่อนไขประกัน" },
 ]
 
 const STAGES = [
   { step: 1, label: "รับแจ้ง" },
   { step: 2, label: "ส่งศูนย์" },
   { step: 3, label: "รออะไหล่" },
-  { step: 4, label: "รอส่งมอบ" },
+  { step: 4, label: "ซ่อมเสร็จ" },
   { step: 5, label: "ปิดเคส" },
+  { step: 6, label: "ปฏิเสธเคลม" },
 ]
 
 export function TicketDetailView({ ticketId }: { ticketId?: string }) {
@@ -494,6 +496,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
       3: "รออะไหล่",
       4: "ซ่อมเสร็จ",
       5: "ปิดเคส",
+      6: "ปฏิเสธเคลม",
     }
     const stageDisplayNames: Record<number, string> = {
       1: "รับแจ้ง/รอตรวจสภาพ",
@@ -501,6 +504,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
       3: "รออะไหล่/กำลังซ่อม",
       4: "ซ่อมเสร็จ/รอส่งมอบ",
       5: "ปิดเคส (รับคืนเรียบร้อย)",
+      6: "ปฏิเสธเคลม (ไม่อยู่ในเงื่อนไข)",
     }
 
     const stageTitle = stageDisplayNames[newStatusStage] || "ปรับเปลี่ยนสถานะ"
@@ -534,6 +538,11 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
               repairOutcome: newRepairOutcome || undefined,
               replacedNewSerialNo:
                 newRepairOutcome === "replaced_new" ? newReplacedSerialNo.trim() : undefined,
+              closedBy: data.assignee || data.reporter || undefined,
+            }
+          : newStatusStage === 6
+          ? {
+              repairOutcome: "rejected",
               closedBy: data.assignee || data.reporter || undefined,
             }
           : {}),
@@ -1405,8 +1414,9 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                       {s.step === 1 && <span className="text-[11px] text-muted-foreground">รอตรวจสภาพ</span>}
                       {s.step === 2 && <span className="text-[11px] text-muted-foreground">ส่งศูนย์บริการ</span>}
                       {s.step === 3 && <span className="text-[11px] text-muted-foreground">กำลังซ่อม</span>}
-                      {s.step === 4 && <span className="text-[11px] text-muted-foreground">รอส่งมอบ</span>}
-                      {s.step === 5 && <span className="text-[11px] text-muted-foreground">จบงาน</span>}
+                      {s.step === 4 && <span className="text-[11px] text-muted-foreground">ซ่อมเสร็จ</span>}
+                      {s.step === 5 && <span className="text-[11px] text-muted-foreground">ปิดเคส/ส่งคืน</span>}
+                      {s.step === 6 && <span className="text-[11px] text-muted-foreground">ไม่อยู่ในเงื่อนไข</span>}
                     </label>
                   ))}
                 </div>
@@ -1418,7 +1428,7 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                     ผลการซ่อม (ส่งกลับ Stock-Flow อัตโนมัติ)
                   </label>
                   <div className="flex flex-col gap-1.5">
-                    {REPAIR_OUTCOMES.map((option) => (
+                    {REPAIR_OUTCOMES.filter(option => option.value !== "rejected").map((option) => (
                       <label
                         key={option.value}
                         className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${
@@ -1456,6 +1466,15 @@ export function TicketDetailView({ ticketId }: { ticketId?: string }) {
                       ต้องระบุผลการซ่อมก่อนปิดเคส เพื่อให้ Stock-Flow บันทึกตัดจำหน่ายหรือรับเข้าคลังได้ถูกต้อง
                     </p>
                   )}
+                </div>
+              )}
+
+              {newStatusStage === 6 && (
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-700 dark:text-red-300">
+                  <p className="font-semibold">สถานะ: ปฏิเสธเคลม (ไม่อยู่ในเงื่อนไขการรับประกัน)</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    เมื่อบันทึก ระบบจะส่ง Webhook แจ้งผลปฏิเสธการเคลมกลับไปยัง Stock-Flow อัตโนมัติ เพื่อให้เจ้าหน้าที่คลังตรวจสอบและดำเนินการต่อไป
+                  </p>
                 </div>
               )}
 
