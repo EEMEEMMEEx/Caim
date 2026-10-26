@@ -1,0 +1,133 @@
+name: Auto-Merge Bot
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull Request number to evaluate and auto-merge"
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  evaluate-and-merge:
+    name: Evaluate & Auto-Merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve Pull Request Number
+        id: resolve_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PR_NUM="${{ inputs.pr_number }}"
+            echo "Manually triggered for PR #$PR_NUM"
+          else
+            # Try to resolve PR number from workflow_run payload
+            PR_NUM=$(echo '${{ toJson(github.event.workflow_run.pull_requests) }}' | jq -r '.[0].number // empty')
+            if [ -z "$PR_NUM" ] || [ "$PR_NUM" = "null" ]; then
+              HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+              echo "Querying open PR by head SHA: $HEAD_SHA"
+              PR_NUM=$(gh pr list --repo "$GITHUB_REPOSITORY" --search "$HEAD_SHA" --state open --json number --jq '.[0].number // empty')
+            fi
+          fi
+
+          if [ -z "$PR_NUM" ] || [ "$PR_NUM" = "null" ]; then
+            echo "No associated pull request found. Exiting."
+            echo "found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Found Target PR #$PR_NUM"
+          echo "found=true" >> $GITHUB_OUTPUT
+          echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
+
+      - name: Validate Conditions and Execute Merge
+        if: steps.resolve_pr.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.resolve_pr.outputs.pr_number }}
+          CI_CONCLUSION: ${{ github.event.workflow_run.conclusion || 'manual' }}
+          CI_RUN_URL: ${{ github.event.workflow_run.html_url || '' }}
+        run: |
+          set -e
+          echo "=== Inspecting Pull Request #$PR_NUMBER ==="
+
+          # Fetch PR details with retry if mergeable state is calculating
+          RETRY_COUNT=0
+          MAX_RETRIES=5
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            PR_JSON=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json number,title,state,author,mergeable,mergeStateStatus)
+            MERGEABLE=$(echo "$PR_JSON" | jq -r '.mergeable')
+            if [ "$MERGEABLE" != "UNKNOWN" ]; then
+              break
+            fi
+            echo "Mergeable state is UNKNOWN, waiting 4s (attempt $((RETRY_COUNT+1))/$MAX_RETRIES)..."
+            sleep 4
+            RETRY_COUNT=$((RETRY_COUNT+1))
+          done
+
+          echo "PR Details: $PR_JSON"
+
+          PR_STATE=$(echo "$PR_JSON" | jq -r '.state')
+          PR_AUTHOR=$(echo "$PR_JSON" | jq -r '.author.login')
+          MERGEABLE=$(echo "$PR_JSON" | jq -r '.mergeable')
+          MERGE_STATE=$(echo "$PR_JSON" | jq -r '.mergeStateStatus')
+
+          # 1. State check
+          if [ "$PR_STATE" != "OPEN" ]; then
+            echo "PR #$PR_NUMBER is not open ($PR_STATE). Skipping."
+            exit 0
+          fi
+
+          # 2. Author allowlist check (Strictly EEMEEMMEEx via GitHub login)
+          ALLOWLIST=("EEMEEMMEEx")
+          IS_ALLOWED="false"
+          for user in "${ALLOWLIST[@]}"; do
+            if [ "$PR_AUTHOR" = "$user" ]; then
+              IS_ALLOWED="true"
+              break
+            fi
+          done
+
+          if [ "$IS_ALLOWED" != "true" ]; then
+            echo "Author '$PR_AUTHOR' is not in allowlist (${ALLOWLIST[*]}). Skipping silently."
+            exit 0
+          fi
+
+          echo "Author '$PR_AUTHOR' verified in allowlist."
+
+          # 3. CI Pipeline Status check
+          if [ "$CI_CONCLUSION" != "success" ] && [ "$CI_CONCLUSION" != "manual" ]; then
+            echo "CI pipeline failed or not successful (conclusion: $CI_CONCLUSION)."
+            COMMENT_BODY="❌ **Auto-Merge Skipped**: Required CI checks have failed (\`$CI_CONCLUSION\`)."
+            if [ -n "$CI_RUN_URL" ]; then
+              COMMENT_BODY="$COMMENT_BODY"$'\n\n'"Please review the [CI Run Logs]($CI_RUN_URL) and fix the errors."
+            fi
+            gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$COMMENT_BODY"
+            exit 0
+          fi
+
+          # 4. Merge Conflict & Error check
+          if [ "$MERGEABLE" = "CONFLICTING" ] || [ "$MERGE_STATE" = "DIRTY" ]; then
+            echo "PR has merge conflicts or dirty state (mergeable: $MERGEABLE, status: $MERGE_STATE)."
+            COMMENT_BODY="⚠️ **Auto-Merge Skipped**: Pull request has merge conflicts with branch \`main\`."$'\n\n'"Please rebase or merge the latest upstream \`main\` into your branch to resolve conflicts."
+            gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$COMMENT_BODY"
+            exit 0
+          fi
+
+          # 5. Execute Auto-Merge
+          echo "All conditions met! Executing auto-merge for PR #$PR_NUMBER..."
+          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --merge
+
+          SUCCESS_MSG="🤖 **Auto-Merge Bot**: Pull request successfully merged into \`main\`."$'\n\n'"- Author: \`$PR_AUTHOR\` (Verified)"$'\n'"- CI Status: \`PASSED\`"$'\n'"- Mergeable: \`CLEAN\`"
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$SUCCESS_MSG"
+          echo "Auto-merge completed successfully."

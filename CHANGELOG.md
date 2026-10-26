@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.7] - 2026-10-26
+
+### Added
+- **GitHub Auto-Merge Bot Workflow (`.github/workflows/auto-merge.yml`)**:
+  - Implemented automated PR merging triggered upon successful completion of the `CI` workflow.
+  - Enforced strict author allowlist validating against GitHub authenticated login (`EEMEEMMEEx`).
+  - Added automated failure feedback comments when CI fails or when merge conflicts occur.
+- **Security Policy & Automation Governance (`SECURITY.md`, `AGENTS.md`)**:
+  - Documented security boundary, anti-spoofing guarantees, and least-privilege token governance.
+  - Added agent operating guidelines for autonomous pull requests and CI compliance.
+
 ## [0.38.6] - 2026-10-26
 
 ### Added
