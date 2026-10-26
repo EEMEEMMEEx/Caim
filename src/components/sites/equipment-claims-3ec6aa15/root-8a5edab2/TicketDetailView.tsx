@@ -111,6 +111,7 @@ const REPAIR_OUTCOMES: { value: CaimRepairOutcome; label: string }[] = [
   { value: "unrepairable", label: "ซ่อมไม่ได้ / แทงจำหน่ายเป็นของเสีย" },
   { value: "repaired", label: "ซ่อมสำเร็จ ใช้ S/N เดิม" },
   { value: "replaced_new", label: "ศูนย์เปลี่ยนของใหม่ (S/N ใหม่)" },
+  { value: "rejected", label: "ปฏิเสธเคลม / ไม่อยู่ในเงื่อนไขประกัน" },
 ]
 
 const STAGES = [

@@ -2,7 +2,7 @@
 // Supports Equipments, Stations, Tickets (Claims), RMA Records, and Transaction Logs
 
 // Closed-case repair outcome contract shared with Stock-Flow (integration plan section 3.2)
-export type CaimRepairOutcome = "unrepairable" | "repaired" | "replaced_new"
+export type CaimRepairOutcome = "unrepairable" | "repaired" | "replaced_new" | "rejected"
 
 export interface StationDocument {
   id: string // e.g. "st-60-1", "st-rep-1", or custom string ID

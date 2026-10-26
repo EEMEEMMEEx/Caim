@@ -50,6 +50,10 @@ export interface DispatchOutcome {
  */
 const OUTCOME_KEYWORDS: Array<{ outcome: CaimRepairOutcome; pattern: RegExp }> = [
   {
+    outcome: "rejected",
+    pattern: /ปฏิเสธ|ไม่รับเคลม|ไม่อยู่ในเงื่อนไข|rejected|deny|denied/i,
+  },
+  {
     outcome: "unrepairable",
     pattern: /ซ่อมไม่ได้|ไม่คุ้ม|ไม่สามารถซ่อม|แทงจำหน่าย|ตัดจำหน่าย|จำหน่ายออก|ทิ้ง|unrepairable|beyond economic|scrap|\bber\b/i,
   },
@@ -64,7 +68,7 @@ const OUTCOME_KEYWORDS: Array<{ outcome: CaimRepairOutcome; pattern: RegExp }> =
 ]
 
 export function isCaimRepairOutcome(value: unknown): value is CaimRepairOutcome {
-  return value === "unrepairable" || value === "repaired" || value === "replaced_new"
+  return value === "unrepairable" || value === "repaired" || value === "replaced_new" || value === "rejected"
 }
 
 /**
@@ -73,10 +77,18 @@ export function isCaimRepairOutcome(value: unknown): value is CaimRepairOutcome 
  * is ambiguous so no stock movement is ever guessed.
  */
 export function resolveRepairOutcome(
-  ticket: Pick<TicketDocument, "repairOutcome" | "repairResult" | "replacedNewSerialNo">
+  ticket: Pick<TicketDocument, "repairOutcome" | "repairResult" | "replacedNewSerialNo"> & { statusCode?: number; status?: string }
 ): CaimRepairOutcome | null {
   if (isCaimRepairOutcome(ticket.repairOutcome)) {
     return ticket.repairOutcome
+  }
+
+  // Detect rejection by ticket statusCode or status text
+  if (
+    Number(ticket.statusCode) === 6 ||
+    /ปฏิเสธ|rejected/i.test(String(ticket.status || ""))
+  ) {
+    return "rejected"
   }
 
   const text = String(ticket.repairResult || "").trim()
