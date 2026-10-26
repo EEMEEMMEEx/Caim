@@ -92,10 +92,21 @@ export function resolveRepairOutcome(
   }
 
   const text = String(ticket.repairResult || "").trim()
-  if (!text) return null
+  if (!text) {
+    // If ticket is closed (statusCode 5 or "ปิดเคส"), default to repaired
+    if (Number(ticket.statusCode) === 5 || /ปิดเคส|closed/i.test(String(ticket.status || ""))) {
+      return "repaired"
+    }
+    return null
+  }
 
   for (const entry of OUTCOME_KEYWORDS) {
     if (entry.pattern.test(text)) return entry.outcome
+  }
+
+  // Fallback for closed cases where text was entered but didn't match unrepairable/replaced
+  if (Number(ticket.statusCode) === 5 || /ปิดเคส|closed/i.test(String(ticket.status || ""))) {
+    return "repaired"
   }
 
   return null
