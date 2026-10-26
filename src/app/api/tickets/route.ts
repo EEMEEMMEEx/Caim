@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server"
 import { getDb, isMongoConfigured } from "@/lib/mongodb"
 import { realtimeEmitter, REALTIME_EVENTS } from "@/lib/events/realtimeEmitter"
-import { TicketDocument, EquipmentDocument } from "@/types/database"
+import { TicketDocument, EquipmentDocument, CaimRepairOutcome } from "@/types/database"
 import { NO_CACHE_HEADERS } from "@/lib/constants/httpHeaders"
 import {
   getPersistentTickets,
